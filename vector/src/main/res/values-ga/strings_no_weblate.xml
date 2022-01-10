@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="resources_language">ga</string>
-    <string name="resources_country_code">IE</string>
-    <string name="resources_script">Latn</string>
-
+  <string name="resources_language">LeOS-Matrix</string>
+  <string name="resources_country_code">LeOS-Matrix</string>
+  <string name="resources_script">LeOS-Matrix</string>
 </resources>
