@@ -66,8 +66,8 @@ fi
 # Remove Triple-T stuff to avoid using them in F-Droid
 rm -rf "$mydir/vector/src/main/play/listings"
 
-git add -A
-git commit -m "Automatic L string correction"
+#git add -A
+#git commit -m "Automatic L string correction"
 
 popd > /dev/null
 
