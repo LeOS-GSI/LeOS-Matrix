@@ -2,7 +2,8 @@
 
 set -e
 
-mydir="$(dirname "$(realpath "$0")")"
+#mydir="$(dirname "$(realpath "$0")")"
+mydir="/mnt/data/AndroidApks/LeOS-Matrix/"
 source "$mydir/merge_helpers.sh"
 
 pushd "$mydir" > /dev/null
@@ -17,8 +18,7 @@ fi
 mydir="."
 
 # Element -> SchildiChat
-find "$mydir/vector/src/main/res" -name strings.xml -exec \
-    sed -i 's|Element|LeOS-Matrix|g' '{}' \;
+' \;
 # Restore Element where it makes sense
 find "$mydir/vector/src/main/res" -name strings.xml -exec \
     sed -i 's/LeOS-Matrix \(Web\|iOS\|Desktop\)/Element \1/g' '{}' \;
