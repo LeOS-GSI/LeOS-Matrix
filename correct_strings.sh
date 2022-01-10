@@ -18,7 +18,8 @@ fi
 mydir="."
 
 # Element -> SchildiChat
-' \;
+find "$mydir/vector/src/main/res" -name strings.xml -exec \
+    sed -i 's|Element|LeOS-Matrix|g' '{}' \;
 # Restore Element where it makes sense
 find "$mydir/vector/src/main/res" -name strings.xml -exec \
     sed -i 's/LeOS-Matrix \(Web\|iOS\|Desktop\)/Element \1/g' '{}' \;
@@ -66,7 +67,7 @@ fi
 rm -rf "$mydir/vector/src/main/play/listings"
 
 git add -A
-git commit -m "Automatic LeOS-Matrix name string correction"
+git commit -m "Automatic L string correction"
 
 popd > /dev/null
 
