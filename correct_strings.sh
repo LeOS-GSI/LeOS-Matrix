@@ -18,16 +18,16 @@ mydir="."
 
 # Element -> SchildiChat
 find "$mydir/vector/src/main/res" -name strings.xml -exec \
-    sed -i 's|Element|SchildiChat|g' '{}' \;
+    sed -i 's|Element|LeOS-Matrix|g' '{}' \;
 # Restore Element where it makes sense
 find "$mydir/vector/src/main/res" -name strings.xml -exec \
-    sed -i 's/SchildiChat \(Web\|iOS\|Desktop\)/Element \1/g' '{}' \;
+    sed -i 's/LeOS-Matrix \(Web\|iOS\|Desktop\)/Element \1/g' '{}' \;
 find "$mydir/vector/src/main/res" -name strings.xml -exec \
-    sed -i 's|SchildiChat Matrix Services|Element Matrix Services|g' '{}' \;
+    sed -i 's|LeOS-Matrix Matrix Services|Element Matrix Services|g' '{}' \;
 find "$mydir/vector/src/main/res" -name strings.xml -exec \
     sed -i 's|\("use_latest_riot">.*\)SchildiChat\(.*</string>\)|\1Element\2|g' '{}' \;
 find "$mydir/vector/src/main/res" -name strings.xml -exec \
-    sed -i 's|\("use_other_session_content_description">.*\)SchildiChat\(.*SchildiChat.*</string>\)|\1SchildiChat/Element\2|' '{}' \;
+    sed -i 's|\("use_other_session_content_description">.*\)LeOS-Matrix\(.*LeOS-Matrix.*</string>\)|\1SchildiChat/Element\2|' '{}' \;
 
 unpatched_strings_file=.tmp_unpatched_strings
 new_patched_strings_file=.tmp_new_patched_strings
@@ -66,7 +66,7 @@ fi
 rm -rf "$mydir/vector/src/main/play/listings"
 
 git add -A
-git commit -m "Automatic SchildiChat string correction"
+git commit -m "Automatic LeOS-Matrix name string correction"
 
 popd > /dev/null
 
