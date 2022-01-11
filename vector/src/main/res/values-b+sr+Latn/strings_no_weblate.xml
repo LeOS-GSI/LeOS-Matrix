@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="resources_language">LeOS-Matrix</string>
-  <string name="resources_country_code">LeOS-Matrix</string>
-  <string name="resources_script">LeOS-Matrix</string>
+
+    <string name="resources_language">sr</string>
+    <string name="resources_country_code">RS</string>
+    <string name="resources_script">Latn</string>
+
 </resources>
