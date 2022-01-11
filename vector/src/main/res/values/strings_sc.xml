@@ -55,9 +55,9 @@
     <string name="url_previews_in_encrypted_rooms">URL previews in encrypted chats</string>
     <string name="url_previews_in_encrypted_rooms_summary">This will leak URLs from your messages to your homeserver!</string>
 
-    <string name="login_mobile_device_sc">LeOS-Messenger Android</string>
+    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
     <string name="bottom_action_all">Overview</string>
-    <string name="all_list_rooms_empty_title">LeOS-Messenger</string>
+    <string name="all_list_rooms_empty_title">LeOS-Matrix</string>
     <string name="all_list_rooms_empty_body">Chats will be displayed here</string>
 
     <!-- Login screen -->
@@ -116,7 +116,7 @@
     <string name="sc_accent_blue">Blue</string>
     <!-- do not change this comment for accent generation -->
 
-    <string name="send_bug_report_sc_extra">To increase the visibility of your issue and to allow us to contact you, you may want to reference this report (by providing your matrix ID and the approximate time when it was sent) in an issue at https://github.com/LeOS-Messenger/LeOS-Messenger-android/issues (check first if one already exists for your issue, and only create a new one if there is not).</string>
+    <string name="send_bug_report_sc_extra">To increase the visibility of your issue and to allow us to contact you, you may want to reference this report (by providing your matrix ID and the approximate time when it was sent) in an issue at https://github.com/LeOS-Matrix/LeOS-Matrix-android/issues (check first if one already exists for your issue, and only create a new one if there is not).</string>
 
     <!-- Unifiedpush Endpoint -->
     <string name="settings_troubleshoot_test_endpoint_title">Endpoint/FCM</string>

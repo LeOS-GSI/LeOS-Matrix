@@ -9,7 +9,7 @@
     tools:viewBindingIgnore="true">
 
     <!-- Layout gravity left: fixes long display name pills moving text out:
-        https://github.com/LeOS-Messenger/LeOS-Messenger-android/issues/66
+        https://github.com/LeOS-Matrix/LeOS-Matrix-android/issues/66
         Interestingly, this not only fixes it for LTR texts for RTL locales,
         but it also makes it align better for RTL texts in RTL locales - at least
         until the user pill is touched...

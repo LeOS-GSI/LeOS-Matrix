@@ -28,9 +28,9 @@
     <string name="login_server_other_title_sc">Aangepaste server</string>
     <string name="login_connect_using_matrix_id_text_sc">b.v. @user:domain.com</string>
     <string name="all_list_rooms_empty_body">Chats worden hier getoond</string>
-    <string name="all_list_rooms_empty_title">LeOS-Messenger</string>
+    <string name="all_list_rooms_empty_title">LeOS-Matrix</string>
     <string name="bottom_action_all">Overzicht</string>
-    <string name="login_mobile_device_sc">LeOS-Messenger Android</string>
+    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
     <string name="url_previews_in_encrypted_rooms_summary">Dit zal URL\'s van je berichten naar je homeserver lekken!</string>
     <string name="labs_mark_rooms_unread_summary">Sta toe om chats als ongelezen te markeren. Andere matrix-clients ondersteunen deze functionaliteit mogelijk nog niet.</string>
     <string name="sc_dark_colored_theme">SC Donkere, gekleurde bellen</string>
@@ -87,5 +87,5 @@
     <string name="settings_open_chats_at_first_unread">Open bij ongelezen</string>
     <string name="sc_accent_pink">Roze</string>
     <string name="settings_open_chats_at_first_unread_summary">Open chats bij het eerste ongelezen bericht in plaats van onderaan.</string>
-    <string name="send_bug_report_sc_extra">Om de zichtbaarheid van uw probleem te vergroten en ons in staat te stellen contact met u op te nemen, kunt u naar dit rapport verwijzen (door uw matrix-ID op te geven en de geschatte tijd waarop het is verzonden) in een issue op https://github.com/LeOS-Messenger/LeOS-Messenger-android/issues (controleer eerst of er al een bestaat voor uw probleem en maak alleen een nieuwe aan als die er niet is).</string>
+    <string name="send_bug_report_sc_extra">Om de zichtbaarheid van uw probleem te vergroten en ons in staat te stellen contact met u op te nemen, kunt u naar dit rapport verwijzen (door uw matrix-ID op te geven en de geschatte tijd waarop het is verzonden) in een issue op https://github.com/LeOS-Matrix/LeOS-Matrix-android/issues (controleer eerst of er al een bestaat voor uw probleem en maak alleen een nieuwe aan als die er niet is).</string>
 </resources>

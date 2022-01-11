@@ -18,9 +18,9 @@
     <string name="bubble_style_none">Нет</string>
     <string name="bubble_style_start">На той же стороне</string>
     <string name="bubble_style_both">С обеих сторон</string>
-    <string name="login_mobile_device_sc">LeOS-Messenger Android</string>
+    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
     <string name="bottom_action_all">Обзор</string>
-    <string name="all_list_rooms_empty_title">LeOS-Messenger</string>
+    <string name="all_list_rooms_empty_title">LeOS-Matrix</string>
     <string name="all_list_rooms_empty_body">Здесь будут отображаться чаты</string>
     <!-- Login screen -->
     <string name="login_connect_using_matrix_id_text_sc">например @user:domain.com</string>
@@ -92,7 +92,7 @@
     <string name="settings_unifiedpush_force_custom_gateway">Принудительный пользовательский push-шлюз</string>
     <string name="settings_unifiedpush_reregister">Перерегистрация push дистрибьютора</string>
     <string name="settings_force_allow_background_sync">Разрешить фоновую синхронизацию в дополнение к push</string>
-    <string name="send_bug_report_sc_extra">Чтобы повысить заметность вашей проблемы и дать нам возможность связаться с вами, вы можете сослаться на этот отчет (указав свой идентификатор Matrix и приблизительное время, когда он был отправлен) в Issues на сайте https://github.com/LeOS-Messenger/LeOS-Messenger-android/issues (сначала проверьте, существует ли уже такой отчет для вашей проблемы, и создайте новый, если его нет).</string>
+    <string name="send_bug_report_sc_extra">Чтобы повысить заметность вашей проблемы и дать нам возможность связаться с вами, вы можете сослаться на этот отчет (указав свой идентификатор Matrix и приблизительное время, когда он был отправлен) в Issues на сайте https://github.com/LeOS-Matrix/LeOS-Matrix-android/issues (сначала проверьте, существует ли уже такой отчет для вашей проблемы, и создайте новый, если его нет).</string>
     <string name="unifiedpush_getdistributors_dialog_title">Выберите дистрибьютора</string>
     <string name="settings_troubleshoot_test_fcm_failed_sc">Не удалось получить токен FCM</string>
     <string name="settings_troubleshoot_test_endpoint_success">Конечная точка успешно получена:
