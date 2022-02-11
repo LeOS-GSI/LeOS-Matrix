@@ -1,2 +1,1 @@
-New
 # LeOS for Android
