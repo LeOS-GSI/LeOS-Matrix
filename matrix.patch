@@ -1,0 +1,1618 @@
+diff --git a/correct_strings.sh b/correct_strings.sh
+index 7289b6f4a..0418a9789 100755
+--- a/correct_strings.sh
++++ b/correct_strings.sh
+@@ -2,7 +2,7 @@
+ 
+ set -e
+ 
+-mydir="$(dirname "$(realpath "$0")")"
++mydir="/mnt/data/AndroidApks/LeOS-Matrix/"
+ source "$mydir/merge_helpers.sh"
+ 
+ pushd "$mydir" > /dev/null
+diff --git a/fastlane/metadata/android/en-US/images/icon.png b/fastlane/metadata/android/en-US/images/icon.png
+index d0680e0ee..6e603f22b 100644
+Binary files a/fastlane/metadata/android/en-US/images/icon.png and b/fastlane/metadata/android/en-US/images/icon.png differ
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index ee6ba9a3a..669386b87 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -1,6 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionSha256Sum=c9490e938b221daf0094982288e4038deed954a3f12fb54cbf270ddf4e37d879
+ distributionUrl=https\://services.gradle.org/distributions/gradle-7.3.3-all.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/vector/build.gradle b/vector/build.gradle
+index 052716a7b..d9ee5839d 100644
+--- a/vector/build.gradle
++++ b/vector/build.gradle
+@@ -131,7 +131,7 @@ android {
+         versionCode 40100750
+ 
+         // Required for sonar analysis
+-        versionName "1.3.12.sc48"
++        versionName "01.1"
+ 
+         buildConfigField "String", "GIT_REVISION", "\"${gitRevision()}\""
+         resValue "string", "git_revision", "\"${gitRevision()}\""
+@@ -179,7 +179,7 @@ android {
+                 reset()
+ 
+                 // Specifies a list of ABIs that Gradle should create APKs for.
+-                include "armeabi-v7a", "x86", "arm64-v8a", "x86_64"
++                include "armeabi-v7a", "arm64-v8a"
+ 
+                 // Generate a universal APK that includes all ABIs, so user who install from CI tool can use this one by default.
+                 universalApk true
+@@ -232,7 +232,7 @@ android {
+     buildTypes {
+         debug {
+             applicationIdSuffix ".debug"
+-            resValue "string", "app_name", "SchildiChat dbg"
++            resValue "string", "app_name", "LeOS-Matrix"
+ 
+             resValue "bool", "debug_mode", "true"
+             buildConfigField "boolean", "LOW_PRIVACY_LOG_ENABLE", "false"
+@@ -243,7 +243,7 @@ android {
+         }
+ 
+         release {
+-            resValue "string", "app_name", "SchildiChat"
++            resValue "string", "app_name", "LeOS-Matrix"
+ 
+             resValue "bool", "debug_mode", "false"
+             buildConfigField "boolean", "LOW_PRIVACY_LOG_ENABLE", "false"
+@@ -273,7 +273,7 @@ android {
+             dimension "store"
+             isDefault = true
+ 
+-            versionName "1.3.12.sc48"
++            versionName "1.1"
+ 
+             resValue "bool", "isGplay", "true"
+             buildConfigField "boolean", "ALLOW_FCM_USE", "true"
+@@ -285,7 +285,7 @@ android {
+         fdroid {
+             dimension "store"
+ 
+-            versionName "1.3.12.sc48"
++            versionName "1.1"
+ 
+             resValue "bool", "isGplay", "false"
+             buildConfigField "boolean", "ALLOW_FCM_USE", "false"
+diff --git a/vector/src/main/res/drawable-hdpi/element_logo_sc.png b/vector/src/main/res/drawable-hdpi/element_logo_sc.png
+deleted file mode 100644
+index 98cde3823..000000000
+Binary files a/vector/src/main/res/drawable-hdpi/element_logo_sc.png and /dev/null differ
+diff --git a/vector/src/main/res/drawable-hdpi/riot_splash_sc.png b/vector/src/main/res/drawable-hdpi/riot_splash_sc.png
+index f41a947cd..fc3fe6ccd 100644
+Binary files a/vector/src/main/res/drawable-hdpi/riot_splash_sc.png and b/vector/src/main/res/drawable-hdpi/riot_splash_sc.png differ
+diff --git a/vector/src/main/res/drawable-mdpi/element_logo_sc.png b/vector/src/main/res/drawable-mdpi/element_logo_sc.png
+deleted file mode 100644
+index 1f9431caa..000000000
+Binary files a/vector/src/main/res/drawable-mdpi/element_logo_sc.png and /dev/null differ
+diff --git a/vector/src/main/res/drawable-mdpi/riot_splash_sc.png b/vector/src/main/res/drawable-mdpi/riot_splash_sc.png
+index 434f97417..95cd1e78b 100644
+Binary files a/vector/src/main/res/drawable-mdpi/riot_splash_sc.png and b/vector/src/main/res/drawable-mdpi/riot_splash_sc.png differ
+diff --git a/vector/src/main/res/drawable-xhdpi/element_logo_sc.png b/vector/src/main/res/drawable-xhdpi/element_logo_sc.png
+deleted file mode 100644
+index 434f97417..000000000
+Binary files a/vector/src/main/res/drawable-xhdpi/element_logo_sc.png and /dev/null differ
+diff --git a/vector/src/main/res/drawable-xhdpi/riot_splash_sc.png b/vector/src/main/res/drawable-xhdpi/riot_splash_sc.png
+index 26dbae503..925ad3e07 100644
+Binary files a/vector/src/main/res/drawable-xhdpi/riot_splash_sc.png and b/vector/src/main/res/drawable-xhdpi/riot_splash_sc.png differ
+diff --git a/vector/src/main/res/drawable-xxhdpi/element_logo_sc.png b/vector/src/main/res/drawable-xxhdpi/element_logo_sc.png
+deleted file mode 100644
+index f41a947cd..000000000
+Binary files a/vector/src/main/res/drawable-xxhdpi/element_logo_sc.png and /dev/null differ
+diff --git a/vector/src/main/res/drawable-xxhdpi/riot_splash_sc.png b/vector/src/main/res/drawable-xxhdpi/riot_splash_sc.png
+index d06c2aa16..1efc8e19f 100644
+Binary files a/vector/src/main/res/drawable-xxhdpi/riot_splash_sc.png and b/vector/src/main/res/drawable-xxhdpi/riot_splash_sc.png differ
+diff --git a/vector/src/main/res/drawable-xxxhdpi/element_logo_sc.png b/vector/src/main/res/drawable-xxxhdpi/element_logo_sc.png
+deleted file mode 100644
+index 26dbae503..000000000
+Binary files a/vector/src/main/res/drawable-xxxhdpi/element_logo_sc.png and /dev/null differ
+diff --git a/vector/src/main/res/drawable-xxxhdpi/riot_splash_sc.png b/vector/src/main/res/drawable-xxxhdpi/riot_splash_sc.png
+index 555cab4a5..d5553335d 100644
+Binary files a/vector/src/main/res/drawable-xxxhdpi/riot_splash_sc.png and b/vector/src/main/res/drawable-xxxhdpi/riot_splash_sc.png differ
+diff --git a/vector/src/main/res/drawable/ic_launcher_background.xml b/vector/src/main/res/drawable/ic_launcher_background.xml
+index f58c9aeb5..ca3826a46 100644
+--- a/vector/src/main/res/drawable/ic_launcher_background.xml
++++ b/vector/src/main/res/drawable/ic_launcher_background.xml
+@@ -1,10 +1,74 @@
+-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:width="108dp"
++<?xml version="1.0" encoding="utf-8"?>
++<vector
+     android:height="108dp"
++    android:width="108dp"
++    android:viewportHeight="108"
+     android:viewportWidth="108"
+-    android:viewportHeight="108">
+-  <path
+-      android:pathData="m0,0h108v108h-108z"
+-      android:fillColor="#0DBD8B"
+-      android:fillType="evenOdd"/>
++    xmlns:android="http://schemas.android.com/apk/res/android">
++    <path android:fillColor="#3DDC84"
++          android:pathData="M0,0h108v108h-108z"/>
++    <path android:fillColor="#00000000" android:pathData="M9,0L9,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M19,0L19,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M29,0L29,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M39,0L39,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M49,0L49,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M59,0L59,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M69,0L69,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M79,0L79,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M89,0L89,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M99,0L99,108"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,9L108,9"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,19L108,19"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,29L108,29"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,39L108,39"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,49L108,49"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,59L108,59"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,69L108,69"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,79L108,79"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,89L108,89"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M0,99L108,99"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M19,29L89,29"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M19,39L89,39"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M19,49L89,49"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M19,59L89,59"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M19,69L89,69"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M19,79L89,79"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M29,19L29,89"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M39,19L39,89"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M49,19L49,89"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M59,19L59,89"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M69,19L69,89"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
++    <path android:fillColor="#00000000" android:pathData="M79,19L79,89"
++          android:strokeColor="#33FFFFFF" android:strokeWidth="0.8"/>
+ </vector>
+diff --git a/vector/src/main/res/layout/fragment_loading.xml b/vector/src/main/res/layout/fragment_loading.xml
+index 92f3bba07..14c5c68d2 100644
+--- a/vector/src/main/res/layout/fragment_loading.xml
++++ b/vector/src/main/res/layout/fragment_loading.xml
+@@ -2,7 +2,8 @@
+ <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     android:layout_width="match_parent"
+-    android:layout_height="match_parent">
++    android:layout_height="match_parent"
++    android:background="#1B4E1B">
+ 
+     <ImageView
+         android:id="@+id/animatedLogoImageView"
+diff --git a/vector/src/main/res/mipmap-anydpi-v26/ic_launcher.xml b/vector/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+index eca70cfe5..b783e928b 100644
+--- a/vector/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
++++ b/vector/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+-    <background android:drawable="@drawable/ic_launcher_background" />
+-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
++    <background android:drawable="@drawable/ic_launcher_background"/>
++    <foreground android:drawable="@mipmap/element_logo_sc"/>
+ </adaptive-icon>
+\ No newline at end of file
+diff --git a/vector/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml b/vector/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+index eca70cfe5..b783e928b 100644
+--- a/vector/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
++++ b/vector/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+-    <background android:drawable="@drawable/ic_launcher_background" />
+-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
++    <background android:drawable="@drawable/ic_launcher_background"/>
++    <foreground android:drawable="@mipmap/element_logo_sc"/>
+ </adaptive-icon>
+\ No newline at end of file
+diff --git a/vector/src/main/res/mipmap-hdpi/ic_launcher.png b/vector/src/main/res/mipmap-hdpi/ic_launcher.png
+deleted file mode 100644
+index 61989aa18..000000000
+Binary files a/vector/src/main/res/mipmap-hdpi/ic_launcher.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-hdpi/ic_launcher_foreground_sc.png b/vector/src/main/res/mipmap-hdpi/ic_launcher_foreground_sc.png
+index bc7b5a672..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-hdpi/ic_launcher_foreground_sc.png and b/vector/src/main/res/mipmap-hdpi/ic_launcher_foreground_sc.png differ
+diff --git a/vector/src/main/res/mipmap-hdpi/ic_launcher_round.png b/vector/src/main/res/mipmap-hdpi/ic_launcher_round.png
+deleted file mode 100644
+index 1e70007a5..000000000
+Binary files a/vector/src/main/res/mipmap-hdpi/ic_launcher_round.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-hdpi/ic_launcher_sc.png b/vector/src/main/res/mipmap-hdpi/ic_launcher_sc.png
+index 6e3ed8e5e..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-hdpi/ic_launcher_sc.png and b/vector/src/main/res/mipmap-hdpi/ic_launcher_sc.png differ
+diff --git a/vector/src/main/res/mipmap-mdpi/ic_launcher.png b/vector/src/main/res/mipmap-mdpi/ic_launcher.png
+deleted file mode 100644
+index a8cb1278e..000000000
+Binary files a/vector/src/main/res/mipmap-mdpi/ic_launcher.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-mdpi/ic_launcher_foreground_sc.png b/vector/src/main/res/mipmap-mdpi/ic_launcher_foreground_sc.png
+index fb355733e..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-mdpi/ic_launcher_foreground_sc.png and b/vector/src/main/res/mipmap-mdpi/ic_launcher_foreground_sc.png differ
+diff --git a/vector/src/main/res/mipmap-mdpi/ic_launcher_round.png b/vector/src/main/res/mipmap-mdpi/ic_launcher_round.png
+deleted file mode 100644
+index a84a5c7f0..000000000
+Binary files a/vector/src/main/res/mipmap-mdpi/ic_launcher_round.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-mdpi/ic_launcher_sc.png b/vector/src/main/res/mipmap-mdpi/ic_launcher_sc.png
+index 475e88123..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-mdpi/ic_launcher_sc.png and b/vector/src/main/res/mipmap-mdpi/ic_launcher_sc.png differ
+diff --git a/vector/src/main/res/mipmap-xhdpi/ic_launcher.png b/vector/src/main/res/mipmap-xhdpi/ic_launcher.png
+deleted file mode 100644
+index 8a58336ca..000000000
+Binary files a/vector/src/main/res/mipmap-xhdpi/ic_launcher.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-xhdpi/ic_launcher_foreground_sc.png b/vector/src/main/res/mipmap-xhdpi/ic_launcher_foreground_sc.png
+index 50eb4e579..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-xhdpi/ic_launcher_foreground_sc.png and b/vector/src/main/res/mipmap-xhdpi/ic_launcher_foreground_sc.png differ
+diff --git a/vector/src/main/res/mipmap-xhdpi/ic_launcher_round.png b/vector/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+deleted file mode 100644
+index a16d061d3..000000000
+Binary files a/vector/src/main/res/mipmap-xhdpi/ic_launcher_round.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-xhdpi/ic_launcher_sc.png b/vector/src/main/res/mipmap-xhdpi/ic_launcher_sc.png
+index 1f9431caa..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-xhdpi/ic_launcher_sc.png and b/vector/src/main/res/mipmap-xhdpi/ic_launcher_sc.png differ
+diff --git a/vector/src/main/res/mipmap-xxhdpi/ic_launcher.png b/vector/src/main/res/mipmap-xxhdpi/ic_launcher.png
+deleted file mode 100644
+index ef4922fc1..000000000
+Binary files a/vector/src/main/res/mipmap-xxhdpi/ic_launcher.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-xxhdpi/ic_launcher_foreground_sc.png b/vector/src/main/res/mipmap-xxhdpi/ic_launcher_foreground_sc.png
+index eccc0f987..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-xxhdpi/ic_launcher_foreground_sc.png and b/vector/src/main/res/mipmap-xxhdpi/ic_launcher_foreground_sc.png differ
+diff --git a/vector/src/main/res/mipmap-xxhdpi/ic_launcher_round.png b/vector/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+deleted file mode 100644
+index 75e42278d..000000000
+Binary files a/vector/src/main/res/mipmap-xxhdpi/ic_launcher_round.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-xxhdpi/ic_launcher_sc.png b/vector/src/main/res/mipmap-xxhdpi/ic_launcher_sc.png
+index 98cde3823..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-xxhdpi/ic_launcher_sc.png and b/vector/src/main/res/mipmap-xxhdpi/ic_launcher_sc.png differ
+diff --git a/vector/src/main/res/mipmap-xxxhdpi/ic_launcher.png b/vector/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+deleted file mode 100644
+index fd6271c31..000000000
+Binary files a/vector/src/main/res/mipmap-xxxhdpi/ic_launcher.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground_sc.png b/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground_sc.png
+index 384cbd4ca..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground_sc.png and b/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground_sc.png differ
+diff --git a/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png b/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+deleted file mode 100644
+index 14c5fe404..000000000
+Binary files a/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png and /dev/null differ
+diff --git a/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_sc.png b/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_sc.png
+index 434f97417..a24fab1c4 100644
+Binary files a/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_sc.png and b/vector/src/main/res/mipmap-xxxhdpi/ic_launcher_sc.png differ
+diff --git a/vector/src/main/res/values-ar/strings.xml b/vector/src/main/res/values-ar/strings.xml
+index 38103356a..29fa6c813 100644
+--- a/vector/src/main/res/values-ar/strings.xml
++++ b/vector/src/main/res/values-ar/strings.xml
+@@ -269,7 +269,7 @@
+     <string name="local_address_book_header">دفتر العناوين المحلي</string>
+     <string name="matrix_only_filter">متراسلو «ماترِكس» فقط</string>
+     <string name="no_conversation_placeholder">لا محادثات</string>
+-    <string name="template_no_contact_access_placeholder">لم تسمح لِ‍ SchildiChat بمطالعة متراسليك المحليين</string>
++    <string name="template_no_contact_access_placeholder">لم تسمح لِ‍ LeOS-Matrix بمطالعة متراسليك المحليين</string>
+     <string name="no_result_placeholder">لا نتائج</string>
+     <string name="rooms_header">الغرف</string>
+     <string name="rooms_directory_header">دليل الغرف</string>
+@@ -671,18 +671,18 @@
+     <string name="compression_options">"أرسِل كَ‍ "</string>
+     <string name="call_error_ice_failed">فشل اتصال الوسائط</string>
+     <string name="call_error_answered_elsewhere">رُدّ على المكالة في مكان آخر</string>
+-    <string name="template_permissions_rationale_msg_storage">يحتاج SchildiChat تصريحا منك للوصول إلى مكتبتي الصور والفديو لإرسال المرفقات وحفظها.
++    <string name="template_permissions_rationale_msg_storage">يحتاج LeOS-Matrix تصريحا منك للوصول إلى مكتبتي الصور والفديو لإرسال المرفقات وحفظها.
+ 
+ رجاءً اسمح بالوصول في المنبثقة التالية لتقدر على إرسال الملفات من هاتفك.</string>
+-    <string name="template_permissions_rationale_msg_camera">يحتاج SchildiChat تصريحا منك للوصول إلى الكمرة لأخذ الصور وللمكالمات الصورية.</string>
+-    <string name="template_permissions_rationale_msg_record_audio">يحتاج SchildiChat تصريحا منك للوصول إلى المِكرفون لإجراء المكالمات الصوتية.</string>
++    <string name="template_permissions_rationale_msg_camera">يحتاج LeOS-Matrix تصريحا منك للوصول إلى الكمرة لأخذ الصور وللمكالمات الصورية.</string>
++    <string name="template_permissions_rationale_msg_record_audio">يحتاج LeOS-Matrix تصريحا منك للوصول إلى المِكرفون لإجراء المكالمات الصوتية.</string>
+     <string name="permissions_rationale_msg_record_audio_explanation">
+ 
+ رجاءً اسمح بالنفاذ في المنبثقة الآتية لتتمكن من إجراء محادثة.</string>
+-    <string name="template_permissions_rationale_msg_camera_and_audio">يحتاج SchildiChat تصريحا منك للوصول إلى الكمرة والمِكرفون لإجراء المكالمات الصورية.
++    <string name="template_permissions_rationale_msg_camera_and_audio">يحتاج LeOS-Matrix تصريحا منك للوصول إلى الكمرة والمِكرفون لإجراء المكالمات الصورية.
+ 
+ رجاءً اسمح بالوصول في المنبثقة التالية لتقدر على إرسال إجراء المكالمات الصورية.</string>
+-    <string name="template_permissions_rationale_msg_contacts">يحتاج SchildiChat تصريحا منك للوصول إلى دفتر العناوين للعثور على مستخدمي ماترِكس الآخرين وذلك حسب البريد الإلكتروني ورقم الهاتف.
++    <string name="template_permissions_rationale_msg_contacts">يحتاج LeOS-Matrix تصريحا منك للوصول إلى دفتر العناوين للعثور على مستخدمي ماترِكس الآخرين وذلك حسب البريد الإلكتروني ورقم الهاتف.
+ 
+ رجاءً اسمح بالوصول في المنبثقة التالية لتستكشف مستخدميك في دفتر العناوين من SchildiChat.</string>
+     <string name="media_slider_saved">حُفظت</string>
+@@ -699,9 +699,9 @@
+     <string name="read_receipts_list">قائمة علامات القراءة</string>
+     <string name="compression_opt_list_original">الأصلي</string>
+     <string name="call_error_user_not_responding">لم يُجب الطرف البعيد.</string>
+-    <string name="template_permissions_msg_contacts_warning_other_androids">يحتاج SchildiChat تصريحا منك للوصول إلى دفتر العناوين للعثور على مستخدمي ماترِكس الآخرين وذلك حسب البريد الإلكتروني ورقم الهاتف.
++    <string name="template_permissions_msg_contacts_warning_other_androids">يحتاج LeOS-Matrix تصريحا منك للوصول إلى دفتر العناوين للعثور على مستخدمي ماترِكس الآخرين وذلك حسب البريد الإلكتروني ورقم الهاتف.
+ 
+-أتسمح بأن يصل SchildiChat إلى متراسليك؟</string>
++أتسمح بأن يصل LeOS-Matrix إلى متراسليك؟</string>
+     <string name="room_participants_header_direct_chats">الدردشات المباشرة</string>
+     <string name="room_participants_invite_search_another_user">معرّف المستخدم أو اسمه أو بريده</string>
+     <string name="room_participants_action_mention">أشِر إليه</string>
+@@ -914,7 +914,7 @@
+     <string name="e2e_re_request_encryption_key"><u>أعِد طلب مفاتيح التعمية</u>من أجهزتك الأخرى.</string>
+     <string name="e2e_re_request_encryption_key_sent">أُرسل طلب المفتاح.</string>
+     <string name="e2e_re_request_encryption_key_dialog_title">أُرسل الطلب</string>
+-    <string name="template_e2e_re_request_encryption_key_dialog_content">رجاءً أطلِق SchildiChat في جهاز آخر يقدر على فك تعمية الرسالة ليُرسل المفاتيح إلى هذا الجهاز.</string>
++    <string name="template_e2e_re_request_encryption_key_dialog_content">رجاءً أطلِق LeOS-Matrix في جهاز آخر يقدر على فك تعمية الرسالة ليُرسل المفاتيح إلى هذا الجهاز.</string>
+     <string name="action_speak">انطِق</string>
+     <string name="action_clear">امسح</string>
+     <string name="room_participants_online">متّصل</string>
+@@ -936,7 +936,7 @@
+     <string name="startup_notification_privacy_button_grant">امنح التصريح</string>
+     <string name="startup_notification_privacy_button_other">اختر خيارا آخر</string>
+     <string name="settings_opt_in_of_analytics">أرسِل بيانات التحاليل</string>
+-    <string name="template_settings_opt_in_of_analytics_summary">يجمع SchildiChat التحاليل بشكل مجهّل فيتيح لنا ذلك تحسين التطبيق.</string>
++    <string name="template_settings_opt_in_of_analytics_summary">يجمع LeOS-Matrix التحاليل بشكل مجهّل فيتيح لنا ذلك تحسين التطبيق.</string>
+     <string name="template_settings_opt_in_of_analytics_prompt">رجاءً فعّل التحاليل لمساعدتنا في تحسين SchildiChat.</string>
+     <string name="settings_opt_in_of_analytics_ok">نعم أريد المساعدة!</string>
+     <string name="lock_screen_hint">اكتب هنا…</string>
+@@ -999,7 +999,7 @@
+         <item quantity="other">%d محدّدة</item>
+     </plurals>
+     <string name="settings_preview_media_before_sending">عايِن الوسيط قبل إرساله</string>
+-    <string name="template_startup_notification_privacy_message">يمكن أن يعمل SchildiChat في الخلفية ليُدير الإخطارات بأمان وخصوصية (قد يؤثّر هذا على استهلاك البطارية).</string>
++    <string name="template_startup_notification_privacy_message">يمكن أن يعمل LeOS-Matrix في الخلفية ليُدير الإخطارات بأمان وخصوصية (قد يؤثّر هذا على استهلاك البطارية).</string>
+     <string name="settings_without_flair">لست عضوًا في أي مجتمع حاليًا.</string>
+     <plurals name="notification_unread_notified_messages">
+         <item quantity="zero">لا رسائل إخطار غير مقروءة</item>
+diff --git a/vector/src/main/res/values-bg/strings.xml b/vector/src/main/res/values-bg/strings.xml
+index b6279f0d4..f57171bdc 100644
+--- a/vector/src/main/res/values-bg/strings.xml
++++ b/vector/src/main/res/values-bg/strings.xml
+@@ -1634,7 +1634,7 @@
+     <string name="login_server_url_form_modular_hint">Element Matrix Services адрес</string>
+     <string name="login_server_url_form_other_hint">Адрес</string>
+     <string name="login_server_url_form_modular_text">Премиум хостинг за организации</string>
+-    <string name="login_server_url_form_modular_notice">Въведете адреса на Modular SchildiChat или на сървър, който искате да използвате</string>
++    <string name="login_server_url_form_modular_notice">Въведете адреса на Modular LeOS-Matrix или на сървър, който искате да използвате</string>
+     <string name="login_sso_error_message">Възникна грешка при зареждане на страницата: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">Приложението не може да влезе в този сървър. Сървъра поддържа следните методи за вход: %1$s.
+ \n
+@@ -2307,7 +2307,7 @@
+     <string name="disclaimer_positive_button">НАУЧИ ПОВЕЧЕ</string>
+     <string name="disclaimer_negative_button">РАЗБРАХ</string>
+     <string name="disclaimer_content">Развълнувани сме да съобщим, че променихме името! Приложението ви е обновено и сте вписани в профила си.</string>
+-    <string name="disclaimer_title">Riot вече е SchildiChat!</string>
++    <string name="disclaimer_title">Riot вече е LeOS-Matrix!</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Изчакване на история на шифроването</string>
+     <string name="crypto_error_withheld_generic">Не можете да достъпите това съобщение, защото изпращача нарочно не е изпратил ключовете за него</string>
+     <string name="crypto_error_withheld_unverified">Не можете да достъпите това съобщение, защото изпращача не се доверява на сесията ви</string>
+diff --git a/vector/src/main/res/values-ca/strings.xml b/vector/src/main/res/values-ca/strings.xml
+index afea1c6bd..0a8b07d01 100644
+--- a/vector/src/main/res/values-ca/strings.xml
++++ b/vector/src/main/res/values-ca/strings.xml
+@@ -1818,7 +1818,7 @@
+     <string name="member_banned_by">Vetat per %1$s</string>
+     <string name="three_pid_revoke_invite_dialog_content">Revoca la invitació a %1$s\?</string>
+     <string name="three_pid_revoke_invite_dialog_title">Revoca la invitació</string>
+-    <string name="login_server_url_form_modular_notice">Introdueix l\'adreça d\'SchildiChat Modular o del servidor que vulguis utilitzar</string>
++    <string name="login_server_url_form_modular_notice">Introdueix l\'adreça d\'LeOS-Matrix Modular o del servidor que vulguis utilitzar</string>
+     <string name="login_server_url_form_modular_text">Allotjament de primera classe per a organitzacions</string>
+     <string name="login_server_url_form_other_hint">Adreça</string>
+     <string name="login_server_url_form_modular_hint">Adreça dels Serveis Matrix d\'SchildiChat</string>
+@@ -2358,7 +2358,7 @@
+     <string name="phone_book_perform_lookup">Busca contactes a Matrix</string>
+     <string name="search_in_my_contacts">Busca als meus contactes</string>
+     <string name="disclaimer_positive_button">MÉS INFORMACIÓ</string>
+-    <string name="disclaimer_title">Riot ara és SchildiChat!</string>
++    <string name="disclaimer_title">Riot ara és LeOS-Matrix!</string>
+     <string name="crypto_error_withheld_generic">No pots accedir al missatge perquè el remitent, intencionadament, no ha enviat les claus</string>
+     <string name="crypto_error_withheld_unverified">No pots accedir al missatge perquè la teva sessió no és de confiança pel remitent</string>
+     <string name="crypto_error_withheld_blacklisted">No pots accedir al missatge perquè el remitent t\'ha bloquejat</string>
+diff --git a/vector/src/main/res/values-cs/strings.xml b/vector/src/main/res/values-cs/strings.xml
+index 4c339f0b6..843e54b9a 100644
+--- a/vector/src/main/res/values-cs/strings.xml
++++ b/vector/src/main/res/values-cs/strings.xml
+@@ -1723,7 +1723,7 @@
+     <string name="login_server_url_form_modular_hint">Adresa Element Matrix Services</string>
+     <string name="login_server_url_form_other_hint">Adresa</string>
+     <string name="login_server_url_form_modular_text">Prémiový hosting pro organizace</string>
+-    <string name="login_server_url_form_modular_notice">Zadejte adresu Modular SchildiChat nebo serveru, který chcete použít</string>
++    <string name="login_server_url_form_modular_notice">Zadejte adresu Modular LeOS-Matrix nebo serveru, který chcete použít</string>
+     <string name="login_sso_error_message">Při načítání stránky došlo k chybě: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">Aplikace se nemůže přihlásit k tomuto homeserveru. Homeserver podporuje následující typy přihlášení: %1$s.
+ \n
+@@ -2342,7 +2342,7 @@
+     <string name="crypto_error_withheld_unverified">Nemůžete číst tuto zprávu, protože Vaše relace není pro odesílatele důvěryhodná</string>
+     <string name="crypto_error_withheld_generic">Nemůžete číst tuto zprávu, protože odesílatel účelově neposlal klíče</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Čekám na historii šifrování</string>
+-    <string name="disclaimer_title">Riot je nyní SchildiChat!</string>
++    <string name="disclaimer_title">Riot je nyní LeOS-Matrix!</string>
+     <string name="disclaimer_content">Jsme nadšení, že smíme oznámit změnu jména! Vaše app je aktuální a jste přihlášeni do svého účtu.</string>
+     <string name="disclaimer_negative_button">ROZUMÍM</string>
+     <string name="disclaimer_positive_button">DOZVĚDĚT SE VÍCE</string>
+@@ -3101,7 +3101,7 @@
+     <string name="analytics_opt_in_list_item_2"><b>Nesdílíme</b> informace s třetími stranami</string>
+     <string name="analytics_opt_in_list_item_1"><b>Nezaznamenáváme ani neprofilujeme</b> žádné údaje o účtu</string>
+     <string name="analytics_opt_in_content_link">zde</string>
+-    <string name="analytics_opt_in_content">Pomozte nám identifikovat problémy a vylepšit SchildiChat sdílením anonymních údajů o používání. Abychom pochopili, jak lidé používají více zařízení, vygenerujeme náhodný identifikátor sdílený vašimi zařízeními.
++    <string name="analytics_opt_in_content">Pomozte nám identifikovat problémy a vylepšit LeOS-Matrix sdílením anonymních údajů o používání. Abychom pochopili, jak lidé používají více zařízení, vygenerujeme náhodný identifikátor sdílený vašimi zařízeními.
+ \n
+ \nMůžete si přečíst všechny naše podmínky %s.</string>
+     <string name="analytics_opt_in_title">Pomozte vylepšit SchildiChat</string>
+diff --git a/vector/src/main/res/values-cs/strings_sc.xml b/vector/src/main/res/values-cs/strings_sc.xml
+index e151437bd..a7b8b3406 100644
+--- a/vector/src/main/res/values-cs/strings_sc.xml
++++ b/vector/src/main/res/values-cs/strings_sc.xml
+@@ -38,7 +38,7 @@
+     <string name="labs_mark_rooms_unread_summary">Umožňuje označit chaty jako nepřečtené. Jiní klienti Matrixu to zatím nemusí podporovat.</string>
+     <string name="url_previews_in_encrypted_rooms">Náhledy URL v šifrovaných chatech</string>
+     <string name="url_previews_in_encrypted_rooms_summary">URL adresy z vašich šifrovaných zpráv budou viditelné pro váš homeserver!</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Přehled</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Chaty se zobrazí zde</string>
+diff --git a/vector/src/main/res/values-de/strings.xml b/vector/src/main/res/values-de/strings.xml
+index 464134878..16f7f0ca1 100644
+--- a/vector/src/main/res/values-de/strings.xml
++++ b/vector/src/main/res/values-de/strings.xml
+@@ -1729,7 +1729,7 @@
+     <string name="room_join_rules_invite">%1$s hat den Raum auf \"nur-einladen\" gestellt.</string>
+     <string name="login_splash_title">Es ist deine Konversation. Mache sie dir zu eigen.</string>
+     <string name="login_server_url_form_modular_text">Premium-Hosting für Organisationen</string>
+-    <string name="login_server_url_form_modular_notice">Gib die Adresse des Modular SchildiChat oder Servers ein, den du verwenden möchtest</string>
++    <string name="login_server_url_form_modular_notice">Gib die Adresse des Modular LeOS-Matrix oder Servers ein, den du verwenden möchtest</string>
+     <string name="login_mode_not_supported">Die Anwendung kann sich nicht bei diesem Homeserver anmelden. Der Homeserver unterstützt die folgenden Anmeldemöglichkeiten: %1$s.
+ \n
+ \nMöchtest du dich mit einem Webclient anmelden\?</string>
+@@ -2258,7 +2258,7 @@
+     <string name="crypto_error_withheld_unverified">Du kannst auf diese Nachricht nicht zugreifen, weil der Sender deiner Sitzung nicht vertraut</string>
+     <string name="crypto_error_withheld_generic">Du kannst auf diese Nachricht nicht zugreifen, weil der Sender absichtlich die Schlüssel nicht gesendet hat</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Warte auf Verschlüsselungshistorie</string>
+-    <string name="disclaimer_title">Riot heißt nun SchildiChat!</string>
++    <string name="disclaimer_title">Riot heißt nun LeOS-Matrix!</string>
+     <string name="disclaimer_content">Wir sind begeistert unsere Namensänderung mitteilen zu können! Deine App ist auf dem neusten Stand und du bist mit deinem Account angemeldet.</string>
+     <string name="disclaimer_negative_button">VERSTANDEN</string>
+     <string name="disclaimer_positive_button">MEHR ERFAHREN</string>
+@@ -2978,7 +2978,7 @@
+     <string name="analytics_opt_in_list_item_3">Du kannst dies jederzeit in den Einstellungen deaktivieren</string>
+     <string name="analytics_opt_in_list_item_2">Wir teilen <b>keine</b> Informationen mit Drittpersonen</string>
+     <string name="analytics_opt_in_list_item_1">Wir erfassen und analysieren <b>keine</b> Accountdaten</string>
+-    <string name="analytics_opt_in_content">Hilf uns dabei Probleme zu identifizieren und SchildiChat zu verbessern, indem du anonyme Nutzungsdaten teilst. Um zu verstehen, wie Personen mehrere Geräte benutzen, werden wir eine zufällige Kennung generieren, die zwischen deinen Geräten geteilt wird.
++    <string name="analytics_opt_in_content">Hilf uns dabei Probleme zu identifizieren und LeOS-Matrix zu verbessern, indem du anonyme Nutzungsdaten teilst. Um zu verstehen, wie Personen mehrere Geräte benutzen, werden wir eine zufällige Kennung generieren, die zwischen deinen Geräten geteilt wird.
+ \n
+ \n%s kannst du alle unsere Bedingungen lesen.</string>
+     <string name="create_spaces_invite_public_header_desc">Stelle sicher, dass die richtigen Personen Zugriff auf %s haben. Du kannst jederzeit weitere Personen einladen.</string>
+@@ -2994,7 +2994,7 @@
+     <string name="preference_root_legals">Rechtliches</string>
+     <string name="decide_which_spaces_can_access">Entscheide, welche Spaces Zugriff auf den Raum haben sollen. Die Mitglieder der Spaces können diesen Räumen beitreten.</string>
+     <string name="analytics_opt_in_content_link">hier</string>
+-    <string name="analytics_opt_in_title">Hilf mit, SchildiChat zu verbessern</string>
++    <string name="analytics_opt_in_title">Hilf mit, LeOS-Matrix zu verbessern</string>
+     <string name="action_enable">Aktivieren</string>
+     <string name="room_member_override_nick_color">Farbe des Nicknamens ändern</string>
+     <string name="ftue_auth_carousel_2_title">Du hast die volle Kontrolle.</string>
+@@ -3013,7 +3013,7 @@
+     </plurals>
+     <string name="restart_the_application_to_apply_changes">Starte die Anwendung neu, damit die Änderung wirksam wird.</string>
+     <string name="labs_enable_latex_maths">LaTeX-Mathematik aktivieren</string>
+-    <string name="link_this_email_with_your_account">%s in den Einstellungen, um Einladungen direkt in SchildiChat zu erhalten.</string>
++    <string name="link_this_email_with_your_account">%s in den Einstellungen, um Einladungen direkt in LeOS-Matrix zu erhalten.</string>
+     <string name="this_invite_to_this_space_was_sent">Diese Einladung zu diesem Raum wurde an %s gesendet, der nicht mit deinem Konto verbunden ist</string>
+     <string name="to_help_space_members_find_and_join">Um Spacemitgliedern zu helfen, einen privaten Raum zu finden und ihm beizutreten, gehe zu den Einstellungen des Raums, indem du auf den Avatar tippst.</string>
+     <string name="this_makes_it_easy_for_rooms_to_stay_private_to_a_space">Dies macht es für Räume einfach, privat in einem Space zu bleiben, während die Leute im Space diese finden und ihnen beitreten können. Alle neuen Räume in einem Raum haben diese Option zur Verfügung.</string>
+@@ -3057,5 +3057,5 @@
+         <item quantity="one">Endgültiges Ergebnis basiert auf %1$d Stimme</item>
+         <item quantity="other">Endgültiges Ergebnis basiert auf %1$d Stimmen</item>
+     </plurals>
+-    <string name="ftue_auth_carousel_4_title">SchildiChat verbindet Datenschutz mit tollen Features.</string>
++    <string name="ftue_auth_carousel_4_title">LeOS-Matrix verbindet Datenschutz mit tollen Features.</string>
+ </resources>
+\ No newline at end of file
+diff --git a/vector/src/main/res/values-de/strings_sc.xml b/vector/src/main/res/values-de/strings_sc.xml
+index 6a8cc5d41..b4cea6eba 100644
+--- a/vector/src/main/res/values-de/strings_sc.xml
++++ b/vector/src/main/res/values-de/strings_sc.xml
+@@ -37,7 +37,7 @@
+     <string name="labs_mark_rooms_unread_summary">Erlaube, Chats als ungelesen zu markieren. Andere Matrix-Clients unterstützen dies möglicherweise noch nicht.</string>
+     <string name="url_previews_in_encrypted_rooms">URL-Vorschau in verschlüsselten Chats</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Dies offenbart in Nachrichten enthaltene URLs gegenüber dem Homeserver!</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Übersicht</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Konversationen werden hier angezeigt</string>
+diff --git a/vector/src/main/res/values-eo/strings.xml b/vector/src/main/res/values-eo/strings.xml
+index dcc897dca..51d0a81c7 100644
+--- a/vector/src/main/res/values-eo/strings.xml
++++ b/vector/src/main/res/values-eo/strings.xml
+@@ -2039,7 +2039,7 @@
+     <string name="disclaimer_positive_button">EKSCIU PLION</string>
+     <string name="disclaimer_negative_button">KOMPRENITE</string>
+     <string name="disclaimer_content">Ni ĝojas anonci, ke ni ŝanĝis nian nomon! Via aplikaĵo estas ĝisdata kaj vi estas salutinta vian konton.</string>
+-    <string name="disclaimer_title">Riot nun estas SchildiChat!</string>
++    <string name="disclaimer_title">Riot nun estas LeOS-Matrix!</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Atendante historion de ĉifrado</string>
+     <string name="crypto_error_withheld_generic">Vi ne povas aliri ĉi tiun mesaĝon, ĉar la sendinto intence ne sendis la ŝlosilojn</string>
+     <string name="crypto_error_withheld_unverified">Vi ne povas aliri ĉi tiun mesaĝon ĉar la sendinto ne fidas vian salutaĵon</string>
+diff --git a/vector/src/main/res/values-es/strings.xml b/vector/src/main/res/values-es/strings.xml
+index 4c93f9357..6f4d604b6 100644
+--- a/vector/src/main/res/values-es/strings.xml
++++ b/vector/src/main/res/values-es/strings.xml
+@@ -1451,7 +1451,7 @@ Por favor permite el acceso en la próxima ventana emergente para descubrir usua
+     <string name="call_failed_dont_ask_again">No volver a preguntar</string>
+     <string name="invite_no_identity_server_error">Para hacer esto, vaya a las opciones y añada un servidor de identidad.</string>
+     <string name="settings_add_3pid_confirm_password_title">Confirme su contraseña</string>
+-    <string name="settings_add_3pid_flow_not_supported">Eso no se puede hacer en SchildiChat para móvil</string>
++    <string name="settings_add_3pid_flow_not_supported">Eso no se puede hacer en LeOS-Matrix para móvil</string>
+     <string name="settings_add_3pid_authentication_needed">Se necesita autenticación</string>
+     <string name="settings_background_fdroid_sync_mode_battery">Optimizado para batería</string>
+     <string name="settings_background_fdroid_sync_mode_real_time">Optimizado para operar en tiempo real</string>
+@@ -1678,7 +1678,7 @@ Por favor permite el acceso en la próxima ventana emergente para descubrir usua
+     <string name="login_signin">Iniciar sesión</string>
+     <string name="login_server_url_form_other_hint">Dirección</string>
+     <string name="login_server_url_form_modular_text">Alojamiento de pago para organizaciones</string>
+-    <string name="login_server_url_form_modular_notice">Introduzca la dirección de Modular SchildiChat o servidor que quieres usar</string>
++    <string name="login_server_url_form_modular_notice">Introduzca la dirección de Modular LeOS-Matrix o servidor que quieres usar</string>
+     <string name="login_sso_error_message">Se produjo un error al cargar la página: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">La aplicación no es capaz de iniciar sesión en este servidor. Éste solo soporta el acceso mediante: %1$s.
+ \n
+@@ -1742,7 +1742,7 @@ Por favor permite el acceso en la próxima ventana emergente para descubrir usua
+     <string name="template_identity_server_error_outdated_identity_server">Servidor de identidad desactualizado. ${app_name} solo soporta API V2.</string>
+     <string name="identity_server_error_outdated_home_server">Operación no posible. Servidor desactualizado.</string>
+     <string name="identity_server_error_no_identity_server_configured">Por favor, configure primero un Servidor de Identidad.</string>
+-    <string name="disclaimer_title">Riot ahora es SchildiChat!</string>
++    <string name="disclaimer_title">Riot ahora es LeOS-Matrix!</string>
+     <string name="disclaimer_negative_button">Entendido</string>
+     <string name="disclaimer_positive_button">Aprender Mas</string>
+     <string name="search_in_my_contacts">Buscar en mis contactos</string>
+@@ -1992,7 +1992,7 @@ Por favor permite el acceso en la próxima ventana emergente para descubrir usua
+     <string name="room_join_rules_invite_by_you">Hiciste la sala solo por invitación.</string>
+     <string name="login_server_matrix_org_text">Únase gratis a millones de personas en el mayor servidor público</string>
+     <string name="login_signin_sso">Continuar con SSO</string>
+-    <string name="login_server_url_form_modular_hint">Dirección de servicios de SchildiChat Matrix</string>
++    <string name="login_server_url_form_modular_hint">Dirección de servicios de LeOS-Matrix Matrix</string>
+     <string name="login_server_url_form_common_notice">Ingrese la dirección del servidor que desea utilizar</string>
+     <string name="login_reset_password_notice">Se enviará un correo electrónico de verificación a su bandeja de entrada para confirmar la configuración de su nueva contraseña.</string>
+     <string name="login_reset_password_submit">Siguiente</string>
+diff --git a/vector/src/main/res/values-es/strings_sc.xml b/vector/src/main/res/values-es/strings_sc.xml
+index 52246aced..813a2ca2a 100644
+--- a/vector/src/main/res/values-es/strings_sc.xml
++++ b/vector/src/main/res/values-es/strings_sc.xml
+@@ -30,7 +30,7 @@
+     <string name="settings_room_unread_kind_group">Previsualización del contenido del chat grupal</string>
+     <string name="bubble_time_location">Ubicación de la marca de tiempo</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Esto va a filtrar las URLs de tus mensajes al servidor central!</string>
+-    <string name="login_mobile_device_sc">SchildiChat para Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix para Android</string>
+     <string name="bottom_action_all">General</string>
+     <string name="url_previews_in_encrypted_rooms">Previsualización de URLs en chats encriptados</string>
+     <string name="settings_home_overview">Vista general</string>
+diff --git a/vector/src/main/res/values-et/strings.xml b/vector/src/main/res/values-et/strings.xml
+index 0c5288c5f..d32f794e0 100644
+--- a/vector/src/main/res/values-et/strings.xml
++++ b/vector/src/main/res/values-et/strings.xml
+@@ -998,7 +998,7 @@
+     <string name="login_server_url_form_modular_hint">Element Matrix Services teenuse aadress</string>
+     <string name="login_server_url_form_other_hint">Aadress</string>
+     <string name="login_server_url_form_modular_text">Tasuline Matrix\'i majutusteenus organisatsioonidele</string>
+-    <string name="login_server_url_form_modular_notice">Sisesta Modular SchildiChat teenuse või muu serveri aadress, mida sa soovid kasutada</string>
++    <string name="login_server_url_form_modular_notice">Sisesta Modular LeOS-Matrix teenuse või muu serveri aadress, mida sa soovid kasutada</string>
+     <string name="login_server_url_form_common_notice">Sisesta serveri aadress, mida sa soovid kasutada</string>
+     <string name="login_sso_error_message">Lehe laadimisel tekkis viga %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">See rakendus ei saa sisse logida antud koduserverisse. See koduserver toetab järgmisi sisselogimise tüüp(e): %1$s.
+@@ -2000,7 +2000,7 @@
+     <string name="crypto_error_withheld_unverified">Sa ei saa seda sõnumit lugeda, kuna saatja ei usalda sinu sessiooni</string>
+     <string name="crypto_error_withheld_generic">Sa ei saa seda sõnumit lugeda, kuna saatja teadlikult ei saatnud vajalikke võtmeid</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Ootan krüptimise ajalugu</string>
+-    <string name="disclaimer_title">Riot\'i uus nimi on SchildiChat!</string>
++    <string name="disclaimer_title">Riot\'i uus nimi on LeOS-Matrix!</string>
+     <string name="disclaimer_content">Meil on hea meel teatada, et oleme muutnud nime! Sinu rakendus on uuendatud ning sa oled oma kontole sisse logitud.</string>
+     <string name="disclaimer_negative_button">Selge lugu</string>
+     <string name="disclaimer_positive_button">Vaata lisateavet</string>
+diff --git a/vector/src/main/res/values-et/strings_sc.xml b/vector/src/main/res/values-et/strings_sc.xml
+index c37cc487d..3a385b164 100644
+--- a/vector/src/main/res/values-et/strings_sc.xml
++++ b/vector/src/main/res/values-et/strings_sc.xml
+@@ -5,7 +5,7 @@
+     <string name="all_list_rooms_empty_body">Vestlused kuvatakse siinkohal</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="bottom_action_all">Ülevaade</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="url_previews_in_encrypted_rooms">URL-i eelvaade krüpteeritud vestlustes</string>
+     <string name="labs_mark_rooms_unread_summary">Luba märkida vestlused lugemata. Teised maatrikskliendid ei pruugi seda funktsiooni veel toetada.</string>
+     <string name="labs_mark_rooms_unread">Märgista vestlused lugemata</string>
+diff --git a/vector/src/main/res/values-eu/strings.xml b/vector/src/main/res/values-eu/strings.xml
+index 55be89671..f9687ee94 100644
+--- a/vector/src/main/res/values-eu/strings.xml
++++ b/vector/src/main/res/values-eu/strings.xml
+@@ -205,7 +205,7 @@
+     <string name="local_address_book_header">Gailuko helbide liburua</string>
+     <string name="matrix_only_filter">Matrixeko kontaktuak besterik ez</string>
+     <string name="no_conversation_placeholder">Elkarrizketarik ez</string>
+-    <string name="template_no_contact_access_placeholder">Ez diozu baimena eman SchildiChat aplikazioari zure gailuko kontaktuak atzitzeko</string>
++    <string name="template_no_contact_access_placeholder">Ez diozu baimena eman LeOS-Matrix aplikazioari zure gailuko kontaktuak atzitzeko</string>
+     <string name="no_result_placeholder">Emaitzarik ez</string>
+ 
+     <string name="rooms_header">Gelak</string>
+@@ -1879,7 +1879,7 @@ Abisua: Fitxategi hau ezabatu daiteke aplikazioa desinstalatzen bada.</string>
+     <string name="login_server_url_form_modular_hint">Element Matrix Services helbidea</string>
+     <string name="login_server_url_form_other_hint">Helbidea</string>
+     <string name="login_server_url_form_modular_text">Ordainpeko ostatatzea elkarteentzat</string>
+-    <string name="login_server_url_form_modular_notice">Sartu erabili nahi duzun Modular SchildiChat edo zerbitzariaren helbidea</string>
++    <string name="login_server_url_form_modular_notice">Sartu erabili nahi duzun Modular LeOS-Matrix edo zerbitzariaren helbidea</string>
+ 
+     <string name="login_sso_error_message">Errore bat gertatu da orria kargatzean: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">Aplikazioak ezin du hasiera-zerbitzari honetan saioa hasi. Hasiera-zerbitzariak honako saio mota onartzen du: %1$s.
+diff --git a/vector/src/main/res/values-eu/strings_sc.xml b/vector/src/main/res/values-eu/strings_sc.xml
+index e2313a577..0e9857128 100644
+--- a/vector/src/main/res/values-eu/strings_sc.xml
++++ b/vector/src/main/res/values-eu/strings_sc.xml
+@@ -23,7 +23,7 @@
+     <string name="settings_home_overview">Ikuspegi orokorra</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Hitzaldian agertuko dira hemen</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Ikuspegi orokorra</string>
+     <string name="url_previews_in_encrypted_rooms">URL aurrebistak enkriptatutako hitzaldian</string>
+     <string name="labs_mark_rooms_unread_summary">Baimendu markatzeko hitzaldian bezala irakurri gabe. Beste matrize bezeroei agian ez laguntza funtzionalitate hau oraindik.</string>
+diff --git a/vector/src/main/res/values-fi/strings.xml b/vector/src/main/res/values-fi/strings.xml
+index 8cc6564f2..d4a2eedb2 100644
+--- a/vector/src/main/res/values-fi/strings.xml
++++ b/vector/src/main/res/values-fi/strings.xml
+@@ -672,7 +672,7 @@
+     <string name="passphrase_confirm_passphrase">Vahvista salasana</string>
+     <string name="encryption_export_saved_as">Huoneen osapuolten välisen salauksen avaimet tallennettiin tiedostoon \'%s\'
+ \n
+-\nVaroitus: tämä tiedosto saatetaan poistaa, mikäli SchildiChat poistetaan.</string>
++\nVaroitus: tämä tiedosto saatetaan poistaa, mikäli LeOS-Matrix poistetaan.</string>
+     <string name="encryption_import_e2e_room_keys">Tuo salatun huoneen avaimet</string>
+     <string name="encryption_import_room_keys">Tuo huoneen avaimet</string>
+     <string name="encryption_import_room_keys_summary">Tuo avaimet paikallisesta tiedostosta</string>
+@@ -1160,7 +1160,7 @@
+     <string name="keys_backup_setup_step3_save_button_title">Tallenna tiedostona</string>
+     <string name="recovery_key_export_saved_as_warning">Palautusavain on tallennettu kohteeseen \'%s\'.
+ \n
+-\nVaroitus: tämä tiedosto saatetaan poistaa, mikäli SchildiChat poistetaan.</string>
++\nVaroitus: tämä tiedosto saatetaan poistaa, mikäli LeOS-Matrix poistetaan.</string>
+     <string name="keys_backup_setup_step3_please_make_copy">Teethän kopion</string>
+     <string name="keys_backup_setup_step3_share_intent_chooser_title">Jaa palautusavain kohteelle…</string>
+     <string name="keys_backup_setup_step3_generating_key_status">Luodaan palautusavainta käyttäen salalausetta. Tässä saattaa kestää useampi sekunti.</string>
+@@ -2355,7 +2355,7 @@
+     <string name="disclaimer_positive_button">LUE LISÄÄ</string>
+     <string name="disclaimer_negative_button">SELVÄ</string>
+     <string name="disclaimer_content">Olemme iloisia uuden nimen lanseerauksesta! Sovelluksesi on ajan tasalla ja olet kirjautunut tilillesi.</string>
+-    <string name="disclaimer_title">Riot on nyt SchildiChat!</string>
++    <string name="disclaimer_title">Riot on nyt LeOS-Matrix!</string>
+     <string name="crypto_utd">Salausta ei voi purkaa</string>
+     <string name="room_settings_save_success">Muutit huoneen asetuksia onnistuneesti</string>
+     <string name="a11y_start_camera">Käynnistä kamera</string>
+diff --git a/vector/src/main/res/values-fr-rCA/strings.xml b/vector/src/main/res/values-fr-rCA/strings.xml
+index ec03e52c3..9adbe3e59 100644
+--- a/vector/src/main/res/values-fr-rCA/strings.xml
++++ b/vector/src/main/res/values-fr-rCA/strings.xml
+@@ -1225,7 +1225,7 @@
+     <string name="login_registration_disabled">Désolé, ce serveur n’accepte pas de nouveau compte.</string>
+     <string name="login_sso_error_message">Une erreur est survenue pendant le chargement de la page : %1$s (%2$d)</string>
+     <string name="login_server_url_form_common_notice">Entrez l’adresse du serveur que vous voulez utiliser</string>
+-    <string name="login_server_url_form_modular_notice">Saisir l’adresse de SchildiChat ou du serveur de Modular que vous voulez utiliser</string>
++    <string name="login_server_url_form_modular_notice">Saisir l’adresse de LeOS-Matrix ou du serveur de Modular que vous voulez utiliser</string>
+     <string name="login_server_url_form_modular_text">Hébergement privé pour les organisations</string>
+     <string name="login_server_url_form_other_hint">Adresse</string>
+     <string name="login_server_url_form_modular_hint">Adresse Element Matrix Services</string>
+diff --git a/vector/src/main/res/values-fr/strings.xml b/vector/src/main/res/values-fr/strings.xml
+index eb6871893..48b6487ef 100644
+--- a/vector/src/main/res/values-fr/strings.xml
++++ b/vector/src/main/res/values-fr/strings.xml
+@@ -1590,7 +1590,7 @@
+ \nAutorisez l’accès dans le prochaine fenêtre pour pouvoir exporter vos clés manuellement.</string>
+     <string name="no_network_indicator">Il n’y a aucune connexion au réseau pour le moment</string>
+     <string name="settings_add_3pid_confirm_password_title">Confirmez votre mot de passe</string>
+-    <string name="settings_add_3pid_flow_not_supported">Vous ne pouvez pas faire cela depuis SchildiChat mobile</string>
++    <string name="settings_add_3pid_flow_not_supported">Vous ne pouvez pas faire cela depuis LeOS-Matrix mobile</string>
+     <string name="settings_add_3pid_authentication_needed">Une authentification est nécessaire</string>
+     <string name="settings_integrations">Intégrations</string>
+     <string name="settings_integrations_summary">Utilisez un gestionnaire d’intégrations pour gérer les robots, les passerelles, les widgets et les jeux d’autocollants.
+@@ -1658,7 +1658,7 @@
+     <string name="login_server_url_form_modular_hint">Adresse Element Matrix Services</string>
+     <string name="login_server_url_form_other_hint">Adresse</string>
+     <string name="login_server_url_form_modular_text">Hébergement privé pour les organisations</string>
+-    <string name="login_server_url_form_modular_notice">Saisir l’adresse de SchildiChat ou du serveur de Modular que vous voulez utiliser</string>
++    <string name="login_server_url_form_modular_notice">Saisir l’adresse de LeOS-Matrix ou du serveur de Modular que vous voulez utiliser</string>
+     <string name="login_sso_error_message">Une erreur est survenue pendant le chargement de la page : %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">L’application ne peut pas s’authentifier sur ce serveur d’accueil. Le serveur d’accueil prend en charge le(s) type(s) d’authentification suivant(s) : %1$s.
+ \n
+@@ -3043,7 +3043,7 @@
+     <string name="analytics_opt_in_list_item_2">Nous <b>ne</b> partageons <b>pas</b> d’information avec des tierces parties</string>
+     <string name="analytics_opt_in_list_item_1">Nous <b>n’</b>enregistrons ou ne profilons <b>aucune</b> donnée du compte</string>
+     <string name="analytics_opt_in_content_link">ici</string>
+-    <string name="analytics_opt_in_content">Aidez nous à identifier les problèmes et améliorer SchildiChat en envoyant des rapports d’usage anonymes. Pour comprendre de quelle manière les gens utilisent SchildiChat sur plusieurs appareils, nous créeront un identifiant aléatoire commun à tous vos appareils.
++    <string name="analytics_opt_in_content">Aidez nous à identifier les problèmes et améliorer LeOS-Matrix en envoyant des rapports d’usage anonymes. Pour comprendre de quelle manière les gens utilisent LeOS-Matrix sur plusieurs appareils, nous créeront un identifiant aléatoire commun à tous vos appareils.
+ \n
+ \nVous pouvez lire toutes les conditions %s.</string>
+     <string name="analytics_opt_in_title">Aider à améliorer SchildiChat</string>
+diff --git a/vector/src/main/res/values-fr/strings_sc.xml b/vector/src/main/res/values-fr/strings_sc.xml
+index a2e4e544c..9fb4c48a0 100644
+--- a/vector/src/main/res/values-fr/strings_sc.xml
++++ b/vector/src/main/res/values-fr/strings_sc.xml
+@@ -47,7 +47,7 @@
+     <string name="labs_mark_rooms_unread_summary">Autoriser de marquer les discussions comme non lues. D’autres clients Matrix ne prennent peut-être pas encore cette fonctionnalité en charge.</string>
+     <string name="url_previews_in_encrypted_rooms">Prévisualisations des URL dans les discussions chiffrées</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Ceci fera fuiter les URL de tes messages vers votre serveur domestique !</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Les conversations seront affichées ici</string>
+     <string name="login_connect_using_matrix_id_text_sc">par ex. @utilisateur:domaine.com</string>
+diff --git a/vector/src/main/res/values-hu/strings.xml b/vector/src/main/res/values-hu/strings.xml
+index b11a0322e..908bdf11a 100644
+--- a/vector/src/main/res/values-hu/strings.xml
++++ b/vector/src/main/res/values-hu/strings.xml
+@@ -1615,7 +1615,7 @@ Ha nem te állítottad be a visszaállítási metódust, akkor egy támadó pró
+     <string name="login_server_url_form_modular_hint">Element Matrix Services Cím</string>
+     <string name="login_server_url_form_other_hint">Cím</string>
+     <string name="login_server_url_form_modular_text">Prémium szerverüzemeltetés szervezetek részére</string>
+-    <string name="login_server_url_form_modular_notice">Add meg az általad használt Modular szerver, vagy a hozzá tartozó SchildiChat címét</string>
++    <string name="login_server_url_form_modular_notice">Add meg az általad használt Modular szerver, vagy a hozzá tartozó LeOS-Matrix címét</string>
+     <string name="login_sso_error_message">Az oldal betöltésekor hiba történt: %1$s (%2$d)</string>
+     <string name="login_registration_disabled">Ne haragudj, ez a szerver nem fogad új fiókokat.</string>
+     <string name="login_login_with_email_error">Ez az e-mail cím egyik fiókhoz sincs társítva.</string>
+@@ -2214,7 +2214,7 @@ Ha nem te állítottad be a visszaállítási metódust, akkor egy támadó pró
+     <string name="crypto_error_withheld_unverified">Nem érheted el ezt az üzenetet, mert a feladó nem bízik a munkamenetedben</string>
+     <string name="crypto_error_withheld_generic">Nem érheted el ezt az üzenetet, mert a feladó szándékosan nem küldte el a kulcsokat</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Várakozás a titkosítási előzményekre</string>
+-    <string name="disclaimer_title">A Riot mostantól SchildiChat!</string>
++    <string name="disclaimer_title">A Riot mostantól LeOS-Matrix!</string>
+     <string name="disclaimer_content">Örömmel jelentjük be, hogy nevet változtattunk! Az alkalmazás naprakész, és be vagy jelentkezve a fiókodba.</string>
+     <string name="disclaimer_negative_button">ÉRTEM</string>
+     <string name="disclaimer_positive_button">TOVÁBBI INFORMÁCIÓK</string>
+@@ -2608,7 +2608,7 @@ Ha nem te állítottad be a visszaállítási metódust, akkor egy támadó pró
+     <string name="settings_security_pin_code_change_pin_summary">Jelenlegi PIN kód megváltoztatása</string>
+     <string name="settings_security_pin_code_change_pin_title">PIN megváltoztatása</string>
+     <string name="template_settings_security_pin_code_grace_period_summary_off">${app_name} megnyitásához mindig PIN kód szükséges.</string>
+-    <string name="template_settings_security_pin_code_grace_period_summary_on">Ha 2 percnél hosszabb ideig nem használod az ${app_name} SchildiChat alkalmazást, PIN kódot fog kérni.</string>
++    <string name="template_settings_security_pin_code_grace_period_summary_on">Ha 2 percnél hosszabb ideig nem használod az ${app_name} LeOS-Matrix alkalmazást, PIN kódot fog kérni.</string>
+     <string name="settings_security_pin_code_grace_period_title">2 perc elteltével PIN szükséges</string>
+     <string name="settings_security_pin_code_use_biometrics_summary_on">Eszköz specifikus biometrikus azonosítás engedélyezése, mint ujjlenyomat vagy arcfelismerés.</string>
+     <plurals name="entries">
+@@ -3028,7 +3028,7 @@ Ha nem te állítottad be a visszaállítási metódust, akkor egy támadó pró
+     </plurals>
+     <string name="preference_system_settings">Rendszerbeállítások</string>
+     <string name="preference_versions">Verziók</string>
+-    <string name="preference_help_summary">Segítség az SchildiChat használatában</string>
++    <string name="preference_help_summary">Segítség az LeOS-Matrix használatában</string>
+     <string name="preference_help_title">Segítség és támogatás</string>
+     <string name="preference_help">Segítség</string>
+     <string name="legals_no_policy_provided">Ez a szerver nem adott meg szabályzatot.</string>
+diff --git a/vector/src/main/res/values-hu/strings_sc.xml b/vector/src/main/res/values-hu/strings_sc.xml
+index 8fc04474a..33fd7a713 100644
+--- a/vector/src/main/res/values-hu/strings_sc.xml
++++ b/vector/src/main/res/values-hu/strings_sc.xml
+@@ -19,7 +19,7 @@
+     <string name="all_list_rooms_empty_body">A csevegések itt jelennek meg</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="bottom_action_all">Áttekintés</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Ez kiszivárogtatja az URL-eket az üzeneteidből a háziszerveredre!</string>
+     <string name="url_previews_in_encrypted_rooms">URL előnézetek titkosított csevegésekben</string>
+     <string name="labs_mark_rooms_unread_summary">Lehetővé teszi a csevegések olvasatlanként való megjelölését. Más mátrixkliensek még nem feltétlenül támogatják ezt a funkciót.</string>
+diff --git a/vector/src/main/res/values-id/strings_sc.xml b/vector/src/main/res/values-id/strings_sc.xml
+index e34a3ea5b..8692ab722 100644
+--- a/vector/src/main/res/values-id/strings_sc.xml
++++ b/vector/src/main/res/values-id/strings_sc.xml
+@@ -26,7 +26,7 @@
+     <string name="settings_aggregate_unread_counts">Hitung chat daripada pesan</string>
+     <string name="labs_mark_rooms_unread">Tandai chat sebagai belum dibaca</string>
+     <string name="labs_mark_rooms_unread_summary">Izinkan menandai chat sebagai belum dibaca. Client Matrix lainnya mungkin belum mendukung ini.</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Ikhtisar</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Chat akan ditampilkan di sini</string>
+diff --git a/vector/src/main/res/values-in/strings.xml b/vector/src/main/res/values-in/strings.xml
+index b5fa43a3c..62464eb79 100644
+--- a/vector/src/main/res/values-in/strings.xml
++++ b/vector/src/main/res/values-in/strings.xml
+@@ -1578,7 +1578,7 @@ Di masa mendatang proses verifikasi ini akan dimutakhirkan.</string>
+ \nApakah Anda ingin masuk menggunakan client web\?</string>
+     <string name="login_sso_error_message">Ada kesalahan terjadi saat memuat halaman: %1$s (%2$d)</string>
+     <string name="login_server_url_form_common_notice">Masukkan alamat server yang ingin Anda gunakan</string>
+-    <string name="login_server_url_form_modular_notice">Masukkan alamat Modular SchildiChat atau Server yang ingin Anda gunakan</string>
++    <string name="login_server_url_form_modular_notice">Masukkan alamat Modular LeOS-Matrix atau Server yang ingin Anda gunakan</string>
+     <string name="login_server_url_form_modular_text">Hosting premium untuk organisasi</string>
+     <string name="login_server_url_form_other_hint">Alamat</string>
+     <string name="login_server_url_form_modular_hint">Alamat Element Matrix Services</string>
+@@ -2545,7 +2545,7 @@ Di masa mendatang proses verifikasi ini akan dimutakhirkan.</string>
+     <string name="disclaimer_positive_button">PELAJARI LEBIH LANJUT</string>
+     <string name="disclaimer_negative_button">MENGERTI</string>
+     <string name="disclaimer_content">Kami senang mengumumkan kami telah mengubah nama! Aplikasi Anda mutakhir dan Anda telah masuk ke akun Anda.</string>
+-    <string name="disclaimer_title">Riot sekarang telah menjadi SchildiChat!</string>
++    <string name="disclaimer_title">Riot sekarang telah menjadi LeOS-Matrix!</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Menunggu untuk riwayat enkripsi</string>
+     <string name="crypto_error_withheld_generic">Anda tidak dapat mengakses pesan ini karena pengirim telah sengaja tidak mengirim kuncinya</string>
+     <string name="crypto_error_withheld_unverified">Anda tidak dapat mengakses pesan ini karena sesi Anda tidak dipercayai oleh pengirim</string>
+@@ -2987,10 +2987,10 @@ Di masa mendatang proses verifikasi ini akan dimutakhirkan.</string>
+     <string name="analytics_opt_in_list_item_2">Kami <b>tidak</b> membagikan informasi ini dengan pihak ketiga</string>
+     <string name="analytics_opt_in_list_item_1">Kami <b>tidak</b> merekam atau memprofil data akun apapun</string>
+     <string name="analytics_opt_in_content_link">di sini</string>
+-    <string name="analytics_opt_in_content">Bantu kami mengidentifikasi masalah-masalah dan membuat SchildiChat lebih baik dengan membagikan data penggunaan anonim. Untuk memahami bagaimana orang-orang menggunakan beberapa perangkat-perangkat, kami akan membuat pengenal acak, yang dibagikan oleh perangkat Anda.
++    <string name="analytics_opt_in_content">Bantu kami mengidentifikasi masalah-masalah dan membuat LeOS-Matrix lebih baik dengan membagikan data penggunaan anonim. Untuk memahami bagaimana orang-orang menggunakan beberapa perangkat-perangkat, kami akan membuat pengenal acak, yang dibagikan oleh perangkat Anda.
+ \n
+ \nAnda dapat membaca semua kebijakan kami %s.</string>
+-    <string name="analytics_opt_in_title">Bantu buat SchildiChat lebih baik</string>
++    <string name="analytics_opt_in_title">Bantu buat LeOS-Matrix lebih baik</string>
+     <string name="action_enable">Aktifkan</string>
+     <string name="restart_the_application_to_apply_changes">Mulai ulang aplikasi ini untuk menerapkan perubahan.</string>
+     <string name="labs_enable_latex_maths">Aktifkan matematika LaTeX</string>
+diff --git a/vector/src/main/res/values-it/strings.xml b/vector/src/main/res/values-it/strings.xml
+index b378303cc..5505f47a5 100644
+--- a/vector/src/main/res/values-it/strings.xml
++++ b/vector/src/main/res/values-it/strings.xml
+@@ -1138,7 +1138,7 @@
+     <string name="settings_troubleshoot_test_service_boot_success">Il servizio inizierà quando il dispositivo sarà riavviato.</string>
+     <string name="template_settings_troubleshoot_test_service_boot_failed">Il servizio non partirà al riavvio del dispositivo. Non riceverai notifiche finché ${app_name} non verrà aperto almeno una volta.</string>
+     <string name="settings_troubleshoot_test_service_boot_quickfix">Abilita l\'esecuzione all\'avvio</string>
+-    <string name="settings_troubleshoot_test_bg_restricted_title">Verifica se SchildiChat sia stato configurato per funzionare in modo limitato quando lavora in background</string>
++    <string name="settings_troubleshoot_test_bg_restricted_title">Verifica se LeOS-Matrix sia stato configurato per funzionare in modo limitato quando lavora in background</string>
+     <string name="template_settings_troubleshoot_test_bg_restricted_success">${app_name} non funziona senza alcuna restrizione anche quando è eseguito in background. Questo test andrebbe eseguito usando dati mobili (non WIFI).
+ \n%1$s</string>
+     <string name="template_settings_troubleshoot_test_bg_restricted_failed">${app_name} è stato configurato per funzionare in modo limitato quando è eseguito in background.
+@@ -1563,7 +1563,7 @@
+     <string name="settings_discovery_disconnect_with_bound_pid">Attualmente stai condividendo i tuoi indirizzi email o numeri di telefono sul server d\'identità %1$s. Dovrai riconnetterti a %2$s per interromperne la condivisione.</string>
+     <string name="settings_agree_to_terms">Accetta i termini di servizio del server d\'identità (%s) per permettere ad altri utenti di trovarti tramite la tua email o numero di telefono.</string>
+     <string name="labs_allow_extended_logging">Attiva i log dettagliati.</string>
+-    <string name="labs_allow_extended_logging_summary">I log dettagliati aiuteranno gli sviluppatori fornendo loro molte più informazioni nelle segnalazioni che invii scuotendo il dispositivo. Anche se attivi i log dettagliati, SchildiChat non registra mai i contenuti dei messaggi o altri dati personali.</string>
++    <string name="labs_allow_extended_logging_summary">I log dettagliati aiuteranno gli sviluppatori fornendo loro molte più informazioni nelle segnalazioni che invii scuotendo il dispositivo. Anche se attivi i log dettagliati, LeOS-Matrix non registra mai i contenuti dei messaggi o altri dati personali.</string>
+     <string name="error_terms_not_accepted">Riprova dopo avere accettato i termini di servizio del tuo Home Server.</string>
+     <string name="error_network_timeout">Sembra che il server stia impiegando troppo tempo a rispondere. Ciò può essere causato da una cattiva connessione o da un errore del server. Riprova fra qualche minuto.</string>
+     <string name="send_attachment">Invia allegato</string>
+@@ -1684,7 +1684,7 @@
+     <string name="login_server_url_form_modular_hint">Indirizzo Element Matrix Services</string>
+     <string name="login_server_url_form_other_hint">Indirizzo</string>
+     <string name="login_server_url_form_modular_text">Hosting premium per organizzazioni</string>
+-    <string name="login_server_url_form_modular_notice">Inserisci l\'indirizzo SchildiChat Modular o del server che vuoi usare</string>
++    <string name="login_server_url_form_modular_notice">Inserisci l\'indirizzo LeOS-Matrix Modular o del server che vuoi usare</string>
+     <string name="login_sso_error_message">Si è verificato un errore caricando la pagina: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">L\'applicazione non riesce ad accedere a questo Home Server. L\'Home Server supporta i seguenti tipi di accesso: %1$s.
+ \n
+@@ -2254,7 +2254,7 @@
+     <string name="crypto_error_withheld_unverified">Non puoi accedere a questo messaggio perché il mittente non ha verificato la tua sessione</string>
+     <string name="crypto_error_withheld_generic">Non puoi accedere a questo messaggio perché il mittente non ha inviato le chiavi di proposito</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">In attesa che la cronologia venga crittografata</string>
+-    <string name="disclaimer_title">Riot ora si chiama SchildiChat!</string>
++    <string name="disclaimer_title">Riot ora si chiama LeOS-Matrix!</string>
+     <string name="disclaimer_content">Siamo entusiasti di annunciare che abbiamo cambiato nome! La tua app è aggiornata e hai fatto l\'accesso al tuo account.</string>
+     <string name="disclaimer_negative_button">CAPITO</string>
+     <string name="disclaimer_positive_button">MAGGIORI INFO</string>
+@@ -3032,7 +3032,7 @@
+     <string name="analytics_opt_in_list_item_2"><b>Non</b> condividiamo informazioni con terze parti</string>
+     <string name="analytics_opt_in_list_item_1"><b>Non</b> registriamo o profiliamo alcun dato dell\'account</string>
+     <string name="analytics_opt_in_content_link">qui</string>
+-    <string name="analytics_opt_in_content">Aiutaci a identificare problemi e a migliorare SchildiChat condividendo dati di utilizzo anonimi. Per capire come le persone usano diversi dispositivi, genereremo un identificativo casuale, condiviso dai tuoi dispositivi.
++    <string name="analytics_opt_in_content">Aiutaci a identificare problemi e a migliorare LeOS-Matrix condividendo dati di utilizzo anonimi. Per capire come le persone usano diversi dispositivi, genereremo un identificativo casuale, condiviso dai tuoi dispositivi.
+ \n
+ \nPuoi leggere i nostri termini di servizio %s.</string>
+     <string name="analytics_opt_in_title">Aiuta a migliorare SchildiChat</string>
+diff --git a/vector/src/main/res/values-iw/strings.xml b/vector/src/main/res/values-iw/strings.xml
+index 2705cc48e..2814ceb36 100644
+--- a/vector/src/main/res/values-iw/strings.xml
++++ b/vector/src/main/res/values-iw/strings.xml
+@@ -375,7 +375,7 @@
+     </plurals>
+     <string name="groups_list">רשימת קבוצות</string>
+     <string name="read_receipts_list">קרא את רשימת הקבלות</string>
+-    <string name="template_e2e_re_request_encryption_key_dialog_content">הפעל את SchildiChat במכשיר אחר שיכול לפענח את ההודעה כדי שיוכל לשלוח את המפתחות להפעלה זו.</string>
++    <string name="template_e2e_re_request_encryption_key_dialog_content">הפעל את LeOS-Matrix במכשיר אחר שיכול לפענח את ההודעה כדי שיוכל לשלוח את המפתחות להפעלה זו.</string>
+     <string name="e2e_re_request_encryption_key_dialog_title">הבקשה נשלחה</string>
+     <string name="e2e_re_request_encryption_key_sent">בקשת המפתח נשלחה.</string>
+     <string name="e2e_re_request_encryption_key">בקש מחדש מפתחות הצפנה מהפעלות האחרות שלך.</string>
+@@ -489,7 +489,7 @@
+     <string name="template_settings_troubleshoot_test_fcm_failed_service_not_available">[%1$s]
+ \nשגיאה זו אינה בשליטה על אלמנט. זה יכול להתרחש מכמה סיבות. אולי זה יעבוד אם תנסה שוב מאוחר יותר, תוכל גם לבדוק ששירות Google Play אינו מוגבל בשימוש נתונים בהגדרות המערכת, או ששעון המכשיר שלך תקין, או שזה יכול לקרות ב- ROM מותאם אישית.</string>
+     <string name="template_settings_troubleshoot_test_fcm_failed_too_many_registration">[%1$s]
+-\nשגיאה זו איננה בשליטה על SchildiChat ולפי גוגל, שגיאה זו מצביעה על כך שלמכשיר יש יותר מדי אפליקציות הרשומות ב- FCM. השגיאה מתרחשת רק במקרים שבהם ישנם מספרים קיצוניים של אפליקציות, כך שהיא לא אמורה להשפיע על המשתמש הממוצע.</string>
++\nשגיאה זו איננה בשליטה על LeOS-Matrix ולפי גוגל, שגיאה זו מצביעה על כך שלמכשיר יש יותר מדי אפליקציות הרשומות ב- FCM. השגיאה מתרחשת רק במקרים שבהם ישנם מספרים קיצוניים של אפליקציות, כך שהיא לא אמורה להשפיע על המשתמש הממוצע.</string>
+     <string name="settings_troubleshoot_test_fcm_failed">נכשל באחזור אסימון FCM:
+ \n%1$s</string>
+     <string name="settings_troubleshoot_test_fcm_success">אסימון FCM אוחזר בהצלחה:
+@@ -1053,7 +1053,7 @@
+ \nגבה את המפתחות שלך בצורה מאובטחת כדי לא לאבד אותם.</string>
+     <string name="keys_backup_setup_step1_title">לעולם אל תאבד הודעות מוצפנות</string>
+     <string name="keys_backup_no_session_error">אין מושב מטריקס זמין</string>
+-    <string name="template_keys_backup_passphrase_not_empty_error_message">אנא מחק את משפט הסיסמה אם ברצונך ש- SchildiChat ייצור מפתח שחזור.</string>
++    <string name="template_keys_backup_passphrase_not_empty_error_message">אנא מחק את משפט הסיסמה אם ברצונך ש- LeOS-Matrix ייצור מפתח שחזור.</string>
+     <string name="passphrase_passphrase_too_weak">משפט הסיסמה חלש מדי</string>
+     <string name="passphrase_empty_error_message">אנא הזן משפט סיסמה</string>
+     <string name="passphrase_passphrase_does_not_match">משפט הסיסמה אינו תואם</string>
+@@ -2110,7 +2110,7 @@
+ \nאלמנט אנדרואיד</string>
+     <string name="template_app_desktop_web">רשת האינטרנט
+ \nשולחן העבודה של אלמנט</string>
+-    <string name="template_use_other_session_content_description">השתמש באלמנט העדכני ביותר במכשירים האחרים שלך, Element Web, Element Desktop, Element iOS, SchildiChat for Android, או לקוח מטריקס אחר עם יכולת חתימה צולבת</string>
++    <string name="template_use_other_session_content_description">השתמש באלמנט העדכני ביותר במכשירים האחרים שלך, Element Web, Element Desktop, Element iOS, LeOS-Matrix for Android, או לקוח מטריקס אחר עם יכולת חתימה צולבת</string>
+     <string name="change_password_summary">הגדר סיסמת חשבון חדשה …</string>
+     <string name="error_saving_media_file">לא ניתן היה לשמור את קובץ המדיה</string>
+     <string name="error_adding_media_file_to_gallery">לא ניתן היה להוסיף קובץ מדיה לגלריה</string>
+@@ -2251,7 +2251,7 @@
+     <string name="disclaimer_positive_button">למד עוד</string>
+     <string name="disclaimer_negative_button">הבנת</string>
+     <string name="disclaimer_content">אנו שמחים לבשר ששינינו שם! האפליקציה שלך מעודכנת ואתה מחובר לחשבונך.</string>
+-    <string name="disclaimer_title">Riot היא עכשיו SchildiChat!</string>
++    <string name="disclaimer_title">Riot היא עכשיו LeOS-Matrix!</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">ממתין להיסטוריית הצפנה</string>
+     <string name="crypto_error_withheld_generic">אינך יכול לגשת להודעה זו מכיוון שהשולח בכוונה לא שלח את המפתחות</string>
+     <string name="crypto_error_withheld_unverified">אינך יכול לגשת להודעה זו מכיוון שהשולח אינו מהימן על ההפעלה שלך</string>
+@@ -2296,7 +2296,7 @@
+     <string name="identity_server_error_terms_not_signed">אנא קבל תחילה את התנאים של שרת הזהות בהגדרות.</string>
+     <string name="identity_server_error_no_identity_server_configured">אנא הגדר תחילה שרת זהות.</string>
+     <string name="identity_server_error_outdated_home_server">פעולה זו אינה אפשרית. שרת הבית מיושן.</string>
+-    <string name="template_identity_server_error_outdated_identity_server">שרת זהות זה מיושן .SchildiChat תומך רק ב- API V2.</string>
++    <string name="template_identity_server_error_outdated_identity_server">שרת זהות זה מיושן .LeOS-Matrix תומך רק ב- API V2.</string>
+     <string name="disconnect_identity_server_dialog_content">להתנתק משרת הזהות%s\?</string>
+     <string name="open_terms_of">תנאים פתוחים של%s</string>
+     <string name="choose_locale_loading_locales">טוען שפות זמינות …</string>
+diff --git a/vector/src/main/res/values-kab/strings.xml b/vector/src/main/res/values-kab/strings.xml
+index 8e04eb874..e868195be 100644
+--- a/vector/src/main/res/values-kab/strings.xml
++++ b/vector/src/main/res/values-kab/strings.xml
+@@ -1130,7 +1130,7 @@
+     <string name="login_connect_to">Qqen ɣer %1$s</string>
+     <string name="login_signin_to">Kcem ɣer %1$s</string>
+     <string name="login_signin_sso">Kemmel s SSO</string>
+-    <string name="login_server_url_form_modular_hint">Tansa n yimeẓla n SchildiChat Matrix</string>
++    <string name="login_server_url_form_modular_hint">Tansa n yimeẓla n LeOS-Matrix Matrix</string>
+     <string name="login_server_url_form_common_notice">Sekcem tansa n uqeddac i tebɣiḍ ad tesqedceḍ</string>
+     <string name="login_login_with_email_error">Imayl-a ur iqqin ula ɣer yiwen n umiḍan.</string>
+     <string name="login_reset_password_on">Wennez awal uffir ɣef %1$s</string>
+@@ -1150,7 +1150,7 @@
+     <string name="login_signin_username_hint">Isem n useqdac neɣ imayl</string>
+     <string name="login_signup_error_user_in_use">Isem-a n useqdac yettwamudd</string>
+     <string name="login_a11y_choose_matrix_org">Fren matrix.org</string>
+-    <string name="login_a11y_choose_modular">Fren imeẓla n SchildiChat Matrix</string>
++    <string name="login_a11y_choose_modular">Fren imeẓla n LeOS-Matrix Matrix</string>
+     <string name="login_a11y_choose_other">Fren aqeddac agejdan udmawan</string>
+     <string name="login_terms_title">Qbel tiwtilin i wakken ad tkemmleḍ</string>
+     <string name="login_wait_for_email_title">Ttxil-k·m senqed imayl-ik·im</string>
+@@ -1951,10 +1951,10 @@
+     <string name="login_server_matrix_org_text">Rnu ɣer yimelyan n yimdanen baṭel ɣef uqeddac azayez ameqqran akk</string>
+     <string name="login_server_modular_text">Tanezduɣt n Premium i tkebbaniyin</string>
+     <string name="login_server_other_text">Iɣewwaren udmawanen &amp; leqqayen</string>
+-    <string name="login_connect_to_modular">Qqen ɣer yimeẓla n SchildiChat Matrix</string>
++    <string name="login_connect_to_modular">Qqen ɣer yimeẓla n LeOS-Matrix Matrix</string>
+     <string name="login_connect_to_a_custom_server">Qqen aqeddac udmawan</string>
+     <string name="login_server_url_form_modular_text">Tanezduɣt n Premium i tkebbaniyin</string>
+-    <string name="login_server_url_form_modular_notice">Sekcem tansa n SchildiChat Modular neɣ n uqeddac i tebɣiḍ ad t-tesqedceḍ</string>
++    <string name="login_server_url_form_modular_notice">Sekcem tansa n LeOS-Matrix Modular neɣ n uqeddac i tebɣiḍ ad t-tesqedceḍ</string>
+     <string name="login_sso_error_message">Tella-d tuccḍa mi ara d-nessalay asebter: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">Asnas ur yezmir ara ad yekcem ɣer uqeddac-a agejdan. Aqeddac agejdan yessefrak anaw-a n unekcum: %1$s.
+ \n
+diff --git a/vector/src/main/res/values-lt/strings_sc.xml b/vector/src/main/res/values-lt/strings_sc.xml
+index 42caaad2c..1d5916f0f 100644
+--- a/vector/src/main/res/values-lt/strings_sc.xml
++++ b/vector/src/main/res/values-lt/strings_sc.xml
+@@ -19,7 +19,7 @@
+     <string name="labs_mark_rooms_unread">Pažymėti pokalbius neskaitytais</string>
+     <string name="url_previews_in_encrypted_rooms">URL peržiūros užšifruotose pokalbiuose</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Tai atskleis nuorodas jūsų žinutėse namų serveriui!</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Apžvalga</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Pokalbiai bus rodomi čia</string>
+diff --git a/vector/src/main/res/values-lv/strings.xml b/vector/src/main/res/values-lv/strings.xml
+index 1c8289b30..5c1bb9fb9 100644
+--- a/vector/src/main/res/values-lv/strings.xml
++++ b/vector/src/main/res/values-lv/strings.xml
+@@ -456,7 +456,7 @@
+     <string name="call_error_answered_elsewhere">zvans atbildēts uz citas ierīces</string>
+     <string name="media_picker_both_capture_title">Uzņemt foto vai video</string>
+     <string name="media_picker_cannot_record_video">Neizdodas ierakstīt video</string>
+-    <string name="permissions_rationale_popup_title">SchildiChat informācija</string>
++    <string name="permissions_rationale_popup_title">LeOS-Matrix informācija</string>
+     <string name="template_permissions_rationale_msg_storage">${app_name} nepieciešama atļauja piekļūt jūsu fotoattēlu un video bibliotēkai, lai nosūtītu un saglabātu pielikumus.
+ \n
+ \nLūdzu, atļaujiet piekļuvi nākamajā uznirstošajā logā, lai varētu nosūtīt failus no sava tālruņa.</string>
+@@ -1580,7 +1580,7 @@ Nākotnē šī pārbaudes procedūra plānota sarežģītāka.</string>
+ \nVai vēlaties pierakstīties, izmantojot tīmekļa klientu\?</string>
+     <string name="login_sso_error_message">Radās kļūda, ielādējot lapu: %1$s (%2$d)</string>
+     <string name="login_server_url_form_common_notice">Ievadiet servera adresi, kuru vēlaties izmantot</string>
+-    <string name="login_server_url_form_modular_notice">Ievadiet Modular SchildiChat vai servera adresi, kuru vēlaties izmantot</string>
++    <string name="login_server_url_form_modular_notice">Ievadiet Modular LeOS-Matrix vai servera adresi, kuru vēlaties izmantot</string>
+     <string name="login_server_url_form_modular_text">Premium hostings organizācijām</string>
+     <string name="login_server_url_form_other_hint">Adrese</string>
+     <string name="login_server_url_form_modular_hint">Element Matrix Services adrese</string>
+@@ -1676,7 +1676,7 @@ Nākotnē šī pārbaudes procedūra plānota sarežģītāka.</string>
+     <string name="disclaimer_positive_button">UZZINĀT VAIRĀK</string>
+     <string name="disclaimer_negative_button">SAPRATU</string>
+     <string name="disclaimer_content">Esam priecīgi paziņot, ka mēs esam mainījuši nosaukumu! Jūsu lietotne ir atjaunināta un esat pierakstījies savā kontā.</string>
+-    <string name="disclaimer_title">Riot tagad saucas SchildiChat!</string>
++    <string name="disclaimer_title">Riot tagad saucas LeOS-Matrix!</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Gaida šifrēšanas vēsturi</string>
+     <string name="room_settings_save_success">Jūs veiksmīgi nomainījāt istabas iestatījumus</string>
+     <string name="power_level_title">Loma</string>
+diff --git a/vector/src/main/res/values-nb-rNO/strings.xml b/vector/src/main/res/values-nb-rNO/strings.xml
+index f37e42dcb..1f6774e23 100644
+--- a/vector/src/main/res/values-nb-rNO/strings.xml
++++ b/vector/src/main/res/values-nb-rNO/strings.xml
+@@ -916,7 +916,7 @@
+     <string name="crypto_error_withheld_unverified">Du får ikke tilgang til denne meldingen fordi økten ikke er klarert av avsenderen</string>
+     <string name="crypto_error_withheld_generic">Du får ikke tilgang til denne meldingen fordi avsenderen med vilje ikke sendte nøklene</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Venter på krypteringshistorikk</string>
+-    <string name="disclaimer_title">Riot er nå SchildiChat!</string>
++    <string name="disclaimer_title">Riot er nå LeOS-Matrix!</string>
+     <string name="disclaimer_content">Vi er glade for å kunngjøre at vi har byttet navn! Appen din er oppdatert, og du er logget på kontoen din.</string>
+     <string name="save_recovery_key_chooser_hint">Lagre gjenopprettingsnøkkel i</string>
+     <string name="loading_contact_book">Henter kontaktene dine…</string>
+diff --git a/vector/src/main/res/values-nb-rNO/strings_sc.xml b/vector/src/main/res/values-nb-rNO/strings_sc.xml
+index c1f9c62f0..b75385ea5 100644
+--- a/vector/src/main/res/values-nb-rNO/strings_sc.xml
++++ b/vector/src/main/res/values-nb-rNO/strings_sc.xml
+@@ -33,7 +33,7 @@
+     <string name="bubble_time_location_bottom">Bunn</string>
+     <string name="labs_mark_rooms_unread">Marker sludringer som ulest</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Dette vil lekke nettadresser fra dine meldinger til din hjemmetjener.</string>
+-    <string name="login_mobile_device_sc">SchildiChat for Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix for Android</string>
+     <string name="bottom_action_all">Oversikt</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="login_connect_using_matrix_id_text_sc">f.eks. @bruker:domene.no</string>
+diff --git a/vector/src/main/res/values-nl/strings.xml b/vector/src/main/res/values-nl/strings.xml
+index 9b1caea66..059ccab5b 100644
+--- a/vector/src/main/res/values-nl/strings.xml
++++ b/vector/src/main/res/values-nl/strings.xml
+@@ -1934,7 +1934,7 @@
+ \nWil je inloggen met een webclient\?</string>
+     <string name="login_sso_error_message">Er is een fout opgetreden bij het laden van de pagina: %1$s (%2$d)</string>
+     <string name="login_server_url_form_common_notice">Voer het adres in van de server die u wilt gebruiken</string>
+-    <string name="login_server_url_form_modular_notice">Voer het adres in van de Modular SchildiChat of de server die u wilt gebruiken</string>
++    <string name="login_server_url_form_modular_notice">Voer het adres in van de Modular LeOS-Matrix of de server die u wilt gebruiken</string>
+     <string name="login_server_url_form_modular_text">Premium hosting voor organisaties</string>
+     <string name="login_server_url_form_modular_hint">Element Matrix Services-adres</string>
+     <string name="login_clear_homeserver_history">Geschiedenis wissen</string>
+@@ -2236,10 +2236,10 @@
+     <string name="analytics_opt_in_list_item_2">We delen <b>geen</b> informatie met derden</string>
+     <string name="analytics_opt_in_list_item_1">We registreren of profileren <b>geen</b> accountgegevens</string>
+     <string name="analytics_opt_in_content_link">hier</string>
+-    <string name="analytics_opt_in_content">Help ons problemen te identificeren en SchildiChat te verbeteren door anonieme gebruiksgegevens te delen. Om inzicht te krijgen in hoe mensen meerdere apparaten gebruiken, genereren we een willekeurige identificatie die door uw apparaten wordt gedeeld.
++    <string name="analytics_opt_in_content">Help ons problemen te identificeren en LeOS-Matrix te verbeteren door anonieme gebruiksgegevens te delen. Om inzicht te krijgen in hoe mensen meerdere apparaten gebruiken, genereren we een willekeurige identificatie die door uw apparaten wordt gedeeld.
+ \n
+ \nU kunt al onze voorwaarden %s lezen.</string>
+-    <string name="analytics_opt_in_title">Help SchildiChat verbeteren</string>
++    <string name="analytics_opt_in_title">Help LeOS-Matrix verbeteren</string>
+     <string name="reset_secure_backup_warning">Dit zal uw huidige sleutel of zin vervangen.</string>
+     <string name="reset_secure_backup_title">Genereer een nieuwe beveiligingssleutel of stel een nieuwe beveiligingszin in voor uw bestaande back-up.</string>
+     <string name="settings_secure_backup_section_info">Bescherm uzelf tegen verlies van toegang tot versleutelde berichten en gegevens door een back-up te maken van versleutelingssleutels op uw server.</string>
+@@ -2460,7 +2460,7 @@
+     <string name="disclaimer_positive_button">LEER MEER</string>
+     <string name="disclaimer_negative_button">BEGREPEN</string>
+     <string name="disclaimer_content">We zijn verheugd om aan te kondigen dat we van naam zijn veranderd! Uw app is up-to-date en u bent ingelogd op uw account.</string>
+-    <string name="disclaimer_title">Riot is nu SchildiChat!</string>
++    <string name="disclaimer_title">Riot is nu LeOS-Matrix!</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Wachten op versleutelingsgeschiedenis</string>
+     <string name="crypto_error_withheld_generic">U heeft geen toegang tot dit bericht omdat de afzender de sleutels met opzet niet heeft verzonden</string>
+     <string name="crypto_error_withheld_blacklisted">U heeft geen toegang tot dit bericht omdat u bent geblokkeerd door de afzender</string>
+@@ -2941,7 +2941,7 @@
+     <string name="create_poll_title">Poll maken</string>
+     <string name="restart_the_application_to_apply_changes">Start de toepassing opnieuw om de wijziging door te voeren.</string>
+     <string name="labs_enable_latex_maths">LaTeX wiskunde inschakelen</string>
+-    <string name="link_this_email_with_your_account">%s in Instellingen om uitnodigingen rechtstreeks in SchildiChat te ontvangen.</string>
++    <string name="link_this_email_with_your_account">%s in Instellingen om uitnodigingen rechtstreeks in LeOS-Matrix te ontvangen.</string>
+     <string name="link_this_email_settings_link">Koppel deze e-mail aan uw account</string>
+     <string name="this_invite_to_this_space_was_sent">Deze uitnodiging voor deze space is verzonden naar %s die niet is gekoppeld aan uw account</string>
+     <string name="this_invite_to_this_room_was_sent">Deze uitnodiging voor deze kamer is verzonden naar %s die niet is gekoppeld aan uw account</string>
+diff --git a/vector/src/main/res/values-nl/strings_sc.xml b/vector/src/main/res/values-nl/strings_sc.xml
+index 1e8bc509c..d472ecdc1 100644
+--- a/vector/src/main/res/values-nl/strings_sc.xml
++++ b/vector/src/main/res/values-nl/strings_sc.xml
+@@ -30,7 +30,7 @@
+     <string name="all_list_rooms_empty_body">Chats worden hier getoond</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="bottom_action_all">Overzicht</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Dit zal URL\'s van je berichten naar je homeserver lekken!</string>
+     <string name="labs_mark_rooms_unread_summary">Sta toe om chats als ongelezen te markeren. Andere matrix-clients ondersteunen deze functionaliteit mogelijk nog niet.</string>
+     <string name="sc_dark_colored_theme">SC Donkere, gekleurde bellen</string>
+diff --git a/vector/src/main/res/values-pl/strings.xml b/vector/src/main/res/values-pl/strings.xml
+index 9ef8e1747..af4728cb2 100644
+--- a/vector/src/main/res/values-pl/strings.xml
++++ b/vector/src/main/res/values-pl/strings.xml
+@@ -1527,7 +1527,7 @@
+     <string name="login_server_url_form_modular_hint">Adres Element Matrix Services</string>
+     <string name="login_server_url_form_other_hint">Adres</string>
+     <string name="login_server_url_form_modular_text">Hosting premium dla organizacji</string>
+-    <string name="login_server_url_form_modular_notice">Wprowadź adres SchildiChat Modular lub serwera którego chcesz użyć</string>
++    <string name="login_server_url_form_modular_notice">Wprowadź adres LeOS-Matrix Modular lub serwera którego chcesz użyć</string>
+     <string name="login_sso_error_message">Wystąpił błąd podczas ładowania strony: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">Aplikacja nie jest w stanie zalogować się do tego serwera domowego. Serwer domowy obsluguje następujące metody logowania: %1$s.
+ \n
+@@ -1869,7 +1869,7 @@
+     <string name="save_recovery_key_chooser_hint">Zapisz klucz odzyskiwania w</string>
+     <string name="disclaimer_positive_button">DOWIEDZ SIĘ WIĘCEJ</string>
+     <string name="disclaimer_content">Jesteśmy podekscytowani mogąc oznajmić, że zmieniliśmy nazwę! Twoja aplikacja jest aktualna i jesteś zalogowany(-a) do swojego konta.</string>
+-    <string name="disclaimer_title">Riot nazywa się teraz SchildiChat!</string>
++    <string name="disclaimer_title">Riot nazywa się teraz LeOS-Matrix!</string>
+     <string name="crypto_error_withheld_generic">Nie masz dostępu do tej wiadomości ponieważ nadawca celowo nie wysłał jej kluczy</string>
+     <string name="crypto_error_withheld_unverified">Nie masz dostępu do tej wiadomości ponieważ nadawca nie ufa Twojej sesji</string>
+     <string name="crypto_error_withheld_blacklisted">Nie masz dostępu do tej wiadomości ponieważ zostałeś zablokowany przez jej nadawcę</string>
+@@ -3045,7 +3045,7 @@
+     <string name="analytics_opt_in_list_item_2"><b>Nie udostępniamy</b> informacji podmiotom trzecim</string>
+     <string name="analytics_opt_in_list_item_1"><b> Nie zbieramy i nie profilujemy </b> danych użytkownika</string>
+     <string name="analytics_opt_in_content_link">tutaj</string>
+-    <string name="analytics_opt_in_content">Pomóż nam znaleźć błędy i ulepszyć SchildiChat poprzez udostępnianie anonimowych danych użytkowania. Aby lepiej zrozumieć jak użytkownicy wykorzystują wiele urządzeń wygenerujemy losowy identyfikator dzielony pomiędzy Twoimi urządzeniami.
++    <string name="analytics_opt_in_content">Pomóż nam znaleźć błędy i ulepszyć LeOS-Matrix poprzez udostępnianie anonimowych danych użytkowania. Aby lepiej zrozumieć jak użytkownicy wykorzystują wiele urządzeń wygenerujemy losowy identyfikator dzielony pomiędzy Twoimi urządzeniami.
+ \n
+ \nWięcej informacji %s.</string>
+     <string name="analytics_opt_in_title">Pomóż usprawnić SchildiChat</string>
+diff --git a/vector/src/main/res/values-pt-rBR/strings.xml b/vector/src/main/res/values-pt-rBR/strings.xml
+index 92e2256f1..6c565ab8c 100644
+--- a/vector/src/main/res/values-pt-rBR/strings.xml
++++ b/vector/src/main/res/values-pt-rBR/strings.xml
+@@ -1772,7 +1772,7 @@
+     <string name="login_server_url_form_modular_hint">Endereço de Element Matrix Services</string>
+     <string name="login_server_url_form_other_hint">Endereço</string>
+     <string name="login_server_url_form_modular_text">Hospedagem premium para organizações</string>
+-    <string name="login_server_url_form_modular_notice">Entre o endereço do Modular SchildiChat ou Servidor que você quer usar</string>
++    <string name="login_server_url_form_modular_notice">Entre o endereço do Modular LeOS-Matrix ou Servidor que você quer usar</string>
+     <string name="login_server_url_form_common_notice">Entre o endereço do servidor que você quer usar</string>
+     <string name="login_sso_error_message">Um erro ocorreu quando carregando a página: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">O aplicativo não é capaz de fazer signin a este servidorcasa. O servidorcasa suporta o(s) seguinte(s) tipo(s) de signin: %1$s.
+@@ -2264,7 +2264,7 @@
+     <string name="crypto_error_withheld_unverified">Você não pode acessar esta mensagem porque sua sessão não é confiada pelo(a) enviador(a)</string>
+     <string name="crypto_error_withheld_generic">Você não pode acessar esta mensagem porque o/a enviador(a) propositalmente não enviou as chaves</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Esperando por histórico de encriptação</string>
+-    <string name="disclaimer_title">Riot agora é SchildiChat!</string>
++    <string name="disclaimer_title">Riot agora é LeOS-Matrix!</string>
+     <string name="disclaimer_content">Nós estamos animados em anunciar que nós temos mudado de nome! Seu app está atualizado e você está com signin feito a sua conta.</string>
+     <string name="disclaimer_negative_button">ENTENDI</string>
+     <string name="disclaimer_positive_button">SABER MAIS</string>
+@@ -3036,7 +3036,7 @@
+     <string name="legals_home_server_title">A política de seu servidorcasa</string>
+     <string name="template_legals_application_title">Política de ${app_name}</string>
+     <string name="analytics_opt_in_list_item_1">Nós <b>não</b> gravamos ou perfilamos quaisquer dados de conta</string>
+-    <string name="analytics_opt_in_content">Ajude-nos a identificar problemas e melhorar SchildiChat ao compartilhar dados de uso anônimos. Para entender como pessoas usam seus múltiplos dispositivos, nós vamos gerar um identificador aleatório, compartilhado por seus dispositivos.
++    <string name="analytics_opt_in_content">Ajude-nos a identificar problemas e melhorar LeOS-Matrix ao compartilhar dados de uso anônimos. Para entender como pessoas usam seus múltiplos dispositivos, nós vamos gerar um identificador aleatório, compartilhado por seus dispositivos.
+ \n
+ \nVocê pode ler todos os nossos termos %s.</string>
+     <string name="analytics_opt_in_title">Ajude a melhorar SchildiChat</string>
+diff --git a/vector/src/main/res/values-pt-rBR/strings_sc.xml b/vector/src/main/res/values-pt-rBR/strings_sc.xml
+index d0694a192..264b73080 100644
+--- a/vector/src/main/res/values-pt-rBR/strings_sc.xml
++++ b/vector/src/main/res/values-pt-rBR/strings_sc.xml
+@@ -27,7 +27,7 @@
+     <string name="labs_mark_rooms_unread_summary">Permite marcar conversas como não lidas. Outros clientes de Matrix podem não suportar ainda esta funcionalidade.</string>
+     <string name="url_previews_in_encrypted_rooms">Prévia de URL em coversas encriptadas</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Isto irá vazar as URLs de suas mensagens para o seu servidor!</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Visão geral</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Conversas serão exibidas aqui</string>
+diff --git a/vector/src/main/res/values-ro/strings_sc.xml b/vector/src/main/res/values-ro/strings_sc.xml
+index 115b5d8ce..7b62e587e 100644
+--- a/vector/src/main/res/values-ro/strings_sc.xml
++++ b/vector/src/main/res/values-ro/strings_sc.xml
+@@ -26,7 +26,7 @@
+     <string name="labs_mark_rooms_unread">Marchează chaturile ca necitit</string>
+     <string name="url_previews_in_encrypted_rooms">Previzualizare URL-uri in chaturile criptate</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Asta va dezvălui URL-urile din mesajele tale către homeserver-ul tău!</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Vedere de ansamblu</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Chaturile vor fi afișate aici</string>
+diff --git a/vector/src/main/res/values-ru/strings.xml b/vector/src/main/res/values-ru/strings.xml
+index 9337f87ed..955e0e4bb 100644
+--- a/vector/src/main/res/values-ru/strings.xml
++++ b/vector/src/main/res/values-ru/strings.xml
+@@ -472,7 +472,7 @@
+     <string name="call_error_answered_elsewhere">Звонок принят на другом устройстве</string>
+     <string name="media_picker_both_capture_title">Снять фото или видео"</string>
+     <string name="media_picker_cannot_record_video">Не удалось записать видео"</string>
+-    <string name="permissions_rationale_popup_title">SchildiChat Информация</string>
++    <string name="permissions_rationale_popup_title">LeOS-Matrix Информация</string>
+     <string name="template_permissions_rationale_msg_storage">${app_name} нуждается в разрешении на доступ к вашей фото-и видеотеке для отправки и сохранения вложений.
+ \n
+ \nПожалуйста, разрешите доступ в следующем всплывающем окне, чтобы иметь возможность отправлять файлы с вашего устройства.</string>
+@@ -1705,7 +1705,7 @@
+     <string name="login_server_url_form_modular_hint">Модульный адрес</string>
+     <string name="login_server_url_form_other_hint">Адрес</string>
+     <string name="login_server_url_form_modular_text">Премиум-хостинг для организаций</string>
+-    <string name="login_server_url_form_modular_notice">Введите адрес Modular SchildiChat или сервера, который вы хотите использовать</string>
++    <string name="login_server_url_form_modular_notice">Введите адрес Modular LeOS-Matrix или сервера, который вы хотите использовать</string>
+     <string name="login_sso_error_message">Произошла ошибка при загрузке страницы: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">Приложение не может войти на этот сервер, так как он поддерживает следующие типы входа: %1$s.
+ \n
+@@ -2327,7 +2327,7 @@
+     <string name="crypto_error_withheld_unverified">Нет доступа к этому сообщению, так как отправитель не доверяет вашей сессии</string>
+     <string name="crypto_error_withheld_generic">Вы не можете получить доступ к этому сообщению, потому что отправитель намеренно не отправил ключи</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Ожидание истории шифрования</string>
+-    <string name="disclaimer_title">Riot теперь SchildiChat!</string>
++    <string name="disclaimer_title">Riot теперь LeOS-Matrix!</string>
+     <string name="disclaimer_content">Мы рады сообщить, что сменили имя! Ваше приложение обновлено, и вы вошли в свою учетную запись.</string>
+     <string name="disclaimer_negative_button">ПОНЯТНО</string>
+     <string name="disclaimer_positive_button">УЗНАТЬ БОЛЬШЕ</string>
+diff --git a/vector/src/main/res/values-ru/strings_sc.xml b/vector/src/main/res/values-ru/strings_sc.xml
+index 0a7daa308..48a58fac7 100644
+--- a/vector/src/main/res/values-ru/strings_sc.xml
++++ b/vector/src/main/res/values-ru/strings_sc.xml
+@@ -18,7 +18,7 @@
+     <string name="bubble_style_none">Нет</string>
+     <string name="bubble_style_start">На той же стороне</string>
+     <string name="bubble_style_both">С обеих сторон</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Обзор</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Здесь будут отображаться чаты</string>
+diff --git a/vector/src/main/res/values-sk/strings.xml b/vector/src/main/res/values-sk/strings.xml
+index c12e38652..eb74cade5 100644
+--- a/vector/src/main/res/values-sk/strings.xml
++++ b/vector/src/main/res/values-sk/strings.xml
+@@ -2079,7 +2079,7 @@
+     <string name="call_resume_action">Pokračovať</string>
+     <string name="settings_rageshake">Zúrivé trasenie</string>
+     <string name="create_spaces_just_me">Iba ja</string>
+-    <string name="disclaimer_title">Riot je teraz SchildiChat!</string>
++    <string name="disclaimer_title">Riot je teraz LeOS-Matrix!</string>
+     <string name="login_wait_for_email_title">Skontrolujte prosím svoj e-mail</string>
+     <string name="poll_end_room_list_preview">Anketa skončila</string>
+     <string name="invite_by_username">Pozvať podľa používateľského mena</string>
+diff --git a/vector/src/main/res/values-sk/strings_sc.xml b/vector/src/main/res/values-sk/strings_sc.xml
+index b32b652d7..026a4fa00 100644
+--- a/vector/src/main/res/values-sk/strings_sc.xml
++++ b/vector/src/main/res/values-sk/strings_sc.xml
+@@ -34,7 +34,7 @@
+     <string name="settings_dark_theme">Tmavá téma</string>
+     <string name="bubble_style_none">Žiadne</string>
+     <string name="bubble_style_start">Rovnaká strana</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="url_previews_in_encrypted_rooms">Náhľady URL v šifrovaných konverzáciách</string>
+     <string name="labs_mark_rooms_unread">Označiť chaty ako neprečítané</string>
+     <string name="bubble_time_location_bottom">Spodná časť</string>
+diff --git a/vector/src/main/res/values-sq/strings.xml b/vector/src/main/res/values-sq/strings.xml
+index b27ae0e97..30fa0dbed 100644
+--- a/vector/src/main/res/values-sq/strings.xml
++++ b/vector/src/main/res/values-sq/strings.xml
+@@ -2301,7 +2301,7 @@
+     <string name="crypto_error_withheld_unverified">S’mund të hapni këtë mesazh, ngaqë sesionit tuaj nuk i zihet besë nga dërguesi</string>
+     <string name="crypto_error_withheld_generic">S’mund ta hapni këtë mesazh, ngaqë dërguesi qëllimisht nuk ju dërgoi kyçet</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Po pritet për historik fshehtëzimesh</string>
+-    <string name="disclaimer_title">Riot-i tanimë quhet SchildiChat!</string>
++    <string name="disclaimer_title">Riot-i tanimë quhet LeOS-Matrix!</string>
+     <string name="disclaimer_content">Jemi të ngazëllyer t’ju njoftojmë se kemi ndërruar emër! Aplikacioni juaj është i përditësuar dhe jeni i futur në llogarinë tuaj.</string>
+     <string name="disclaimer_negative_button">E MORA VESH</string>
+     <string name="disclaimer_positive_button">MËSONI MË TEPËR</string>
+diff --git a/vector/src/main/res/values-sv/strings.xml b/vector/src/main/res/values-sv/strings.xml
+index af7fbad49..38a7283a5 100644
+--- a/vector/src/main/res/values-sv/strings.xml
++++ b/vector/src/main/res/values-sv/strings.xml
+@@ -2015,7 +2015,7 @@
+     <string name="login_server_url_form_modular_hint">Element Matrix Services-adress</string>
+     <string name="login_server_url_form_other_hint">Adress</string>
+     <string name="login_server_url_form_modular_text">Premiumservervärd för organisationer</string>
+-    <string name="login_server_url_form_modular_notice">Skriv in adressen för den Modular SchildiChat eller server du vill använda</string>
++    <string name="login_server_url_form_modular_notice">Skriv in adressen för den Modular LeOS-Matrix eller server du vill använda</string>
+     <string name="login_server_url_form_common_notice">Skriv in adressen för servern du vill använda</string>
+     <string name="login_sso_error_message">Ett fel inträffade vid laddning av sidan: %1$s (%2$d)</string>
+     <string name="login_mode_not_supported">Appen kan inte logga in på den här hemservern. Hemservern stöder följande inloggningstyp(er): %1$s.
+@@ -2290,7 +2290,7 @@
+     <string name="room_settings_save_success">Du ändrade rumsinställningarna framgångsrikt</string>
+     <string name="crypto_utd">Kan inte avkryptera</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Väntar på krypteringshistorik</string>
+-    <string name="disclaimer_title">Riot är nu SchildiChat!</string>
++    <string name="disclaimer_title">Riot är nu LeOS-Matrix!</string>
+     <string name="disclaimer_content">Vi är glada att meddela att vi har bytt namn! Din app är uppdaterad och du är inloggad på ditt konto.</string>
+     <string name="disclaimer_negative_button">UPPFATTAT</string>
+     <string name="disclaimer_positive_button">LÄR DIG MER</string>
+@@ -3006,7 +3006,7 @@
+     <string name="analytics_opt_in_list_item_2">Vi delar <b>inte</b> information med tredje parter</string>
+     <string name="analytics_opt_in_list_item_1">Vi spelar <b>inte</b> in eller profilerar någon kontodata</string>
+     <string name="analytics_opt_in_content_link">här</string>
+-    <string name="analytics_opt_in_content">Hjälp oss att identifiera problem och förbättra SchildiChat genom att dela anonym användningsdata. För att förstå hur personer använder multipla enheter så generar vi en slumpmässig identifierare som delas mellan dina enheter.
++    <string name="analytics_opt_in_content">Hjälp oss att identifiera problem och förbättra LeOS-Matrix genom att dela anonym användningsdata. För att förstå hur personer använder multipla enheter så generar vi en slumpmässig identifierare som delas mellan dina enheter.
+ \n
+ \nDu kan läsa alla våra villkor %s.</string>
+     <string name="analytics_opt_in_title">Hjälp att förbättra SchildiChat</string>
+diff --git a/vector/src/main/res/values-sv/strings_sc.xml b/vector/src/main/res/values-sv/strings_sc.xml
+index c138b2b8e..aa8900f67 100644
+--- a/vector/src/main/res/values-sv/strings_sc.xml
++++ b/vector/src/main/res/values-sv/strings_sc.xml
+@@ -31,7 +31,7 @@
+     <string name="labs_mark_rooms_unread">Markera chattar som olästa</string>
+     <string name="url_previews_in_encrypted_rooms">URL-förhandsgranskningar i krypterade chattar</string>
+     <string name="url_previews_in_encrypted_rooms_summary">Detta kommer att läcka webbadresser från dina meddelanden till din hemserver!</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="all_list_rooms_empty_body">Chattar kommer att visas här</string>
+     <string name="login_connect_using_matrix_id_text_sc">t.ex. @användare:domain.com</string>
+     <string name="show_room_info_sc">Rumsinformation</string>
+@@ -101,7 +101,7 @@
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="login_server_other_text_sc">Ange serveradress för att logga in eller registrera dig</string>
+     <string name="footer_read_receipt_content_description">Meddelandestatus</string>
+-    <string name="send_bug_report_sc_extra">För att öka synligheten för ditt problem och för att vi ska kunna kontakta dig kan du referera till denna rapport (genom att ange ditt matrix-ID och ungefärlig tid då det skickades) i ett problem på https://github.com/SchildiChat /SchildiChat-android/issues (kontrollera först om det redan finns ett för ditt problem och skapa bara en ny om det inte finns).</string>
++    <string name="send_bug_report_sc_extra">För att öka synligheten för ditt problem och för att vi ska kunna kontakta dig kan du referera till denna rapport (genom att ange ditt matrix-ID och ungefärlig tid då det skickades) i ett problem på https://github.com/LeOS-Matrix /SchildiChat-android/issues (kontrollera först om det redan finns ett för ditt problem och skapa bara en ny om det inte finns).</string>
+     <string name="login_server_other_title_sc">Custom server</string>
+     <string name="settings_user_colors_in_public_rooms">Användarfärger i offentliga rum</string>
+     <string name="settings_force_allow_background_sync_summary">Bara meningsfullt när du felsöker din push-inställning!</string>
+diff --git a/vector/src/main/res/values-tr/strings.xml b/vector/src/main/res/values-tr/strings.xml
+index 6e85669f7..3430f4a73 100644
+--- a/vector/src/main/res/values-tr/strings.xml
++++ b/vector/src/main/res/values-tr/strings.xml
+@@ -1534,7 +1534,7 @@
+     <string name="login_signin_to">%1$s sunucusuna giriş yap</string>
+     <string name="login_connect_to_a_custom_server">Özel bir sunucuya bağlan</string>
+     <string name="login_connect_to">%1$s sunucusuna bağlan</string>
+-    <string name="login_connect_to_modular">SchildiChat Matrix Hizmetlerine bağlan</string>
++    <string name="login_connect_to_modular">LeOS-Matrix Matrix Hizmetlerine bağlan</string>
+     <string name="login_social_sso">tek seferlik giriş</string>
+     <string name="login_social_signup_with">%s ile kayıt ol</string>
+     <string name="login_social_signin_with">%s ile giriş yap</string>
+@@ -1623,7 +1623,7 @@
+     <string name="login_terms_title">Devam etmek için koşulları kabul edin</string>
+     <string name="login_a11y_captcha_container">Lütfen aşağıdaki doğrulamayı tamamlayın</string>
+     <string name="login_a11y_choose_other">Özel bir ana sunucu seçin</string>
+-    <string name="login_a11y_choose_modular">SchildiChat Matric Hizmetleri\'ni seç</string>
++    <string name="login_a11y_choose_modular">LeOS-Matrix Matric Hizmetleri\'ni seç</string>
+     <string name="login_a11y_choose_matrix_org">Matrix.org sunucusunu seç</string>
+     <string name="login_signup_cancel_confirmation_content">Hesabınız henüz oluşturulmadı.
+ \n
+@@ -1668,7 +1668,7 @@
+ \nİnternet istemcisi ile kayıt olmak ister misiniz\?</string>
+     <string name="login_registration_disabled">Üzgünüm, bu sunucu artık yeni hesap kabul etmiyor.</string>
+     <string name="login_login_with_email_error">Bu e-posta herhangi bir hesapla ilişkili değil.</string>
+-    <string name="login_server_url_form_modular_hint">SchildiChat Matrix Hizmetleri Adresi</string>
++    <string name="login_server_url_form_modular_hint">LeOS-Matrix Matrix Hizmetleri Adresi</string>
+     <string name="login_server_url_form_other_hint">Adres</string>
+     <string name="login_clear_homeserver_history">Geçmişi temizle</string>
+     <string name="login_signin">Giriş yap</string>
+diff --git a/vector/src/main/res/values-uk/strings.xml b/vector/src/main/res/values-uk/strings.xml
+index aef5c9681..93dc0315a 100644
+--- a/vector/src/main/res/values-uk/strings.xml
++++ b/vector/src/main/res/values-uk/strings.xml
+@@ -1922,7 +1922,7 @@
+     <string name="reply">Відповісти</string>
+     <string name="edit">Редагувати</string>
+     <string name="disclaimer_negative_button">Зрозуміло</string>
+-    <string name="disclaimer_title">Riot тепер називається SchildiChat!</string>
++    <string name="disclaimer_title">Riot тепер називається LeOS-Matrix!</string>
+     <string name="downloaded_file">Файл %1$s було звантажено!</string>
+     <string name="downloading_file">Звантаження файлу %1$s…</string>
+     <string name="send_file_step_sending_file">Надсилання файлу (%1$s / %2$s)</string>
+@@ -2570,7 +2570,7 @@
+     <string name="login_registration_disabled">Перепрошуємо, сервер не приймає нових облікових записів.</string>
+     <string name="login_sso_error_message">Сталася помилка під час завантаження сторінки: %1$s (%2$d)</string>
+     <string name="login_server_url_form_common_notice">Введіть адресу сервера, який ви хочете використовувати</string>
+-    <string name="login_server_url_form_modular_notice">Введіть адресу Modular SchildiChat або сервера, який ви хочете використовувати</string>
++    <string name="login_server_url_form_modular_notice">Введіть адресу Modular LeOS-Matrix або сервера, який ви хочете використовувати</string>
+     <string name="login_reset_password_success_title">Успіх!</string>
+     <string name="login_reset_password_success_notice">Ваш пароль скинуто.</string>
+     <string name="login_reset_password_mail_confirmation_submit">Мною перевірено адресу е-пошти</string>
+diff --git a/vector/src/main/res/values-vi/strings.xml b/vector/src/main/res/values-vi/strings.xml
+index b44c556dd..babfc21f4 100644
+--- a/vector/src/main/res/values-vi/strings.xml
++++ b/vector/src/main/res/values-vi/strings.xml
+@@ -468,7 +468,7 @@
+     <string name="disclaimer_positive_button">TÌM HIỂU THÊM</string>
+     <string name="disclaimer_negative_button">HIỂU RỒI</string>
+     <string name="disclaimer_content">Chúng tôi rất háo hức muốn tuyên bố rằng chúng tôi đã đổi tên! Ứng dụng của bạn đã được cập nhật và bạn đã đăng nhập vào tài khoản của bạn.</string>
+-    <string name="disclaimer_title">Riot bây giờ là SchildiChat!</string>
++    <string name="disclaimer_title">Riot bây giờ là LeOS-Matrix!</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Đang đợi lịch sử mã hoá</string>
+     <string name="crypto_error_withheld_generic">Bạn không thể truy cập tin nhắn này vì người gửi đã cố tình không gửi các mã khoá</string>
+     <string name="crypto_error_withheld_unverified">Bạn không thể truy cập tin nhắn này vì phiên làm việc của bạn không được người gửi tin cậy</string>
+@@ -1284,7 +1284,7 @@
+     <string name="login_terms_title">Chấp nhận điều khoản để tiếp tục</string>
+     <string name="login_a11y_captcha_container">Hãy thực hiện thách thức captcha</string>
+     <string name="login_a11y_choose_other">Chọn một máy chủ khác</string>
+-    <string name="login_a11y_choose_modular">Chọn Dịch vụ SchildiChat Matrix</string>
++    <string name="login_a11y_choose_modular">Chọn Dịch vụ LeOS-Matrix Matrix</string>
+     <string name="login_a11y_choose_matrix_org">Chọn matrix.org</string>
+     <string name="login_signup_cancel_confirmation_content">Tài khoản của bạn chưa được tạo.
+ \n
+@@ -1338,7 +1338,7 @@
+     <string name="login_reset_password_on">Đặt lại mật khẩu ở %1$s</string>
+     <string name="login_login_with_email_error">Địa chỉ email này không có trong hệ thống.</string>
+     <string name="login_server_url_form_other_hint">Địa chỉ</string>
+-    <string name="login_server_url_form_modular_hint">Địa chỉ Dịch vụ SchildiChat Matrix</string>
++    <string name="login_server_url_form_modular_hint">Địa chỉ Dịch vụ LeOS-Matrix Matrix</string>
+     <string name="login_clear_homeserver_history">Xóa lịch sử</string>
+     <string name="login_signin_sso">Tiếp tục với SSO</string>
+     <string name="login_signin">Đăng Nhập</string>
+@@ -2336,7 +2336,7 @@
+ \nBạn có muốn đăng nhập bằng máy khách web không\?</string>
+     <string name="login_sso_error_message">Lỗi xảy ra khi tải trang: %1$s (%2$d)</string>
+     <string name="login_server_url_form_common_notice">Nhập địa chỉ của máy chủ bạn muốn sử dụng</string>
+-    <string name="login_server_url_form_modular_notice">Nhập địa chỉ của Mô-đun SchildiChat hoặc Máy chủ bạn muốn sử dụng</string>
++    <string name="login_server_url_form_modular_notice">Nhập địa chỉ của Mô-đun LeOS-Matrix hoặc Máy chủ bạn muốn sử dụng</string>
+     <string name="login_server_url_form_modular_text">Lưu trữ cao cấp cho các tổ chức</string>
+     <string name="login_server_modular_text">Lưu trữ cao cấp cho các tổ chức</string>
+     <string name="login_server_matrix_org_text">Tham gia hàng triệu máy chủ công cộng miễn phí lớn nhất</string>
+@@ -2918,7 +2918,7 @@
+     <string name="analytics_opt_in_list_item_2">Chúng tôi <b>không </b> chia sẻ thông tin với bên thứ ba</string>
+     <string name="analytics_opt_in_list_item_1">Chúng tôi <b>không</b> ghi âm hoặc tạo hồ sơ bất kỳ dữ liệu tài khoản nào</string>
+     <string name="analytics_opt_in_content_link">ở đây</string>
+-    <string name="analytics_opt_in_content">Giúp chúng tôi xác định các vấn đề và cải thiện SchildiChat bằng cách chia sẻ dữ liệu sử dụng ẩn danh. Để hiểu cách mọi người sử dụng nhiều thiết bị, chúng tôi sẽ tạo ra một mã định danh ngẫu nhiên, được chia sẻ bởi các thiết bị của bạn.
++    <string name="analytics_opt_in_content">Giúp chúng tôi xác định các vấn đề và cải thiện LeOS-Matrix bằng cách chia sẻ dữ liệu sử dụng ẩn danh. Để hiểu cách mọi người sử dụng nhiều thiết bị, chúng tôi sẽ tạo ra một mã định danh ngẫu nhiên, được chia sẻ bởi các thiết bị của bạn.
+ \n
+ \nBạn có thể đọc tất cả các thuật ngữ của chúng tôi %s.</string>
+     <string name="analytics_opt_in_title">Giúp cải thiện SchildiChat</string>
+diff --git a/vector/src/main/res/values-zh-rCN/strings.xml b/vector/src/main/res/values-zh-rCN/strings.xml
+index f47df55c6..66202d1b2 100644
+--- a/vector/src/main/res/values-zh-rCN/strings.xml
++++ b/vector/src/main/res/values-zh-rCN/strings.xml
+@@ -1679,16 +1679,16 @@
+     <string name="login_server_other_text">自定义 &amp; 高级设置</string>
+     <string name="login_continue">继续</string>
+     <string name="login_connect_to">连接到 %1$s</string>
+-    <string name="login_connect_to_modular">连接到 SchildiChat Matrix 服务</string>
++    <string name="login_connect_to_modular">连接到 LeOS-Matrix Matrix 服务</string>
+     <string name="login_connect_to_a_custom_server">连接到自定义服务器</string>
+     <string name="login_signin_to">登录 %1$s</string>
+     <string name="login_signup">注册</string>
+     <string name="login_signin">登录</string>
+     <string name="login_signin_sso">使用单点登录继续</string>
+-    <string name="login_server_url_form_modular_hint">SchildiChat Matrix 服务地址</string>
++    <string name="login_server_url_form_modular_hint">LeOS-Matrix Matrix 服务地址</string>
+     <string name="login_server_url_form_other_hint">地址</string>
+     <string name="login_server_url_form_modular_text">面向组织的高级托管</string>
+-    <string name="login_server_url_form_modular_notice">输入 Modular SchildiChat 或你想使用的服务器地址</string>
++    <string name="login_server_url_form_modular_notice">输入 Modular LeOS-Matrix 或你想使用的服务器地址</string>
+     <string name="login_server_url_form_common_notice">输入你想使用的服务器的地址</string>
+     <string name="login_sso_error_message">载入页面时出错：%1$s (%2$d)</string>
+     <string name="login_mode_not_supported">应用无法登录到此主服务器。主服务器支持以下登录类型：%1$s。
+@@ -2810,7 +2810,7 @@
+     <string name="settings_notification_default">默认通知</string>
+     <string name="call_tile_video_active">活跃视频通话</string>
+     <string name="call_tile_voice_active">活跃语音通话</string>
+-    <string name="link_this_email_with_your_account">在 SchildiChat 中直接接收邀请的设置 %s。</string>
++    <string name="link_this_email_with_your_account">在 LeOS-Matrix 中直接接收邀请的设置 %s。</string>
+     <string name="link_this_email_settings_link">将此邮箱与您的账户相链接</string>
+     <string name="this_invite_to_this_space_was_sent">加入这个空间的邀请被发送至 %s，此邮箱未与您的账户相关联</string>
+     <string name="this_invite_to_this_room_was_sent">加入这个聊天室的邀请被发送至 %s，此邮箱未与您的账户相关联</string>
+@@ -2970,7 +2970,7 @@
+     </plurals>
+     <string name="preference_system_settings">系统设置</string>
+     <string name="preference_versions">版本</string>
+-    <string name="preference_help_summary">获取使用 SchildiChat 的帮助</string>
++    <string name="preference_help_summary">获取使用 LeOS-Matrix 的帮助</string>
+     <string name="preference_help_title">帮助和支持</string>
+     <string name="preference_help">帮助</string>
+     <string name="preference_root_legals">法律</string>
+diff --git a/vector/src/main/res/values-zh-rCN/strings_sc.xml b/vector/src/main/res/values-zh-rCN/strings_sc.xml
+index f02724839..790792d48 100644
+--- a/vector/src/main/res/values-zh-rCN/strings_sc.xml
++++ b/vector/src/main/res/values-zh-rCN/strings_sc.xml
+@@ -38,7 +38,7 @@
+     <string name="settings_aggregate_unread_counts">仅统计私聊</string>
+     <string name="labs_mark_rooms_unread">将聊天标记为未读</string>
+     <string name="url_previews_in_encrypted_rooms">允许在加密聊天中显示链接预览</string>
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">概览</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">聊天记录将会显示在这里</string>
+diff --git a/vector/src/main/res/values-zh-rTW/strings.xml b/vector/src/main/res/values-zh-rTW/strings.xml
+index 56255376c..0a3a721fc 100644
+--- a/vector/src/main/res/values-zh-rTW/strings.xml
++++ b/vector/src/main/res/values-zh-rTW/strings.xml
+@@ -1655,7 +1655,7 @@
+     <string name="login_server_url_form_modular_hint">Element Matrix Services 位置</string>
+     <string name="login_server_url_form_other_hint">位置</string>
+     <string name="login_server_url_form_modular_text">組織有專業主機</string>
+-    <string name="login_server_url_form_modular_notice">輸入 Modular SchildiChat 或您想要使用的伺服器位置</string>
++    <string name="login_server_url_form_modular_notice">輸入 Modular LeOS-Matrix 或您想要使用的伺服器位置</string>
+     <string name="login_sso_error_message">載入頁面時發生錯誤：%1$s (%2$d)</string>
+     <string name="login_mode_not_supported">應用程式無法登入此家伺服器。家伺服器支援以下登入類型：%1$s。
+ \n
+@@ -2224,7 +2224,7 @@
+     <string name="crypto_error_withheld_unverified">您無法存取此訊息，因為您的工作階段未被傳送者所信任</string>
+     <string name="crypto_error_withheld_generic">您無法存取此訊息，因為傳送者刻意未傳送金鑰</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">正在等待加密歷史</string>
+-    <string name="disclaimer_title">Riot 現在是 SchildiChat 了！</string>
++    <string name="disclaimer_title">Riot 現在是 LeOS-Matrix 了！</string>
+     <string name="disclaimer_content">我們很高興地我們已變更名稱！您的應用程式是最新的，而您也登入了您的帳號。</string>
+     <string name="disclaimer_negative_button">知道了</string>
+     <string name="disclaimer_positive_button">取得更多資訊</string>
+@@ -2808,7 +2808,7 @@
+     <string name="settings_notification_other">其他</string>
+     <string name="settings_notification_mentions_and_keywords">提及與關鍵字</string>
+     <string name="settings_notification_default">預設通知</string>
+-    <string name="link_this_email_with_your_account">設定中的 %s 可直接在 SchildiChat 中接收邀請。</string>
++    <string name="link_this_email_with_your_account">設定中的 %s 可直接在 LeOS-Matrix 中接收邀請。</string>
+     <string name="link_this_email_settings_link">將此電子郵件與您的帳號連結</string>
+     <string name="this_invite_to_this_space_was_sent">此空間的邀請已傳送給與您的帳號無關的 %s</string>
+     <string name="this_invite_to_this_room_was_sent">此聊天室的邀請已傳送給與您的帳號無關的 %s</string>
+@@ -2970,7 +2970,7 @@
+     </plurals>
+     <string name="preference_system_settings">系統設定</string>
+     <string name="preference_versions">版本</string>
+-    <string name="preference_help_summary">取得關於使用 SchildiChat 的協助</string>
++    <string name="preference_help_summary">取得關於使用 LeOS-Matrix 的協助</string>
+     <string name="preference_help_title">說明與支援</string>
+     <string name="preference_help">說明</string>
+     <string name="preference_root_legals">法律</string>
+diff --git a/vector/src/main/res/values/strings.xml b/vector/src/main/res/values/strings.xml
+index 7511206e8..ff424b082 100644
+--- a/vector/src/main/res/values/strings.xml
++++ b/vector/src/main/res/values/strings.xml
+@@ -1366,7 +1366,7 @@
+     <!-- analytics v2 -->
+     <string name="analytics_opt_in_title">Help improve SchildiChat</string>
+     <!-- The template will be replaced by the value of the resource analytics_opt_in_content_link -->
+-    <string name="analytics_opt_in_content">Help us identify issues and improve SchildiChat by sharing anonymous usage data. To understand how people use multiple devices, we’ll generate a random identifier, shared by your devices.\n\nYou can read all our terms %s.</string>
++    <string name="analytics_opt_in_content">Help us identify issues and improve LeOS-Matrix by sharing anonymous usage data. To understand how people use multiple devices, we’ll generate a random identifier, shared by your devices.\n\nYou can read all our terms %s.</string>
+     <string name="analytics_opt_in_content_link">here</string>
+     <string name="analytics_opt_in_list_item_1">We <b>don\'t</b> record or profile any account data</string>
+     <string name="analytics_opt_in_list_item_2">We <b>don\'t</b> share information with third parties</string>
+@@ -2563,7 +2563,7 @@
+     <string name="login_server_url_form_modular_hint">Element Matrix Services Address</string>
+     <string name="login_server_url_form_other_hint">Address</string>
+     <string name="login_server_url_form_modular_text">Premium hosting for organisations</string>
+-    <string name="login_server_url_form_modular_notice">Enter the address of the Modular SchildiChat or Server you want to use</string>
++    <string name="login_server_url_form_modular_notice">Enter the address of the Modular LeOS-Matrix or Server you want to use</string>
+     <string name="login_server_url_form_common_notice">Enter the address of the server you want to use</string>
+ 
+     <string name="login_sso_error_message">An error occurred when loading the page: %1$s (%2$d)</string>
+@@ -3110,7 +3110,7 @@
+     <string name="bootstrap_progress_generating_ssss_with_info">Generating SSSS key from passphrase (%s)</string>
+     <string name="bootstrap_progress_generating_ssss_recovery">Generating SSSS key from recovery key</string>
+     <string name="bootstrap_progress_storing_in_sss">Storing keybackup secret in SSSS</string>
+-    <!-- To produce things like 'SchildiChat Android (IQDHUVJTTV)' -->
++    <!-- To produce things like 'LeOS-Matrix Android (IQDHUVJTTV)' -->
+     <string name="new_session_review_with_info">%1$s (%2$s)</string>
+ 
+     <string name="bootstrap_migration_enter_backup_password">Enter your Key Backup Passphrase to continue.</string>
+@@ -3275,7 +3275,7 @@
+     <string name="crypto_error_withheld_generic">You cannot access this message because the sender purposely did not send the keys</string>
+     <string name="notice_crypto_unable_to_decrypt_merged">Waiting for encryption history</string>
+ 
+-    <string name="disclaimer_title">Riot is now SchildiChat!</string>
++    <string name="disclaimer_title">Riot is now LeOS-Matrix!</string>
+     <string name="disclaimer_content">We’re excited to announce we’ve changed name! Your app is up to date and you’re signed in to your account.</string>
+     <string name="disclaimer_negative_button">GOT IT</string>
+     <string name="disclaimer_positive_button">LEARN MORE</string>
+diff --git a/vector/src/main/res/values/strings_sc.xml b/vector/src/main/res/values/strings_sc.xml
+index 255ea7578..9b405e248 100644
+--- a/vector/src/main/res/values/strings_sc.xml
++++ b/vector/src/main/res/values/strings_sc.xml
+@@ -55,7 +55,7 @@
+     <string name="url_previews_in_encrypted_rooms">URL previews in encrypted chats</string>
+     <string name="url_previews_in_encrypted_rooms_summary">This will leak URLs from your messages to your homeserver!</string>
+ 
+-    <string name="login_mobile_device_sc">SchildiChat Android</string>
++    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+     <string name="bottom_action_all">Overview</string>
+     <string name="all_list_rooms_empty_title">SchildiChat</string>
+     <string name="all_list_rooms_empty_body">Chats will be displayed here</string>
