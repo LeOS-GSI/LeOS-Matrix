@@ -26,7 +26,7 @@
     <string name="labs_mark_rooms_unread">Marchează chaturile ca necitit</string>
     <string name="url_previews_in_encrypted_rooms">Previzualizare URL-uri in chaturile criptate</string>
     <string name="url_previews_in_encrypted_rooms_summary">Asta va dezvălui URL-urile din mesajele tale către homeserver-ul tău!</string>
-    <string name="login_mobile_device_sc">SchildiChat Android</string>
+    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
     <string name="bottom_action_all">Vedere de ansamblu</string>
     <string name="all_list_rooms_empty_title">SchildiChat</string>
     <string name="all_list_rooms_empty_body">Chaturile vor fi afișate aici</string>

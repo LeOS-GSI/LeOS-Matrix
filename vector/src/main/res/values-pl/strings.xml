@@ -1527,7 +1527,7 @@
     <string name="login_server_url_form_modular_hint">Adres Element Matrix Services</string>
     <string name="login_server_url_form_other_hint">Adres</string>
     <string name="login_server_url_form_modular_text">Hosting premium dla organizacji</string>
-    <string name="login_server_url_form_modular_notice">Wprowadź adres SchildiChat Modular lub serwera którego chcesz użyć</string>
+    <string name="login_server_url_form_modular_notice">Wprowadź adres LeOS-Matrix Modular lub serwera którego chcesz użyć</string>
     <string name="login_sso_error_message">Wystąpił błąd podczas ładowania strony: %1$s (%2$d)</string>
     <string name="login_mode_not_supported">Aplikacja nie jest w stanie zalogować się do tego serwera domowego. Serwer domowy obsluguje następujące metody logowania: %1$s.
 \n
@@ -1869,7 +1869,7 @@
     <string name="save_recovery_key_chooser_hint">Zapisz klucz odzyskiwania w</string>
     <string name="disclaimer_positive_button">DOWIEDZ SIĘ WIĘCEJ</string>
     <string name="disclaimer_content">Jesteśmy podekscytowani mogąc oznajmić, że zmieniliśmy nazwę! Twoja aplikacja jest aktualna i jesteś zalogowany(-a) do swojego konta.</string>
-    <string name="disclaimer_title">Riot nazywa się teraz SchildiChat!</string>
+    <string name="disclaimer_title">Riot nazywa się teraz LeOS-Matrix!</string>
     <string name="crypto_error_withheld_generic">Nie masz dostępu do tej wiadomości ponieważ nadawca celowo nie wysłał jej kluczy</string>
     <string name="crypto_error_withheld_unverified">Nie masz dostępu do tej wiadomości ponieważ nadawca nie ufa Twojej sesji</string>
     <string name="crypto_error_withheld_blacklisted">Nie masz dostępu do tej wiadomości ponieważ zostałeś zablokowany przez jej nadawcę</string>
@@ -3045,7 +3045,7 @@
     <string name="analytics_opt_in_list_item_2"><b>Nie udostępniamy</b> informacji podmiotom trzecim</string>
     <string name="analytics_opt_in_list_item_1"><b> Nie zbieramy i nie profilujemy </b> danych użytkownika</string>
     <string name="analytics_opt_in_content_link">tutaj</string>
-    <string name="analytics_opt_in_content">Pomóż nam znaleźć błędy i ulepszyć SchildiChat poprzez udostępnianie anonimowych danych użytkowania. Aby lepiej zrozumieć jak użytkownicy wykorzystują wiele urządzeń wygenerujemy losowy identyfikator dzielony pomiędzy Twoimi urządzeniami.
+    <string name="analytics_opt_in_content">Pomóż nam znaleźć błędy i ulepszyć LeOS-Matrix poprzez udostępnianie anonimowych danych użytkowania. Aby lepiej zrozumieć jak użytkownicy wykorzystują wiele urządzeń wygenerujemy losowy identyfikator dzielony pomiędzy Twoimi urządzeniami.
 \n
 \nWięcej informacji %s.</string>
     <string name="analytics_opt_in_title">Pomóż usprawnić SchildiChat</string>

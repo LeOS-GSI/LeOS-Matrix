@@ -254,7 +254,7 @@ class VoiceMessageViews(
         views.voiceMessageMicButton.setImageResource(R.drawable.ic_voice_mic)
         views.voiceMessageMicButton.setAttributeBackground(android.R.attr.selectableItemBackgroundBorderless)
         /* This is from Element, and I have no idea why they just didn't make it symmetric from the layout... well I did!
-        // Also, SchildiChat layout doesn't need any margin there, and doesn't enlarge the icon during recording, so no code needed here
+        // Also, LeOS-Matrix layout doesn't need any margin there, and doesn't enlarge the icon during recording, so no code needed here
         views.voiceMessageMicButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
             if (rtlXMultiplier == -1) {
                 // RTL

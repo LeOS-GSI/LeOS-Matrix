@@ -33,7 +33,7 @@
     <string name="bubble_time_location_bottom">Bunn</string>
     <string name="labs_mark_rooms_unread">Marker sludringer som ulest</string>
     <string name="url_previews_in_encrypted_rooms_summary">Dette vil lekke nettadresser fra dine meldinger til din hjemmetjener.</string>
-    <string name="login_mobile_device_sc">SchildiChat for Android</string>
+    <string name="login_mobile_device_sc">LeOS-Matrix for Android</string>
     <string name="bottom_action_all">Oversikt</string>
     <string name="all_list_rooms_empty_title">SchildiChat</string>
     <string name="login_connect_using_matrix_id_text_sc">f.eks. @bruker:domene.no</string>

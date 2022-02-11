@@ -472,7 +472,7 @@
     <string name="call_error_answered_elsewhere">Звонок принят на другом устройстве</string>
     <string name="media_picker_both_capture_title">Снять фото или видео"</string>
     <string name="media_picker_cannot_record_video">Не удалось записать видео"</string>
-    <string name="permissions_rationale_popup_title">SchildiChat Информация</string>
+    <string name="permissions_rationale_popup_title">LeOS-Matrix Информация</string>
     <string name="template_permissions_rationale_msg_storage">${app_name} нуждается в разрешении на доступ к вашей фото-и видеотеке для отправки и сохранения вложений.
 \n
 \nПожалуйста, разрешите доступ в следующем всплывающем окне, чтобы иметь возможность отправлять файлы с вашего устройства.</string>
@@ -1705,7 +1705,7 @@
     <string name="login_server_url_form_modular_hint">Модульный адрес</string>
     <string name="login_server_url_form_other_hint">Адрес</string>
     <string name="login_server_url_form_modular_text">Премиум-хостинг для организаций</string>
-    <string name="login_server_url_form_modular_notice">Введите адрес Modular SchildiChat или сервера, который вы хотите использовать</string>
+    <string name="login_server_url_form_modular_notice">Введите адрес Modular LeOS-Matrix или сервера, который вы хотите использовать</string>
     <string name="login_sso_error_message">Произошла ошибка при загрузке страницы: %1$s (%2$d)</string>
     <string name="login_mode_not_supported">Приложение не может войти на этот сервер, так как он поддерживает следующие типы входа: %1$s.
 \n
@@ -2327,7 +2327,7 @@
     <string name="crypto_error_withheld_unverified">Нет доступа к этому сообщению, так как отправитель не доверяет вашей сессии</string>
     <string name="crypto_error_withheld_generic">Вы не можете получить доступ к этому сообщению, потому что отправитель намеренно не отправил ключи</string>
     <string name="notice_crypto_unable_to_decrypt_merged">Ожидание истории шифрования</string>
-    <string name="disclaimer_title">Riot теперь SchildiChat!</string>
+    <string name="disclaimer_title">Riot теперь LeOS-Matrix!</string>
     <string name="disclaimer_content">Мы рады сообщить, что сменили имя! Ваше приложение обновлено, и вы вошли в свою учетную запись.</string>
     <string name="disclaimer_negative_button">ПОНЯТНО</string>
     <string name="disclaimer_positive_button">УЗНАТЬ БОЛЬШЕ</string>

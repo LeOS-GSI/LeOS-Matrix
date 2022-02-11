@@ -38,7 +38,7 @@
     <string name="settings_aggregate_unread_counts">仅统计私聊</string>
     <string name="labs_mark_rooms_unread">将聊天标记为未读</string>
     <string name="url_previews_in_encrypted_rooms">允许在加密聊天中显示链接预览</string>
-    <string name="login_mobile_device_sc">SchildiChat Android</string>
+    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
     <string name="bottom_action_all">概览</string>
     <string name="all_list_rooms_empty_title">SchildiChat</string>
     <string name="all_list_rooms_empty_body">聊天记录将会显示在这里</string>

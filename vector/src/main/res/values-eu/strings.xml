@@ -205,7 +205,7 @@
     <string name="local_address_book_header">Gailuko helbide liburua</string>
     <string name="matrix_only_filter">Matrixeko kontaktuak besterik ez</string>
     <string name="no_conversation_placeholder">Elkarrizketarik ez</string>
-    <string name="template_no_contact_access_placeholder">Ez diozu baimena eman SchildiChat aplikazioari zure gailuko kontaktuak atzitzeko</string>
+    <string name="template_no_contact_access_placeholder">Ez diozu baimena eman LeOS-Matrix aplikazioari zure gailuko kontaktuak atzitzeko</string>
     <string name="no_result_placeholder">Emaitzarik ez</string>
 
     <string name="rooms_header">Gelak</string>
@@ -1879,7 +1879,7 @@ Abisua: Fitxategi hau ezabatu daiteke aplikazioa desinstalatzen bada.</string>
     <string name="login_server_url_form_modular_hint">Element Matrix Services helbidea</string>
     <string name="login_server_url_form_other_hint">Helbidea</string>
     <string name="login_server_url_form_modular_text">Ordainpeko ostatatzea elkarteentzat</string>
-    <string name="login_server_url_form_modular_notice">Sartu erabili nahi duzun Modular SchildiChat edo zerbitzariaren helbidea</string>
+    <string name="login_server_url_form_modular_notice">Sartu erabili nahi duzun Modular LeOS-Matrix edo zerbitzariaren helbidea</string>
 
     <string name="login_sso_error_message">Errore bat gertatu da orria kargatzean: %1$s (%2$d)</string>
     <string name="login_mode_not_supported">Aplikazioak ezin du hasiera-zerbitzari honetan saioa hasi. Hasiera-zerbitzariak honako saio mota onartzen du: %1$s.

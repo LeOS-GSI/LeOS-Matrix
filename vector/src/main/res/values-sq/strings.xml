@@ -2301,7 +2301,7 @@
     <string name="crypto_error_withheld_unverified">S’mund të hapni këtë mesazh, ngaqë sesionit tuaj nuk i zihet besë nga dërguesi</string>
     <string name="crypto_error_withheld_generic">S’mund ta hapni këtë mesazh, ngaqë dërguesi qëllimisht nuk ju dërgoi kyçet</string>
     <string name="notice_crypto_unable_to_decrypt_merged">Po pritet për historik fshehtëzimesh</string>
-    <string name="disclaimer_title">Riot-i tanimë quhet SchildiChat!</string>
+    <string name="disclaimer_title">Riot-i tanimë quhet LeOS-Matrix!</string>
     <string name="disclaimer_content">Jemi të ngazëllyer t’ju njoftojmë se kemi ndërruar emër! Aplikacioni juaj është i përditësuar dhe jeni i futur në llogarinë tuaj.</string>
     <string name="disclaimer_negative_button">E MORA VESH</string>
     <string name="disclaimer_positive_button">MËSONI MË TEPËR</string>

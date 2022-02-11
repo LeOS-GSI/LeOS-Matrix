@@ -19,7 +19,7 @@
     <string name="all_list_rooms_empty_body">A csevegések itt jelennek meg</string>
     <string name="all_list_rooms_empty_title">SchildiChat</string>
     <string name="bottom_action_all">Áttekintés</string>
-    <string name="login_mobile_device_sc">SchildiChat Android</string>
+    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
     <string name="url_previews_in_encrypted_rooms_summary">Ez kiszivárogtatja az URL-eket az üzeneteidből a háziszerveredre!</string>
     <string name="url_previews_in_encrypted_rooms">URL előnézetek titkosított csevegésekben</string>
     <string name="labs_mark_rooms_unread_summary">Lehetővé teszi a csevegések olvasatlanként való megjelölését. Más mátrixkliensek még nem feltétlenül támogatják ezt a funkciót.</string>

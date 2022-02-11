@@ -671,7 +671,7 @@ class MessageItemFactory @Inject constructor(
          */
 
         val htmlBody = messageContent.getHtmlBody()
-        // SchildiChat likes to not overwrite message formatting for notices, compared to upstream
+        // LeOS-Matrix likes to not overwrite message formatting for notices, compared to upstream
         val formattedBody = htmlBody
         /*
         val formattedBody = span {

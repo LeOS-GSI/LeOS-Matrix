@@ -672,7 +672,7 @@
     <string name="passphrase_confirm_passphrase">Vahvista salasana</string>
     <string name="encryption_export_saved_as">Huoneen osapuolten välisen salauksen avaimet tallennettiin tiedostoon \'%s\'
 \n
-\nVaroitus: tämä tiedosto saatetaan poistaa, mikäli SchildiChat poistetaan.</string>
+\nVaroitus: tämä tiedosto saatetaan poistaa, mikäli LeOS-Matrix poistetaan.</string>
     <string name="encryption_import_e2e_room_keys">Tuo salatun huoneen avaimet</string>
     <string name="encryption_import_room_keys">Tuo huoneen avaimet</string>
     <string name="encryption_import_room_keys_summary">Tuo avaimet paikallisesta tiedostosta</string>
@@ -1160,7 +1160,7 @@
     <string name="keys_backup_setup_step3_save_button_title">Tallenna tiedostona</string>
     <string name="recovery_key_export_saved_as_warning">Palautusavain on tallennettu kohteeseen \'%s\'.
 \n
-\nVaroitus: tämä tiedosto saatetaan poistaa, mikäli SchildiChat poistetaan.</string>
+\nVaroitus: tämä tiedosto saatetaan poistaa, mikäli LeOS-Matrix poistetaan.</string>
     <string name="keys_backup_setup_step3_please_make_copy">Teethän kopion</string>
     <string name="keys_backup_setup_step3_share_intent_chooser_title">Jaa palautusavain kohteelle…</string>
     <string name="keys_backup_setup_step3_generating_key_status">Luodaan palautusavainta käyttäen salalausetta. Tässä saattaa kestää useampi sekunti.</string>
@@ -2355,7 +2355,7 @@
     <string name="disclaimer_positive_button">LUE LISÄÄ</string>
     <string name="disclaimer_negative_button">SELVÄ</string>
     <string name="disclaimer_content">Olemme iloisia uuden nimen lanseerauksesta! Sovelluksesi on ajan tasalla ja olet kirjautunut tilillesi.</string>
-    <string name="disclaimer_title">Riot on nyt SchildiChat!</string>
+    <string name="disclaimer_title">Riot on nyt LeOS-Matrix!</string>
     <string name="crypto_utd">Salausta ei voi purkaa</string>
     <string name="room_settings_save_success">Muutit huoneen asetuksia onnistuneesti</string>
     <string name="a11y_start_camera">Käynnistä kamera</string>
