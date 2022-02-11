@@ -1,1 +1,1 @@
-# LeOS for Android
+# LeOS-Matrix Client for Android
