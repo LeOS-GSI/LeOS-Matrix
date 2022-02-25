@@ -131,7 +131,7 @@ android {
         versionCode 40100750
 
         // Required for sonar analysis
-        versionName "1.1"
+        versionName "12.1"
 
         buildConfigField "String", "GIT_REVISION", "\"${gitRevision()}\""
         resValue "string", "git_revision", "\"${gitRevision()}\""
@@ -273,7 +273,7 @@ android {
             dimension "store"
             isDefault = true
 
-            versionName "1.1"
+            versionName "12.1"
 
             resValue "bool", "isGplay", "true"
             buildConfigField "boolean", "ALLOW_FCM_USE", "true"
@@ -285,7 +285,7 @@ android {
         fdroid {
             dimension "store"
 
-            versionName "1.1"
+            versionName "12.1"
 
             resValue "bool", "isGplay", "false"
             buildConfigField "boolean", "ALLOW_FCM_USE", "false"
