@@ -4,5 +4,5 @@
 
 ## Screenshot
 | <img src="screenshots/LeOS-Matrix.png" width="200"/>
-|:---:|:---:|:---:|
+
 
