@@ -18,12 +18,11 @@ package org.billcarsonfr.jsonviewer
 
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Context
 import android.view.ContextMenu
-import android.view.Menu
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.getSystemService
 import com.airbnb.epoxy.EpoxyAttribute
 import com.airbnb.epoxy.EpoxyHolder
 import com.airbnb.epoxy.EpoxyModelClass
@@ -72,17 +71,13 @@ internal abstract class ValueItem : EpoxyModelWithHolder<ValueItem.Holder>() {
         }
 
         override fun onCreateContextMenu(
-            menu: ContextMenu?,
-            v: View?,
-            menuInfo: ContextMenu.ContextMenuInfo?
+                menu: ContextMenu?,
+                v: View?,
+                menuInfo: ContextMenu.ContextMenuInfo?
         ) {
             if (copyValue != null) {
-                val menuItem = menu?.add(
-                    Menu.NONE, R.id.copy_value,
-                    Menu.NONE, R.string.copy_value
-                )
-                val clipService =
-                    v?.context?.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                val menuItem = menu?.add(R.string.copy_value)
+                val clipService = v?.context?.getSystemService<ClipboardManager>()
                 menuItem?.setOnMenuItemClickListener {
                     clipService?.setPrimaryClip(ClipData.newPlainText("", copyValue))
                     true

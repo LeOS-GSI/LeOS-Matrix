@@ -27,8 +27,10 @@ import im.vector.app.core.epoxy.onClick
 import im.vector.app.core.ui.views.ShieldImageView
 import im.vector.app.features.home.AvatarRenderer
 import im.vector.app.features.home.room.detail.timeline.TimelineEventController
+import im.vector.app.features.home.room.detail.timeline.view.TimelineMessageLayoutRenderer
+import im.vector.app.features.home.room.detail.timeline.view.scOnlyRenderMessageLayout
 import im.vector.lib.core.utils.epoxy.charsequence.EpoxyCharSequence
-import org.matrix.android.sdk.api.crypto.RoomEncryptionTrustLevel
+import org.matrix.android.sdk.api.session.crypto.model.RoomEncryptionTrustLevel
 
 @EpoxyModelClass(layout = R.layout.item_timeline_event_base_noinfo)
 abstract class NoticeItem : BaseEventItem<NoticeItem.Holder>() {
@@ -53,6 +55,8 @@ abstract class NoticeItem : BaseEventItem<NoticeItem.Holder>() {
                 holder.e2EDecorationView.render(RoomEncryptionTrustLevel.Warning)
             }
         }
+
+        (holder.view as? TimelineMessageLayoutRenderer).scOnlyRenderMessageLayout(attributes.informationData.messageLayout, this, holder)
     }
 
     override fun unbind(holder: Holder) {
@@ -64,7 +68,7 @@ abstract class NoticeItem : BaseEventItem<NoticeItem.Holder>() {
         return listOf(attributes.informationData.eventId)
     }
 
-    override fun getViewType() = STUB_ID
+    override fun getViewStubId() = STUB_ID
 
     class Holder : BaseHolder(STUB_ID) {
         val avatarImageView by bind<ImageView>(R.id.itemNoticeAvatarView)
@@ -78,7 +82,8 @@ abstract class NoticeItem : BaseEventItem<NoticeItem.Holder>() {
             val noticeText: EpoxyCharSequence,
             val itemLongClickListener: View.OnLongClickListener? = null,
             val readReceiptsCallback: TimelineEventController.ReadReceiptsCallback? = null,
-            val avatarClickListener: ClickListener? = null
+            val avatarClickListener: ClickListener? = null,
+            val threadSummaryClickListener: ClickListener? = null
     )
 
     companion object {

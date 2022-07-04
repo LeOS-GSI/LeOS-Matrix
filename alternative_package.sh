@@ -53,7 +53,7 @@ logo_alternative() {
     logo_replace_color "$mydir/graphics/ic_launcher_sc.svg" "$@"
     logo_replace_color "$mydir/graphics/feature_image.svg" "$@"
     logo_replace_color "$mydir/graphics/store_icon.svg" "$@"
-    logo_replace_color "$mydir/vector/src/main/res/mipmap-anydpi-v26/ic_launcher_background_sc.xml" "$@"
+    logo_replace_color "$mydir/vector/src/release/res/drawable/ic_launcher_background_sc.xml" "$@"
     "$mydir/graphics/icon_gen.sh"
 }
 
@@ -98,7 +98,7 @@ case "$package_add" in
 esac
 
 sed -i "s|\"SchildiChat|\"$name_replace|g" "$build_gradle"
-sed -i "s|de.spiritcroc.riotx|de.spiritcroc.riotx.$package_add|g" "$build_gradle" `find "$src_dir" -name google-services.json`
+sed -i "s|de.spiritcroc.riotx|de.spiritcroc.riotx.$package_add|g" "$build_gradle" `find "$src_dir" -name google-services.json` `find "$src_dir" -name shortcuts.xml`
 sed -i "s|SchildiChat|$name_replace|g" `find "$fastlane_dir/metadata/android" -name "title.txt"`
 
 

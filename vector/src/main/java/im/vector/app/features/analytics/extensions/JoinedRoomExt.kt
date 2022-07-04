@@ -19,6 +19,7 @@ package im.vector.app.features.analytics.extensions
 import im.vector.app.features.analytics.plan.JoinedRoom
 import org.matrix.android.sdk.api.extensions.orFalse
 import org.matrix.android.sdk.api.session.room.model.RoomSummary
+import org.matrix.android.sdk.api.session.room.model.RoomType
 import org.matrix.android.sdk.api.session.room.model.roomdirectory.PublicRoom
 
 fun Int?.toAnalyticsRoomSize(): JoinedRoom.RoomSize {
@@ -32,16 +33,20 @@ fun Int?.toAnalyticsRoomSize(): JoinedRoom.RoomSize {
     }
 }
 
-fun RoomSummary?.toAnalyticsJoinedRoom(): JoinedRoom {
+fun RoomSummary?.toAnalyticsJoinedRoom(trigger: JoinedRoom.Trigger?): JoinedRoom {
     return JoinedRoom(
             isDM = this?.isDirect.orFalse(),
-            roomSize = this?.joinedMembersCount?.toAnalyticsRoomSize() ?: JoinedRoom.RoomSize.Two
+            isSpace = this?.roomType == RoomType.SPACE,
+            roomSize = this?.joinedMembersCount?.toAnalyticsRoomSize() ?: JoinedRoom.RoomSize.Two,
+            trigger = trigger
     )
 }
 
-fun PublicRoom.toAnalyticsJoinedRoom(): JoinedRoom {
+fun PublicRoom.toAnalyticsJoinedRoom(trigger: JoinedRoom.Trigger?): JoinedRoom {
     return JoinedRoom(
             isDM = false,
-            roomSize = numJoinedMembers.toAnalyticsRoomSize()
+            isSpace = false,
+            roomSize = numJoinedMembers.toAnalyticsRoomSize(),
+            trigger = trigger
     )
 }

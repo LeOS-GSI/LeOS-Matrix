@@ -25,7 +25,7 @@ sealed class RoomListQuickActionsSharedAction(
         @StringRes val titleRes: Int,
         @DrawableRes val iconResId: Int?,
         val destructive: Boolean = false) :
-    VectorSharedAction {
+        VectorSharedAction {
 
     data class MarkUnread(val roomId: String) : RoomListQuickActionsSharedAction(
             R.string.room_list_quick_actions_mark_room_unread,
@@ -40,6 +40,11 @@ sealed class RoomListQuickActionsSharedAction(
     data class OpenAtBottom(val roomId: String) : RoomListQuickActionsSharedAction(
             R.string.room_list_quick_actions_open_at_bottom,
             R.drawable.ic_room_actions_open_at_bottom
+    )
+
+    data class OpenAnonymous(val roomId: String) : RoomListQuickActionsSharedAction(
+            R.string.room_list_quick_actions_open_anonymous,
+            R.drawable.ic_room_actions_open_anonymous
     )
 
     data class NotificationsAllNoisy(val roomId: String) : RoomListQuickActionsSharedAction(
@@ -69,11 +74,13 @@ sealed class RoomListQuickActionsSharedAction(
 
     data class LowPriority(val roomId: String) : RoomListQuickActionsSharedAction(
             R.string.room_list_quick_actions_low_priority_add,
-            R.drawable.ic_low_priority_24)
+            R.drawable.ic_low_priority_24
+    )
 
     data class Favorite(val roomId: String) : RoomListQuickActionsSharedAction(
             R.string.room_list_quick_actions_favorite_add,
-            R.drawable.ic_star_24dp)
+            R.drawable.ic_star_24dp
+    )
 
     data class Leave(val roomId: String, val showIcon: Boolean = true) : RoomListQuickActionsSharedAction(
             R.string.room_list_quick_actions_leave,

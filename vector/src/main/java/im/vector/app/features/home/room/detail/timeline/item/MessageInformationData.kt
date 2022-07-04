@@ -17,8 +17,9 @@
 package im.vector.app.features.home.room.detail.timeline.item
 
 import android.os.Parcelable
+import im.vector.app.features.home.room.detail.timeline.style.TimelineMessageLayout
 import kotlinx.parcelize.Parcelize
-import org.matrix.android.sdk.api.crypto.VerificationState
+import org.matrix.android.sdk.api.session.crypto.verification.VerificationState
 import org.matrix.android.sdk.api.session.room.send.SendState
 import org.matrix.android.sdk.api.util.MatrixItem
 
@@ -31,10 +32,8 @@ data class MessageInformationData(
         val ageLocalTS: Long?,
         val avatarUrl: String?,
         val memberName: CharSequence? = null,
-        val showInformation: Boolean = true,
-        val forceShowTimestamp: Boolean = false,
-        /*List of reactions (emoji,count,isSelected)*/
-        val orderedReactionList: List<ReactionInfoData>? = null,
+        val messageLayout: TimelineMessageLayout,
+        val reactionsSummary: ReactionsSummaryData,
         val pollResponseAggregatedSummary: PollResponseData? = null,
         val hasBeenEdited: Boolean = false,
         val hasPendingEdits: Boolean = false,
@@ -46,7 +45,10 @@ data class MessageInformationData(
         val senderPowerLevel: Int?,
         val dmChatPartnerId: String?,
         val e2eDecoration: E2EDecoration = E2EDecoration.NONE,
-        val sendStateDecoration: SendStateDecoration = SendStateDecoration.NONE
+        val sendStateDecoration: SendStateDecoration = SendStateDecoration.NONE,
+        val isFirstFromThisSender: Boolean = false,
+        val isLastFromThisSender: Boolean = false,
+        val messageType: String? = null
 ) : Parcelable {
 
     val matrixItem: MatrixItem
@@ -59,8 +61,22 @@ data class ReferencesInfoData(
 ) : Parcelable
 
 @Parcelize
+data class ReactionsSummaryData(
+        /*List of reactions (emoji,count,isSelected)*/
+        val reactions: List<ReactionInfoData>? = null,
+        val showAll: Boolean = false
+) : Parcelable
+
+data class ReactionsSummaryEvents(
+        val onShowMoreClicked: () -> Unit,
+        val onShowLessClicked: () -> Unit,
+        val onAddMoreClicked: () -> Unit
+)
+
+@Parcelize
 data class ReactionInfoData(
         val key: String,
+        val url: String?,
         val count: Int,
         val addedByMe: Boolean,
         val synced: Boolean

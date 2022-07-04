@@ -17,11 +17,14 @@
 package org.matrix.android.sdk.internal.session.homeserver
 
 import com.zhuinden.monarchy.Monarchy
-import org.matrix.android.sdk.api.MatrixPatterns.getDomain
+import org.matrix.android.sdk.api.MatrixPatterns.getServerName
 import org.matrix.android.sdk.api.auth.data.HomeServerConnectionConfig
 import org.matrix.android.sdk.api.auth.wellknown.WellknownResult
+import org.matrix.android.sdk.api.extensions.orFalse
+import org.matrix.android.sdk.api.extensions.orTrue
 import org.matrix.android.sdk.api.session.homeserver.HomeServerCapabilities
 import org.matrix.android.sdk.internal.auth.version.Versions
+import org.matrix.android.sdk.internal.auth.version.doesServerSupportThreads
 import org.matrix.android.sdk.internal.auth.version.isLoginAndRegistrationSupportedBySdk
 import org.matrix.android.sdk.internal.database.model.HomeServerCapabilitiesEntity
 import org.matrix.android.sdk.internal.database.query.getOrCreate
@@ -90,11 +93,17 @@ internal class DefaultGetHomeServerCapabilitiesTask @Inject constructor(
             }
         }.getOrNull()
 
+        // Domain may include a port (eg, matrix.org:8080)
+        // Per https://spec.matrix.org/latest/client-server-api/#well-known-uri we should extract the hostname from the server name
+        // So we take everything before the last : as the domain for the well-known task.
+        // NB: This is not always the same endpoint as capabilities / mediaConfig uses.
         val wellknownResult = runCatching {
-            getWellknownTask.execute(GetWellknownTask.Params(
-                    domain = userId.getDomain(),
-                    homeServerConnectionConfig = homeServerConnectionConfig
-            ))
+            getWellknownTask.execute(
+                    GetWellknownTask.Params(
+                            domain = userId.getServerName().substringBeforeLast(":"),
+                            homeServerConnectionConfig = homeServerConnectionConfig
+                    )
+            )
         }.getOrNull()
 
         insertInDb(capabilities, mediaConfig, versions, wellknownResult)
@@ -108,11 +117,20 @@ internal class DefaultGetHomeServerCapabilitiesTask @Inject constructor(
             val homeServerCapabilitiesEntity = HomeServerCapabilitiesEntity.getOrCreate(realm)
 
             if (getCapabilitiesResult != null) {
-                homeServerCapabilitiesEntity.canChangePassword = getCapabilitiesResult.canChangePassword()
+                val capabilities = getCapabilitiesResult.capabilities
 
-                homeServerCapabilitiesEntity.roomVersionsJson = getCapabilitiesResult.capabilities?.roomVersions?.let {
+                // The spec says: If not present, the client should assume that
+                // password, display name, avatar changes and 3pid changes are possible via the API
+                homeServerCapabilitiesEntity.canChangePassword = capabilities?.changePassword?.enabled.orTrue()
+                homeServerCapabilitiesEntity.canChangeDisplayName = capabilities?.changeDisplayName?.enabled.orTrue()
+                homeServerCapabilitiesEntity.canChangeAvatar = capabilities?.changeAvatar?.enabled.orTrue()
+                homeServerCapabilitiesEntity.canChange3pid = capabilities?.change3pid?.enabled.orTrue()
+
+                homeServerCapabilitiesEntity.roomVersionsJson = capabilities?.roomVersions?.let {
                     MoshiProvider.providesMoshi().adapter(RoomVersions::class.java).toJson(it)
                 }
+                homeServerCapabilitiesEntity.canUseThreading = /* capabilities?.threads?.enabled.orFalse() || */
+                        getVersionResult?.doesServerSupportThreads().orFalse()
             }
 
             if (getMediaConfigResult != null) {

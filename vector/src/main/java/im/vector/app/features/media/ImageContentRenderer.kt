@@ -16,6 +16,7 @@
 
 package im.vector.app.features.media
 
+import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Parcelable
@@ -25,6 +26,7 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.Transformation
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
@@ -41,10 +43,12 @@ import im.vector.app.core.glide.GlideRequest
 import im.vector.app.core.glide.GlideRequests
 import im.vector.app.core.ui.model.Size
 import im.vector.app.core.utils.DimensionConverter
+import im.vector.app.features.settings.VectorPreferences
 import kotlinx.parcelize.Parcelize
 import org.matrix.android.sdk.api.extensions.tryOrNull
 import org.matrix.android.sdk.api.session.content.ContentUrlResolver
-import org.matrix.android.sdk.internal.crypto.attachments.ElementToDecrypt
+import org.matrix.android.sdk.api.session.crypto.attachments.ElementToDecrypt
+import org.matrix.android.sdk.api.session.media.PreviewUrlData
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -61,9 +65,13 @@ interface AttachmentData : Parcelable {
     val allowNonMxcUrls: Boolean
 }
 
+private const val URL_PREVIEW_IMAGE_MIN_FULL_WIDTH_PX = 600
+private const val URL_PREVIEW_IMAGE_MIN_FULL_HEIGHT_PX = 315
+
 class ImageContentRenderer @Inject constructor(private val localFilesHelper: LocalFilesHelper,
                                                private val activeSessionHolder: ActiveSessionHolder,
-                                               private val dimensionConverter: DimensionConverter) {
+                                               private val dimensionConverter: DimensionConverter,
+                                               private val vectorPreferences: VectorPreferences) {
 
     @Parcelize
     data class Data(
@@ -90,12 +98,21 @@ class ImageContentRenderer @Inject constructor(private val localFilesHelper: Loc
     }
 
     /**
-     * For url preview
+     * For url preview.
      */
-    fun render(mxcUrl: String, imageView: ImageView, hideOnFail: Boolean = false): Boolean {
+    fun render(previewUrlData: PreviewUrlData, imageView: ImageView, hideOnFail: Boolean = false): Boolean {
         val contentUrlResolver = activeSessionHolder.getActiveSession().contentUrlResolver()
-        val imageUrl = contentUrlResolver.resolveFullSize(mxcUrl) ?: return false
-
+        val imageUrl = contentUrlResolver.resolveFullSize(previewUrlData.mxcUrl) ?: return false
+        /*
+        val maxHeight = dimensionConverter.resources.getDimensionPixelSize(R.dimen.preview_url_view_image_max_height)
+        val height = previewUrlData.imageHeight ?: URL_PREVIEW_IMAGE_MIN_FULL_HEIGHT_PX
+        val width = previewUrlData.imageWidth ?: URL_PREVIEW_IMAGE_MIN_FULL_WIDTH_PX
+        if (height < URL_PREVIEW_IMAGE_MIN_FULL_HEIGHT_PX || width < URL_PREVIEW_IMAGE_MIN_FULL_WIDTH_PX) {
+            imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
+        } else {
+            imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+        */
         GlideApp.with(imageView)
                 .load(imageUrl)
                 .listener(object: RequestListener<Drawable> {
@@ -114,12 +131,13 @@ class ImageContentRenderer @Inject constructor(private val localFilesHelper: Loc
                         return false
                     }
                 })
+                //.override(width, height.coerceAtMost(maxHeight))
                 .into(imageView)
         return true
     }
 
     /**
-     * For gallery
+     * For gallery.
      */
     fun render(data: Data, imageView: ImageView, size: Int) {
         // a11y
@@ -130,7 +148,7 @@ class ImageContentRenderer @Inject constructor(private val localFilesHelper: Loc
                 .into(imageView)
     }
 
-    fun render(data: Data, mode: Mode, imageView: ImageView, onImageSizeListener: OnImageSizeListener? = null, animate: Boolean = false) {
+    fun render(data: Data, mode: Mode, imageView: ImageView, cornerRoundnessDp: Int = 3, cornerTransformation: Transformation<Bitmap> = RoundedCorners(dimensionConverter.dpToPx(cornerRoundnessDp)), onImageSizeListener: OnImageSizeListener? = null, animate: Boolean = false) {
         val size = processSize(data, mode)
         imageView.updateLayoutParams {
             width = size.width
@@ -159,13 +177,13 @@ class ImageContentRenderer @Inject constructor(private val localFilesHelper: Loc
                         return false
                     }
                 })
-        request = if (animate) {
+        request = if (animate && vectorPreferences.autoplayAnimatedImages()) {
             // Glide seems to already do some dp to px calculation for animated gifs?
-            request.transform(RoundedCorners(3))
+            request.transform(RoundedCorners(cornerRoundnessDp))
             //request.apply(RequestOptions.bitmapTransform(RoundedCorners(3)))
         } else {
             request.dontAnimate()
-                    .transform(RoundedCorners(dimensionConverter.dpToPx(3)))
+                    .transform(cornerTransformation)
         }
         request
                 // .thumbnail(0.3f)
@@ -182,7 +200,7 @@ class ImageContentRenderer @Inject constructor(private val localFilesHelper: Loc
     }
 
     /**
-     * Used by Attachment Viewer
+     * Used by Attachment Viewer.
      */
     fun render(data: Data, contextView: View, target: CustomViewTarget<*, Drawable>) {
         val req = if (data.elementToDecrypt != null) {
@@ -199,9 +217,7 @@ class ImageContentRenderer @Inject constructor(private val localFilesHelper: Loc
                     .load(resolvedUrl)
         }
 
-        req.override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
-                .fitCenter()
-                .into(target)
+        req.fitCenter().into(target)
     }
 
     fun renderFitTarget(data: Data, mode: Mode, imageView: ImageView, callback: ((Boolean) -> Unit)? = null) {

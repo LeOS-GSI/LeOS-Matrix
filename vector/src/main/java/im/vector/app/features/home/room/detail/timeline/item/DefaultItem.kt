@@ -23,6 +23,8 @@ import com.airbnb.epoxy.EpoxyAttribute
 import com.airbnb.epoxy.EpoxyModelClass
 import im.vector.app.R
 import im.vector.app.features.home.AvatarRenderer
+import im.vector.app.features.home.room.detail.timeline.view.TimelineMessageLayoutRenderer
+import im.vector.app.features.home.room.detail.timeline.view.scOnlyRenderMessageLayout
 
 @EpoxyModelClass(layout = R.layout.item_timeline_event_base_noinfo)
 abstract class DefaultItem : BaseEventItem<DefaultItem.Holder>() {
@@ -35,6 +37,8 @@ abstract class DefaultItem : BaseEventItem<DefaultItem.Holder>() {
         holder.messageTextView.text = attributes.text
         attributes.avatarRenderer.render(attributes.informationData.matrixItem, holder.avatarImageView)
         holder.view.setOnLongClickListener(attributes.itemLongClickListener)
+
+        (holder.view as? TimelineMessageLayoutRenderer).scOnlyRenderMessageLayout(attributes.informationData.messageLayout, this, holder)
     }
 
     override fun unbind(holder: Holder) {
@@ -46,7 +50,7 @@ abstract class DefaultItem : BaseEventItem<DefaultItem.Holder>() {
         return listOf(attributes.informationData.eventId)
     }
 
-    override fun getViewType() = STUB_ID
+    override fun getViewStubId() = STUB_ID
 
     class Holder : BaseHolder(STUB_ID) {
         val avatarImageView by bind<ImageView>(R.id.itemDefaultAvatarView)

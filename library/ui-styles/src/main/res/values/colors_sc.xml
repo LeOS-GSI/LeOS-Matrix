@@ -15,6 +15,9 @@
     <color name="accent_sc_pale">@color/accent_sc_300</color>
     <color name="direct_chat_ring_color_sc">@color/accent_sc_dark</color>
 
+    <!-- Blue accent for notifications, unread marker, links -->
+    <color name="sc_blue">#2196F3</color>
+
     <!-- Username/avatar colors -->
     <color name="avatar_fill_sc_1">@color/accent_sc</color>
     <color name="username_sc_1">@color/accent_sc</color>
@@ -97,5 +100,11 @@
     <color name="user_color_element_pl_50">@color/palette_azure</color>
     <color name="user_color_element_pl_1">@color/palette_kiwi</color>
     <color name="user_color_element_pl_0">@color/palette_element_green</color>
+
+    <color name="sc_alert">#E53935</color>
+    <color name="sc_alert_light">@color/sc_alert</color>
+    <color name="sc_alert_dark">@color/sc_alert</color>
+    <color name="color_warning_sc">@color/sc_alert</color>
+    <color name="shield_color_warning_sc">@color/color_warning_sc</color>
 
 </resources>

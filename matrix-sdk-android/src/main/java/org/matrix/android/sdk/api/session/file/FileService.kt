@@ -17,11 +17,11 @@
 package org.matrix.android.sdk.api.session.file
 
 import android.net.Uri
+import org.matrix.android.sdk.api.session.crypto.attachments.ElementToDecrypt
+import org.matrix.android.sdk.api.session.crypto.attachments.toElementToDecrypt
 import org.matrix.android.sdk.api.session.room.model.message.MessageWithAttachmentContent
 import org.matrix.android.sdk.api.session.room.model.message.getFileName
 import org.matrix.android.sdk.api.session.room.model.message.getFileUrl
-import org.matrix.android.sdk.internal.crypto.attachments.ElementToDecrypt
-import org.matrix.android.sdk.internal.crypto.attachments.toElementToDecrypt
 import java.io.File
 
 /**
@@ -33,7 +33,7 @@ interface FileService {
         /**
          * The original file is in cache, but the decrypted files can be deleted for security reason.
          * To decrypt the file again, call [downloadFile], the encrypted file will not be downloaded again
-         * @param decryptedFileInCache true if the decrypted file is available. Always true for clear files.
+         * @property decryptedFileInCache true if the decrypted file is available. Always true for clear files.
          */
         data class InCache(val decryptedFileInCache: Boolean) : FileState()
         object Downloading : FileState()
@@ -45,9 +45,9 @@ interface FileService {
      * Result will be a decrypted file, stored in the cache folder. url parameter will be used to create unique filename to avoid name collision.
      */
     suspend fun downloadFile(fileName: String,
-                     mimeType: String?,
-                     url: String?,
-                     elementToDecrypt: ElementToDecrypt?): File
+                             mimeType: String?,
+                             url: String?,
+                             elementToDecrypt: ElementToDecrypt?): File
 
     suspend fun downloadFile(messageContent: MessageWithAttachmentContent): File =
             downloadFile(
@@ -68,11 +68,12 @@ interface FileService {
                     mxcUrl = messageContent.getFileUrl(),
                     fileName = messageContent.getFileName(),
                     mimeType = messageContent.mimeType,
-                    elementToDecrypt = messageContent.encryptedFileInfo?.toElementToDecrypt())
+                    elementToDecrypt = messageContent.encryptedFileInfo?.toElementToDecrypt()
+            )
 
     /**
      * Use this URI and pass it to intent using flag Intent.FLAG_GRANT_READ_URI_PERMISSION
-     * (if not other app won't be able to access it)
+     * (if not other app won't be able to access it).
      */
     fun getTemporarySharableURI(mxcUrl: String?,
                                 fileName: String,
@@ -105,17 +106,17 @@ interface FileService {
             )
 
     /**
-     * Clears all the files downloaded by the service, including decrypted files
+     * Clears all the files downloaded by the service, including decrypted files.
      */
     fun clearCache()
 
     /**
-     * Clears all the decrypted files by the service
+     * Clears all the decrypted files by the service.
      */
     fun clearDecryptedCache()
 
     /**
-     * Get size of cached files
+     * Get size of cached files.
      */
-    fun getCacheSize(): Int
+    fun getCacheSize(): Long
 }

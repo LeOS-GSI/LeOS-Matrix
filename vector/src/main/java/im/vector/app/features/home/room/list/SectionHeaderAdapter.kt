@@ -16,6 +16,7 @@
 
 package im.vector.app.features.home.room.list
 
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -24,15 +25,17 @@ import androidx.recyclerview.widget.RecyclerView
 import im.vector.app.R
 import im.vector.app.core.epoxy.ClickListener
 import im.vector.app.core.epoxy.onClick
-import im.vector.app.databinding.ItemRoomCategoryBinding
+import im.vector.app.databinding.ItemRoomCategoryScBinding
 import im.vector.app.features.themes.ThemeUtils
 
 class SectionHeaderAdapter constructor(
+        roomsSectionData: RoomsSectionData,
         private val onClickAction: ClickListener
 ) : RecyclerView.Adapter<SectionHeaderAdapter.VH>() {
 
     data class RoomsSectionData(
             val name: String,
+            val itemCount: Int = 0,
             val isExpanded: Boolean = true,
             val notificationCount: Int = 0,
             val isHighlighted: Boolean = false,
@@ -42,14 +45,16 @@ class SectionHeaderAdapter constructor(
             val markedUnread: Boolean = false,
 
             // This will be false until real data has been submitted once
-            val isLoading: Boolean = true
+            val isLoading: Boolean = true,
+            val isCollapsable: Boolean = false
     )
 
-    lateinit var roomsSectionData: RoomsSectionData
+    var roomsSectionData: RoomsSectionData = roomsSectionData
         private set
 
-    fun updateSection(newRoomsSectionData: RoomsSectionData) {
-        if (!::roomsSectionData.isInitialized || newRoomsSectionData != roomsSectionData) {
+    fun updateSection(block: (RoomsSectionData) -> RoomsSectionData) {
+        val newRoomsSectionData = block(roomsSectionData)
+        if (roomsSectionData != newRoomsSectionData) {
             roomsSectionData = newRoomsSectionData
             notifyDataSetChanged()
         }
@@ -61,7 +66,7 @@ class SectionHeaderAdapter constructor(
 
     override fun getItemId(position: Int) = roomsSectionData.hashCode().toLong()
 
-    override fun getItemViewType(position: Int) = R.layout.item_room_category
+    override fun getItemViewType(position: Int) = R.layout.item_room_category_sc
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         return VH.create(parent, onClickAction)
@@ -74,7 +79,7 @@ class SectionHeaderAdapter constructor(
     override fun getItemCount(): Int = if (roomsSectionData.isHidden) 0 else 1
 
     class VH constructor(
-            private val binding: ItemRoomCategoryBinding,
+            private val binding: ItemRoomCategoryScBinding,
             onClickAction: ClickListener
     ) : RecyclerView.ViewHolder(binding.root) {
 
@@ -85,19 +90,26 @@ class SectionHeaderAdapter constructor(
         fun bind(roomsSectionData: RoomsSectionData) {
             binding.roomCategoryTitleView.text = roomsSectionData.name
             val tintColor = ThemeUtils.getColor(binding.root.context, R.attr.vctr_content_secondary)
-            val expandedArrowDrawableRes = if (roomsSectionData.isExpanded) R.drawable.ic_expand_more else R.drawable.ic_expand_less
-            val expandedArrowDrawable = ContextCompat.getDrawable(binding.root.context, expandedArrowDrawableRes)?.also {
-                DrawableCompat.setTint(it, tintColor)
+            val collapsableArrowDrawable: Drawable? = if (roomsSectionData.isCollapsable) {
+                val expandedArrowDrawableRes = if (roomsSectionData.isExpanded) R.drawable.ic_expand_more else R.drawable.ic_expand_less
+                ContextCompat.getDrawable(binding.root.context, expandedArrowDrawableRes)?.also {
+                    DrawableCompat.setTint(it, tintColor)
+                }
+            } else {
+                null
             }
+            binding.root.isClickable = roomsSectionData.isCollapsable
+            binding.roomCategoryTitleView.setCompoundDrawablesWithIntrinsicBounds(null, null, collapsableArrowDrawable, null)
+            //binding.roomCategoryCounterView.setCompoundDrawablesWithIntrinsicBounds(null, null, collapsableArrowDrawable, null)
+            //binding.roomCategoryCounterView.text = roomsSectionData.itemCount.takeIf { it > 0 }?.toString().orEmpty()
             binding.roomCategoryUnreadCounterBadgeView.render(UnreadCounterBadgeView.State(roomsSectionData.notificationCount, roomsSectionData.isHighlighted, roomsSectionData.unread, roomsSectionData.markedUnread))
-            binding.roomCategoryTitleView.setCompoundDrawablesWithIntrinsicBounds(null, null, expandedArrowDrawable, null)
         }
 
         companion object {
             fun create(parent: ViewGroup, onClickAction: ClickListener): VH {
                 val view = LayoutInflater.from(parent.context)
-                        .inflate(R.layout.item_room_category, parent, false)
-                val binding = ItemRoomCategoryBinding.bind(view)
+                        .inflate(R.layout.item_room_category_sc, parent, false)
+                val binding = ItemRoomCategoryScBinding.bind(view)
                 return VH(binding, onClickAction)
             }
         }

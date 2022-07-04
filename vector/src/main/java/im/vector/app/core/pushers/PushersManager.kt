@@ -22,7 +22,7 @@ import im.vector.app.core.di.ActiveSessionHolder
 import im.vector.app.core.resources.AppNameProvider
 import im.vector.app.core.resources.LocaleProvider
 import im.vector.app.core.resources.StringProvider
-import org.matrix.android.sdk.api.session.pushers.PushersService
+import org.matrix.android.sdk.api.session.pushers.HttpPusher
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.math.abs
@@ -38,7 +38,7 @@ class PushersManager @Inject constructor(
     suspend fun testPush(context: Context) {
         val currentSession = activeSessionHolder.getActiveSession()
 
-        currentSession.testPush(
+        currentSession.pushersService().testPush(
                 UPHelper.getPushGateway(context)!!,
                 getPusherAppId(context),
                 UPHelper.getUpEndpoint(context)!!,
@@ -53,7 +53,7 @@ class PushersManager @Inject constructor(
     ): UUID {
         val currentSession = activeSessionHolder.getActiveSession()
 
-        return currentSession.enqueueAddHttpPusher(
+        return currentSession.pushersService().enqueueAddHttpPusher(
                 createHttpPusher(
                         pushKey,
                         gateway,
@@ -68,7 +68,7 @@ class PushersManager @Inject constructor(
             gateway: String
     ) {
         val currentSession = activeSessionHolder.getActiveSession()
-        currentSession.addHttpPusher(
+        currentSession.pushersService().addHttpPusher(
                 createHttpPusher(
                         pushKey,
                         gateway,
@@ -81,7 +81,7 @@ class PushersManager @Inject constructor(
             pushKey: String,
             gateway: String,
             deviceId: String
-    ) = PushersService.HttpPusher(
+    ) = HttpPusher(
             pushKey,
             deviceId,
             profileTag = DEFAULT_PUSHER_FILE_TAG + "_" + abs(activeSessionHolder.getActiveSession().myUserId.hashCode()),
@@ -96,7 +96,7 @@ class PushersManager @Inject constructor(
     suspend fun registerEmailForPush(email: String) {
         val currentSession = activeSessionHolder.getActiveSession()
         val appName = appNameProvider.getAppName()
-        currentSession.addEmailPusher(
+        currentSession.pushersService().addEmailPusher(
                 email = email,
                 lang = localeProvider.current().language,
                 emailBranding = appName,
@@ -107,12 +107,12 @@ class PushersManager @Inject constructor(
 
     suspend fun unregisterEmailPusher(email: String) {
         val currentSession = activeSessionHolder.getSafeActiveSession() ?: return
-        currentSession.removeEmailPusher(email)
+        currentSession.pushersService().removeEmailPusher(email)
     }
 
     suspend fun unregisterPusher(context: Context, pushKey: String) {
         val currentSession = activeSessionHolder.getSafeActiveSession() ?: return
-        currentSession.removeHttpPusher(pushKey, getPusherAppId(context))
+        currentSession.pushersService().removeHttpPusher(pushKey, getPusherAppId(context))
     }
 
     private fun getPusherAppId(context: Context) : String {

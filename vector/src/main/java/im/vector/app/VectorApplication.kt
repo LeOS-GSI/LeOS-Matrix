@@ -41,9 +41,11 @@ import com.vanniktech.emoji.EmojiManager
 import com.vanniktech.emoji.google.GoogleEmojiProvider
 import dagger.hilt.android.HiltAndroidApp
 import de.spiritcroc.matrixsdk.StaticScSdkHelper
+import de.spiritcroc.matrixsdk.util.DbgUtil
 import im.vector.app.core.di.ActiveSessionHolder
 import im.vector.app.core.extensions.configureAndStart
 import im.vector.app.core.extensions.startSyncing
+import im.vector.app.core.time.Clock
 import im.vector.app.features.analytics.VectorAnalytics
 import im.vector.app.features.call.webrtc.WebRtcCallManager
 import im.vector.app.features.configuration.VectorConfiguration
@@ -56,7 +58,6 @@ import im.vector.app.features.pin.PinLocker
 import im.vector.app.features.popup.PopupAlertManager
 import im.vector.app.features.rageshake.VectorFileLogger
 import im.vector.app.features.rageshake.VectorUncaughtExceptionHandler
-import im.vector.app.features.room.VectorRoomDisplayNameFallbackProvider
 import im.vector.app.features.settings.VectorLocale
 import im.vector.app.features.settings.VectorPreferences
 import im.vector.app.features.themes.ThemeUtils
@@ -64,7 +65,6 @@ import im.vector.app.features.version.VersionProvider
 import im.vector.app.core.pushers.StateHelper
 import org.jitsi.meet.sdk.log.JitsiMeetDefaultLogHandler
 import org.matrix.android.sdk.api.Matrix
-import org.matrix.android.sdk.api.MatrixConfiguration
 import org.matrix.android.sdk.api.auth.AuthenticationService
 import org.matrix.android.sdk.api.legacy.LegacySessionImporter
 import timber.log.Timber
@@ -78,7 +78,6 @@ import androidx.work.Configuration as WorkConfiguration
 @HiltAndroidApp
 class VectorApplication :
         Application(),
-        MatrixConfiguration.Provider,
         WorkConfiguration.Provider {
 
     lateinit var appContext: Context
@@ -89,6 +88,7 @@ class VectorApplication :
     @Inject lateinit var emojiCompatWrapper: EmojiCompatWrapper
     @Inject lateinit var vectorUncaughtExceptionHandler: VectorUncaughtExceptionHandler
     @Inject lateinit var activeSessionHolder: ActiveSessionHolder
+    @Inject lateinit var clock: Clock
     @Inject lateinit var notificationDrawerManager: NotificationDrawerManager
     @Inject lateinit var vectorPreferences: VectorPreferences
     @Inject lateinit var versionProvider: VersionProvider
@@ -101,6 +101,7 @@ class VectorApplication :
     @Inject lateinit var autoRageShaker: AutoRageShaker
     @Inject lateinit var vectorFileLogger: VectorFileLogger
     @Inject lateinit var vectorAnalytics: VectorAnalytics
+    @Inject lateinit var matrix: Matrix
 
     // font thread handler
     private var fontThreadHandler: Handler? = null
@@ -121,10 +122,11 @@ class VectorApplication :
         vectorAnalytics.init()
         invitesAcceptor.initialize()
         autoRageShaker.initialize()
-        vectorUncaughtExceptionHandler.activate(this)
+        vectorUncaughtExceptionHandler.activate()
 
         // SC SDK helper initialization
         StaticScSdkHelper.scSdkPreferenceProvider = vectorPreferences
+        DbgUtil.load(appContext)
 
         // Remove Log handler statically added by Jitsi
         Timber.forest()
@@ -186,7 +188,7 @@ class VectorApplication :
 
             override fun onPause(owner: LifecycleOwner) {
                 Timber.i("App entered background")
-                StateHelper.onEnterBackground(appContext, vectorPreferences, activeSessionHolder)
+                StateHelper.onEnterBackground(appContext, vectorPreferences, activeSessionHolder, clock)
             }
         })
         ProcessLifecycleOwner.get().lifecycle.addObserver(appStateHandler)
@@ -217,23 +219,18 @@ class VectorApplication :
 
     private fun enableStrictModeIfNeeded() {
         if (BuildConfig.ENABLE_STRICT_MODE_LOGS) {
-            StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
-                    .detectAll()
-                    .penaltyLog()
-                    .build())
+            StrictMode.setThreadPolicy(
+                    StrictMode.ThreadPolicy.Builder()
+                            .detectAll()
+                            .penaltyLog()
+                            .build()
+            )
         }
-    }
-
-    override fun providesMatrixConfiguration(): MatrixConfiguration {
-        return MatrixConfiguration(
-                applicationFlavor = BuildConfig.FLAVOR_DESCRIPTION,
-                roomDisplayNameFallbackProvider = VectorRoomDisplayNameFallbackProvider(this)
-        )
     }
 
     override fun getWorkManagerConfiguration(): WorkConfiguration {
         return WorkConfiguration.Builder()
-                .setWorkerFactory(Matrix.getInstance(this.appContext).workerFactory())
+                .setWorkerFactory(matrix.getWorkerFactory())
                 .setExecutor(Executors.newCachedThreadPool())
                 .build()
     }
@@ -243,13 +240,13 @@ class VectorApplication :
         val sdkVersion = Matrix.getSdkVersion()
         val date = SimpleDateFormat("MM-dd HH:mm:ss.SSSZ", Locale.US).format(Date())
 
-        Timber.v("----------------------------------------------------------------")
-        Timber.v("----------------------------------------------------------------")
-        Timber.v(" Application version: $appVersion")
-        Timber.v(" SDK version: $sdkVersion")
-        Timber.v(" Local time: $date")
-        Timber.v("----------------------------------------------------------------")
-        Timber.v("----------------------------------------------------------------\n\n\n\n")
+        Timber.d("----------------------------------------------------------------")
+        Timber.d("----------------------------------------------------------------")
+        Timber.d(" Application version: $appVersion")
+        Timber.d(" SDK version: $sdkVersion")
+        Timber.d(" Local time: $date")
+        Timber.d("----------------------------------------------------------------")
+        Timber.d("----------------------------------------------------------------\n\n\n\n")
     }
 
     override fun attachBaseContext(base: Context) {

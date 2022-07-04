@@ -19,6 +19,7 @@ package im.vector.app.features.home.room.detail
 import com.airbnb.mvrx.Async
 import com.airbnb.mvrx.MavericksState
 import com.airbnb.mvrx.Uninitialized
+import im.vector.app.features.home.room.detail.arguments.TimelineArgs
 import org.matrix.android.sdk.api.extensions.orFalse
 import org.matrix.android.sdk.api.session.events.model.Event
 import org.matrix.android.sdk.api.session.initsync.SyncStatusService
@@ -26,7 +27,9 @@ import org.matrix.android.sdk.api.session.room.members.ChangeMembershipState
 import org.matrix.android.sdk.api.session.room.model.RoomMemberSummary
 import org.matrix.android.sdk.api.session.room.model.RoomSummary
 import org.matrix.android.sdk.api.session.room.powerlevels.PowerLevelsHelper
+import org.matrix.android.sdk.api.session.room.sender.SenderInfo
 import org.matrix.android.sdk.api.session.sync.SyncState
+import org.matrix.android.sdk.api.session.threads.ThreadNotificationBadgeState
 import org.matrix.android.sdk.api.session.widgets.model.Widget
 import org.matrix.android.sdk.api.session.widgets.model.WidgetType
 
@@ -34,7 +37,7 @@ sealed class UnreadState {
     object Unknown : UnreadState()
     object HasNoUnread : UnreadState()
     data class ReadMarkerNotLoaded(val readMarkerId: String) : UnreadState()
-    data class HasUnread(val firstUnreadEventId: String) : UnreadState()
+    data class HasUnread(val firstUnreadEventId: String, val readMarkerId: String) : UnreadState()
 }
 
 data class JitsiState(
@@ -48,11 +51,13 @@ data class JitsiState(
 data class RoomDetailViewState(
         val roomId: String,
         val eventId: String?,
-        val openAtFirstUnread: Boolean? = null,
+        val isInviteAlreadyAccepted: Boolean,
         val myRoomMember: Async<RoomMemberSummary> = Uninitialized,
         val asyncInviter: Async<RoomMemberSummary> = Uninitialized,
         val asyncRoomSummary: Async<RoomSummary> = Uninitialized,
         val powerLevelsHelper: PowerLevelsHelper? = null,
+        val openAtFirstUnread: Boolean? = null,
+        val openAnonymously: Boolean = false,
         val activeRoomWidgets: Async<List<Widget>> = Uninitialized,
         val formattedTypingUsers: String? = null,
         val tombstoneEvent: Event? = null,
@@ -70,19 +75,32 @@ data class RoomDetailViewState(
         val isAllowedToSetupEncryption: Boolean = true,
         val hasFailedSending: Boolean = false,
         val jitsiState: JitsiState = JitsiState(),
-        val switchToParentSpace: Boolean = false
+        val switchToParentSpace: Boolean = false,
+        val rootThreadEventId: String? = null,
+        val threadNotificationBadgeState: ThreadNotificationBadgeState = ThreadNotificationBadgeState(),
+        val typingUsers: List<SenderInfo>? = null
 ) : MavericksState {
 
-    constructor(args: RoomDetailArgs) : this(
+    constructor(args: TimelineArgs) : this(
             roomId = args.roomId,
             eventId = args.eventId,
+            isInviteAlreadyAccepted = args.isInviteAlreadyAccepted,
             // Also highlight the target event, if any
             highlightedEventId = args.eventId,
             openAtFirstUnread = args.openAtFirstUnread,
-            switchToParentSpace = args.switchToParentSpace
+            openAnonymously = args.openAnonymously,
+            switchToParentSpace = args.switchToParentSpace,
+            rootThreadEventId = args.threadTimelineArgs?.rootThreadEventId
     )
 
-    fun isWebRTCCallOptionAvailable() = (asyncRoomSummary.invoke()?.joinedMembersCount ?: 0) <= 2
+    fun isCallOptionAvailable(): Boolean {
+        return asyncRoomSummary.invoke()?.isDirect ?: true ||
+                // When there is only one member, a warning will be displayed when the user
+                // clicks on the menu item to start a call
+                asyncRoomSummary.invoke()?.joinedMembersCount == 1
+    }
+
+    fun isSearchAvailable() = asyncRoomSummary()?.isEncrypted == false
 
     // This checks directly on the active room widgets.
     // It can differs for a short period of time on the JitsiState as its computed async.
@@ -90,5 +108,8 @@ data class RoomDetailViewState(
 
     fun isDm() = asyncRoomSummary()?.isDirect == true
 
+
     fun isPublic() = asyncRoomSummary()?.isPublic == true
+
+    fun isThreadTimeline() = rootThreadEventId != null
 }

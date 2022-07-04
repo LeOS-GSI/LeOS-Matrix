@@ -16,7 +16,8 @@
 
 package im.vector.app.features.home.room.detail.timeline.item
 
-import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.Paint
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -26,13 +27,15 @@ import androidx.annotation.DrawableRes
 import androidx.core.view.isVisible
 import com.airbnb.epoxy.EpoxyAttribute
 import com.airbnb.epoxy.EpoxyModelClass
-import kotlin.math.max
 import im.vector.app.R
 import im.vector.app.core.epoxy.onClick
 import im.vector.app.features.home.room.detail.timeline.helper.ContentDownloadStateTrackerBinder
 import im.vector.app.features.home.room.detail.timeline.helper.ContentUploadStateTrackerBinder
-import im.vector.app.features.themes.BubbleThemeUtils
+import im.vector.app.features.home.room.detail.timeline.style.TimelineMessageLayout
+import im.vector.app.features.themes.ThemeUtils
+import im.vector.app.features.themes.guessTextWidth
 import kotlin.math.ceil
+import kotlin.math.max
 
 @EpoxyModelClass(layout = R.layout.item_timeline_event_base)
 abstract class MessageFileItem : AbsMessageItem<MessageFileItem.Holder>() {
@@ -47,14 +50,13 @@ abstract class MessageFileItem : AbsMessageItem<MessageFileItem.Holder>() {
     @DrawableRes
     var iconRes: Int = 0
 
-//    @EpoxyAttribute(EpoxyAttribute.Option.DoNotHash)
-//    var clickListener: ClickListener? = null
+    @EpoxyAttribute
+    @JvmField
+    var isLocalFile = false
 
     @EpoxyAttribute
-    var izLocalFile = false
-
-    @EpoxyAttribute
-    var izDownloaded = false
+    @JvmField
+    var isDownloaded = false
 
     @EpoxyAttribute
     lateinit var contentUploadStateTrackerBinder: ContentUploadStateTrackerBinder
@@ -65,27 +67,35 @@ abstract class MessageFileItem : AbsMessageItem<MessageFileItem.Holder>() {
     override fun bind(holder: Holder) {
         super.bind(holder)
         renderSendState(holder.fileLayout, holder.filenameView)
+
         if (!attributes.informationData.sendState.hasFailed()) {
-            contentUploadStateTrackerBinder.bind(attributes.informationData.eventId, izLocalFile, holder.progressLayout)
+            contentUploadStateTrackerBinder.bind(attributes.informationData.eventId, isLocalFile, holder.progressLayout)
         } else {
             holder.fileImageView.setImageResource(R.drawable.ic_cross)
             holder.progressLayout.isVisible = false
         }
+
         holder.filenameView.text = filename
+
         if (attributes.informationData.sendState.isSending()) {
             holder.fileImageView.setImageResource(iconRes)
         } else {
-            if (izDownloaded) {
+            if (isDownloaded) {
                 holder.fileImageView.setImageResource(iconRes)
-                holder.fileDownloadProgress.progress = 100
+                holder.fileDownloadProgress.progress = 0
             } else {
                 contentDownloadStateTrackerBinder.bind(mxcUrl, holder)
                 holder.fileImageView.setImageResource(R.drawable.ic_download)
-                holder.fileDownloadProgress.progress = 0
             }
         }
-//        holder.view.setOnClickListener(clickListener)
 
+        val backgroundTint = if (attributes.informationData.messageLayout is TimelineMessageLayout.Bubble
+                || attributes.informationData.messageLayout is TimelineMessageLayout.ScBubble) {
+            Color.TRANSPARENT
+        } else {
+            ThemeUtils.getColor(holder.view.context, R.attr.sc_message_bg_incoming)
+        }
+        holder.mainLayout.backgroundTintList = ColorStateList.valueOf(backgroundTint)
         holder.filenameView.onClick(attributes.itemClickListener)
         holder.filenameView.setOnLongClickListener(attributes.itemLongClickListener)
         holder.fileImageWrapper.onClick(attributes.itemClickListener)
@@ -99,27 +109,27 @@ abstract class MessageFileItem : AbsMessageItem<MessageFileItem.Holder>() {
         contentDownloadStateTrackerBinder.unbind(mxcUrl)
     }
 
-    override fun getViewType() = STUB_ID
-
-    override fun messageBubbleAllowed(context: Context): Boolean {
-        return true
-    }
-
-    override fun getViewStubMinimumWidth(holder: Holder, contentInBubble: Boolean, showInformation: Boolean): Int {
-        val superVal = super.getViewStubMinimumWidth(holder, contentInBubble, showInformation)
-
+    override fun getViewStubMinimumWidth(holder: Holder): Int {
         // Guess text width for name and time
         // On first call, holder.fileImageView.width is not initialized yet
-        val imageWidth = holder.fileImageView.resources.getDimensionPixelSize(R.dimen.chat_avatar_size)
+        val imageWidth = holder.fileImageView.resources.getDimensionPixelSize(R.dimen.file_icon_size)
         val minimumWidthWithText =
-                ceil(BubbleThemeUtils.guessTextWidth(holder.filenameView, filename)).toInt() +
-                imageWidth +
-                holder.filenameView.resources.getDimensionPixelSize(R.dimen.sc_bubble_guess_minimum_width_padding)
+                ceil(guessTextWidth(holder.filenameView, filename)).toInt() +
+                        imageWidth +
+                        holder.filenameView.resources.getDimensionPixelSize(R.dimen.sc_bubble_guess_minimum_width_padding)
         val absoluteMinimumWidth = imageWidth*3
-        return max(max(absoluteMinimumWidth, minimumWidthWithText), superVal)
+        return max(absoluteMinimumWidth, minimumWidthWithText)
     }
 
+    override fun applyScBubbleStyle(messageLayout: TimelineMessageLayout.ScBubble, holder: Holder) {
+        // Undo padding from TimelineContentMediaPillStyle
+        holder.mainLayout.setPadding(0, 0, 0, 0)
+    }
+
+    override fun getViewStubId() = STUB_ID
+
     class Holder : AbsMessageItem.Holder(STUB_ID) {
+        val mainLayout by bind<ViewGroup>(R.id.messageFileMainLayout)
         val progressLayout by bind<ViewGroup>(R.id.messageFileUploadProgressLayout)
         val fileLayout by bind<ViewGroup>(R.id.messageFileLayout)
         val fileImageView by bind<ImageView>(R.id.messageFileIconView)

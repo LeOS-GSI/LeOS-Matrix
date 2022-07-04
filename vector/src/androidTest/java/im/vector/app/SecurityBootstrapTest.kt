@@ -38,7 +38,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.platform.app.InstrumentationRegistry
+import im.vector.app.core.utils.getMatrixInstance
 import im.vector.app.features.MainActivity
 import im.vector.app.features.crypto.recover.SetupMode
 import im.vector.app.features.home.HomeActivity
@@ -47,8 +47,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.matrix.android.sdk.api.Matrix
 import org.matrix.android.sdk.api.session.Session
+import kotlin.random.Random
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
@@ -61,9 +61,8 @@ class SecurityBootstrapTest : VerificationTestBase() {
 
     @Before
     fun createSessionWithCrossSigning() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val matrix = Matrix.getInstance(context)
-        val userName = "foobar_${System.currentTimeMillis()}"
+        val matrix = getMatrixInstance()
+        val userName = "foobar_${Random.nextLong()}"
         existingSession = createAccountAndSync(matrix, userName, password, true)
         stubAllExternalIntents()
     }
@@ -166,9 +165,9 @@ class SecurityBootstrapTest : VerificationTestBase() {
         assert(uiSession.cryptoService().crossSigningService().isCrossSigningInitialized())
         assert(uiSession.cryptoService().crossSigningService().canCrossSign())
         assert(uiSession.cryptoService().crossSigningService().allPrivateKeysKnown())
-        assert(uiSession.cryptoService().keysBackupService().isEnabled)
+        assert(uiSession.cryptoService().keysBackupService().isEnabled())
         assert(uiSession.cryptoService().keysBackupService().currentBackupVersion != null)
-        assert(uiSession.sharedSecretStorageService.isRecoverySetup())
-        assert(uiSession.sharedSecretStorageService.isMegolmKeyInBackup())
+        assert(uiSession.sharedSecretStorageService().isRecoverySetup())
+        assert(uiSession.sharedSecretStorageService().isMegolmKeyInBackup())
     }
 }

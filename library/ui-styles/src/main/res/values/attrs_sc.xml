@@ -46,7 +46,10 @@
         <attr name="conference_animation_from" format="color" />
         <attr name="conference_animation_to" format="color" />
 
-        <attr name="vctr_presence_indicator_online" format="color" />
+        <attr name="unread_line_unimportant" format="color" />
+
+        <attr name="color_warning" format="color" />
+        <attr name="shield_color_warning" format="color" />
 
     </declare-styleable>
 

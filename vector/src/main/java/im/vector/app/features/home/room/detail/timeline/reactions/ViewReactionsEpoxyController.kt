@@ -18,21 +18,26 @@ package im.vector.app.features.home.room.detail.timeline.reactions
 
 import com.airbnb.epoxy.TypedEpoxyController
 import com.airbnb.mvrx.Fail
-import com.airbnb.mvrx.Incomplete
+import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.Success
+import com.airbnb.mvrx.Uninitialized
 import im.vector.app.EmojiSpanify
 import im.vector.app.R
+import im.vector.app.core.di.ActiveSessionHolder
 import im.vector.app.core.resources.StringProvider
 import im.vector.app.core.ui.list.genericFooterItem
 import im.vector.app.core.ui.list.genericLoaderItem
+import im.vector.app.core.utils.DimensionConverter
 import im.vector.lib.core.utils.epoxy.charsequence.toEpoxyCharSequence
 import javax.inject.Inject
 
 /**
- * Epoxy controller for reaction event list
+ * Epoxy controller for reaction event list.
  */
 class ViewReactionsEpoxyController @Inject constructor(
         private val stringProvider: StringProvider,
+        private val dimensionConverter: DimensionConverter,
+        private val activeSessionHolder: ActiveSessionHolder,
         private val emojiSpanify: EmojiSpanify) :
         TypedEpoxyController<DisplayReactionsViewState>() {
 
@@ -41,23 +46,27 @@ class ViewReactionsEpoxyController @Inject constructor(
     override fun buildModels(state: DisplayReactionsViewState) {
         val host = this
         when (state.mapReactionKeyToMemberList) {
-            is Incomplete -> {
+            Uninitialized,
+            is Loading -> {
                 genericLoaderItem {
                     id("Spinner")
                 }
             }
-            is Fail       -> {
+            is Fail    -> {
                 genericFooterItem {
                     id("failure")
                     text(host.stringProvider.getString(R.string.unknown_error).toEpoxyCharSequence())
                 }
             }
-            is Success    -> {
+            is Success -> {
                 state.mapReactionKeyToMemberList()?.forEach { reactionInfo ->
                     reactionInfoSimpleItem {
                         id(reactionInfo.eventId)
                         timeStamp(reactionInfo.timestamp)
                         reactionKey(host.emojiSpanify.spanify(reactionInfo.reactionKey).toEpoxyCharSequence())
+                        reactionUrl(reactionInfo.reactionUrl)
+                        dimensionConverter(host.dimensionConverter)
+                        activeSessionHolder(host.activeSessionHolder)
                         authorDisplayName(reactionInfo.authorName ?: reactionInfo.authorId)
                         userClicked { host.listener?.didSelectUser(reactionInfo.authorId) }
                     }

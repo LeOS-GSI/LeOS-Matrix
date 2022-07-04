@@ -52,7 +52,7 @@ class KeysBackupRestoreActivity : SimpleFragmentActivity() {
         super.onBackPressed()
     }
 
-    @Inject  lateinit var activeSessionHolder: ActiveSessionHolder
+    @Inject lateinit var activeSessionHolder: ActiveSessionHolder
 
     override fun initUiAndData() {
         super.initUiAndData()
@@ -128,7 +128,7 @@ class KeysBackupRestoreActivity : SimpleFragmentActivity() {
     }
 
     private fun launch4SActivity() {
-        SharedSecureStorageActivity.newIntent(
+        SharedSecureStorageActivity.newReadIntent(
                 context = this,
                 keyId = null, // default key
                 requestedSecrets = listOf(KEYBACKUP_SECRET_SSSS_NAME),

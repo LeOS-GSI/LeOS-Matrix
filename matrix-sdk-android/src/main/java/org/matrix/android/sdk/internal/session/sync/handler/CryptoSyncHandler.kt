@@ -18,16 +18,16 @@ package org.matrix.android.sdk.internal.session.sync.handler
 
 import org.matrix.android.sdk.api.logger.LoggerTag
 import org.matrix.android.sdk.api.session.crypto.MXCryptoError
+import org.matrix.android.sdk.api.session.crypto.model.MXEventDecryptionResult
+import org.matrix.android.sdk.api.session.crypto.model.OlmDecryptionResult
 import org.matrix.android.sdk.api.session.events.model.Event
 import org.matrix.android.sdk.api.session.events.model.EventType
+import org.matrix.android.sdk.api.session.events.model.content.OlmEventContent
 import org.matrix.android.sdk.api.session.events.model.toModel
 import org.matrix.android.sdk.api.session.room.model.message.MessageContent
 import org.matrix.android.sdk.api.session.sync.model.SyncResponse
 import org.matrix.android.sdk.api.session.sync.model.ToDeviceSyncResponse
 import org.matrix.android.sdk.internal.crypto.DefaultCryptoService
-import org.matrix.android.sdk.internal.crypto.MXEventDecryptionResult
-import org.matrix.android.sdk.internal.crypto.algorithms.olm.OlmDecryptionResult
-import org.matrix.android.sdk.internal.crypto.model.event.OlmEventContent
 import org.matrix.android.sdk.internal.crypto.verification.DefaultVerificationService
 import org.matrix.android.sdk.internal.session.initsync.ProgressReporter
 import timber.log.Timber
@@ -38,7 +38,7 @@ private val loggerTag = LoggerTag("CryptoSyncHandler", LoggerTag.CRYPTO)
 internal class CryptoSyncHandler @Inject constructor(private val cryptoService: DefaultCryptoService,
                                                      private val verificationService: DefaultVerificationService) {
 
-    fun handleToDevice(toDevice: ToDeviceSyncResponse, progressReporter: ProgressReporter? = null) {
+    suspend fun handleToDevice(toDevice: ToDeviceSyncResponse, progressReporter: ProgressReporter? = null) {
         val total = toDevice.events?.size ?: 0
         toDevice.events?.forEachIndexed { index, event ->
             progressReporter?.reportProgress(index * 100F / total)
@@ -60,13 +60,13 @@ internal class CryptoSyncHandler @Inject constructor(private val cryptoService: 
     }
 
     /**
-     * Decrypt an encrypted event
+     * Decrypt an encrypted event.
      *
-     * @param event      the event to decrypt
+     * @param event the event to decrypt
      * @param timelineId the timeline identifier
      * @return true if the event has been decrypted
      */
-    private fun decryptToDeviceEvent(event: Event, timelineId: String?): Boolean {
+    private suspend fun decryptToDeviceEvent(event: Event, timelineId: String?): Boolean {
         Timber.v("## CRYPTO | decryptToDeviceEvent")
         if (event.getClearType() == EventType.ENCRYPTED) {
             var result: MXEventDecryptionResult? = null
@@ -80,6 +80,8 @@ internal class CryptoSyncHandler @Inject constructor(private val cryptoService: 
                     it.identityKey() == senderKey
                 }?.deviceId ?: senderKey
                 Timber.e("## CRYPTO | Failed to decrypt to device event from ${event.senderId}|$deviceId reason:<${event.mCryptoError ?: exception}>")
+            } catch (failure: Throwable) {
+                Timber.e(failure, "## CRYPTO | Failed to decrypt to device event from ${event.senderId}")
             }
 
             if (null != result) {
@@ -91,7 +93,9 @@ internal class CryptoSyncHandler @Inject constructor(private val cryptoService: 
                 )
                 return true
             } else {
-                // should not happen
+                // Could happen for to device events
+                // None of the known session could decrypt the message
+                // In this case unwedging process might have been started (rate limited)
                 Timber.e("## CRYPTO | ERROR NULL DECRYPTION RESULT from ${event.senderId}")
             }
         }

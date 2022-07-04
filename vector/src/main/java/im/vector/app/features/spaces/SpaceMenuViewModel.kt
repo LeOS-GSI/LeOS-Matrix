@@ -34,9 +34,12 @@ import im.vector.app.features.session.coroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import org.matrix.android.sdk.api.query.ActiveSpaceFilter
+import org.matrix.android.sdk.api.query.RoomCategoryFilter
+import org.matrix.android.sdk.api.query.SpaceFilter
 import org.matrix.android.sdk.api.session.Session
 import org.matrix.android.sdk.api.session.events.model.EventType
+import org.matrix.android.sdk.api.session.getRoom
+import org.matrix.android.sdk.api.session.getRoomSummary
 import org.matrix.android.sdk.api.session.room.model.Membership
 import org.matrix.android.sdk.api.session.room.powerlevels.PowerLevelsHelper
 import org.matrix.android.sdk.api.session.room.powerlevels.Role
@@ -131,25 +134,26 @@ class SpaceMenuViewModel @AssistedInject constructor(
         session.coroutineScope.launch {
             try {
                 if (state.leaveMode == SpaceMenuState.LeaveMode.LEAVE_NONE) {
-                    session.getRoom(initialState.spaceId)?.leave(null)
+                    session.spaceService().leaveSpace(initialState.spaceId)
                 } else if (state.leaveMode == SpaceMenuState.LeaveMode.LEAVE_ALL) {
                     // need to find all child rooms that i have joined
 
-                    session.getRoomSummaries(
+                    session.roomService().getRoomSummaries(
                             roomSummaryQueryParams {
                                 excludeType = null
-                                activeSpaceFilter = ActiveSpaceFilter.ActiveSpace(initialState.spaceId)
+                                spaceFilter = SpaceFilter.ActiveSpace(initialState.spaceId)
                                 memberships = listOf(Membership.JOIN)
+                                roomCategoryFilter = RoomCategoryFilter.ONLY_ROOMS
                             }
                     ).forEach {
                         try {
-                            session.getRoom(it.roomId)?.leave(null)
+                            session.spaceService().leaveSpace(it.roomId)
                         } catch (failure: Throwable) {
                             // silently ignore?
                             Timber.e(failure, "Fail to leave sub rooms/spaces")
                         }
                     }
-                    session.getRoom(initialState.spaceId)?.leave(null)
+                    session.spaceService().leaveSpace(initialState.spaceId)
                 }
 
                 // We observe the membership and to dismiss when we have remote echo of leaving

@@ -18,8 +18,10 @@ package im.vector.app.features.settings
 
 import android.app.Activity
 import android.content.Context
+import android.os.Bundle
 import android.widget.CheckedTextView
 import androidx.core.view.children
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import im.vector.app.BuildConfig
@@ -32,22 +34,30 @@ import im.vector.app.core.preference.VectorSwitchPreference
 import im.vector.app.databinding.DialogSelectTextSizeBinding
 import im.vector.app.features.MainActivity
 import im.vector.app.features.MainActivityArgs
+import im.vector.app.features.analytics.plan.MobileScreen
 import im.vector.app.features.configuration.VectorConfiguration
 import im.vector.app.features.themes.BubbleThemeUtils
-import im.vector.app.features.themes.BubbleThemeUtils.BUBBLE_TIME_BOTTOM
 import im.vector.app.features.themes.ThemeUtils
+import kotlinx.coroutines.launch
+import org.matrix.android.sdk.api.session.presence.model.PresenceEnum
 import javax.inject.Inject
 
 class VectorSettingsPreferencesFragment @Inject constructor(
         private val vectorConfiguration: VectorConfiguration,
+        private val bubbleThemeUtils: BubbleThemeUtils,
         private val vectorPreferences: VectorPreferences
 ) : VectorSettingsBaseFragment() {
+
+    companion object {
+        const val BUBBLE_APPEARANCE_KEY = "BUBBLE_APPEARANCE_KEY"
+    }
 
     override var titleRes = R.string.settings_preferences
     override val preferenceXmlRes = R.xml.vector_settings_preferences
 
     //private var bubbleTimeLocationPref: VectorListPreference? = null
     private var alwaysShowTimestampsPref: VectorSwitchPreference? = null
+    private var bubbleAppearancePref: VectorPreference? = null
 
     private val selectedLanguagePreference by lazy {
         findPreference<VectorPreference>(VectorPreferences.SETTINGS_INTERFACE_LANGUAGE_PREFERENCE_KEY)!!
@@ -57,6 +67,11 @@ class VectorSettingsPreferencesFragment @Inject constructor(
     }
     private val takePhotoOrVideoPreference by lazy {
         findPreference<VectorPreference>("SETTINGS_INTERFACE_TAKE_PHOTO_VIDEO")!!
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        analyticsScreenName = MobileScreen.ScreenName.SettingsPreferences
     }
 
     override fun bindPref() {
@@ -99,30 +114,24 @@ class VectorSettingsPreferencesFragment @Inject constructor(
 
         val bubbleStylePreference = findPreference<VectorListPreference>(BubbleThemeUtils.BUBBLE_STYLE_KEY)
         bubbleStylePreference!!.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-            BubbleThemeUtils.invalidateBubbleStyle()
-            updateBubbleDependencies(
-                    bubbleStyle = newValue as String,
-                    BUBBLE_TIME_BOTTOM //bubbleTimeLocation = bubbleTimeLocationPref!!.value
-            )
+            updateBubbleDependencies(bubbleStyle = newValue as String)
             true
         }
 
-        //bubbleTimeLocationPref = findPreference<VectorListPreference>(BubbleThemeUtils.BUBBLE_TIME_LOCATION_KEY)
         alwaysShowTimestampsPref = findPreference<VectorSwitchPreference>(VectorPreferences.SETTINGS_ALWAYS_SHOW_TIMESTAMPS_KEY)
-        /*
-        bubbleTimeLocationPref!!.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-            BubbleThemeUtils.invalidateBubbleStyle()
-            updateBubbleDependencies(
-                    bubbleStyle = bubbleStylePreference.value,
-                    bubbleTimeLocation = newValue as String
-            )
-            true
+        bubbleAppearancePref = findPreference(BUBBLE_APPEARANCE_KEY)
+        updateBubbleDependencies(bubbleStyle = bubbleStylePreference.value)
+
+        findPreference<VectorSwitchPreference>(VectorPreferences.SETTINGS_PRESENCE_USER_ALWAYS_APPEARS_OFFLINE)!!.let { pref ->
+            pref.isChecked = vectorPreferences.userAlwaysAppearsOffline()
+            pref.setOnPreferenceChangeListener { _, newValue ->
+                val presenceOfflineModeEnabled = newValue as? Boolean ?: false
+                lifecycleScope.launch {
+                    session.presenceService().setMyPresence(if (presenceOfflineModeEnabled) PresenceEnum.OFFLINE else PresenceEnum.ONLINE)
+                }
+                true
+            }
         }
-        */
-        updateBubbleDependencies(
-                bubbleStyle = bubbleStylePreference.value,
-                bubbleTimeLocation = BUBBLE_TIME_BOTTOM //bubbleTimeLocationPref!!.value
-        )
 
         findPreference<VectorSwitchPreference>(VectorPreferences.SETTINGS_PREF_SPACE_SHOW_ALL_ROOM_IN_HOME)!!.let { pref ->
             pref.isChecked = vectorPreferences.prefSpacesShowAllRoomInHome()
@@ -170,7 +179,7 @@ class VectorSettingsPreferencesFragment @Inject constructor(
                 false
             }
         }
-        */
+         */
 
         // update keep medias period
         findPreference<VectorPreference>(VectorPreferences.SETTINGS_MEDIA_SAVING_PERIOD_KEY)!!.let {
@@ -179,8 +188,10 @@ class VectorSettingsPreferencesFragment @Inject constructor(
             it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
                 context?.let { context: Context ->
                     MaterialAlertDialogBuilder(context)
-                            .setSingleChoiceItems(R.array.media_saving_choice,
-                                    vectorPreferences.getSelectedMediasSavingPeriod()) { d, n ->
+                            .setSingleChoiceItems(
+                                    R.array.media_saving_choice,
+                                    vectorPreferences.getSelectedMediasSavingPeriod()
+                            ) { d, n ->
                                 vectorPreferences.setSelectedMediasSavingPeriod(n)
                                 d.cancel()
 
@@ -262,8 +273,9 @@ class VectorSettingsPreferencesFragment @Inject constructor(
                 }
     }
 
-    private fun updateBubbleDependencies(bubbleStyle: String, bubbleTimeLocation: String) {
+    private fun updateBubbleDependencies(bubbleStyle: String) {
         //bubbleTimeLocationPref?.setEnabled(BubbleThemeUtils.isBubbleTimeLocationSettingAllowed(bubbleStyle))
-        alwaysShowTimestampsPref?.setEnabled(!BubbleThemeUtils.forceAlwaysShowTimestamps(bubbleStyle, bubbleTimeLocation))
+        alwaysShowTimestampsPref?.isEnabled = bubbleStyle in listOf(BubbleThemeUtils.BUBBLE_STYLE_NONE, BubbleThemeUtils.BUBBLE_STYLE_START)
+        bubbleAppearancePref?.isEnabled = bubbleStyle in listOf(BubbleThemeUtils.BUBBLE_STYLE_START, BubbleThemeUtils.BUBBLE_STYLE_BOTH)
     }
 }

@@ -31,6 +31,7 @@ import im.vector.app.core.epoxy.LoadingItem_
 import im.vector.app.core.extensions.localDateTime
 import im.vector.app.core.extensions.nextOrNull
 import im.vector.app.core.extensions.prevOrNull
+import im.vector.app.core.time.Clock
 import im.vector.app.features.home.room.detail.JitsiState
 import im.vector.app.features.home.room.detail.RoomDetailAction
 import im.vector.app.features.home.room.detail.RoomDetailViewState
@@ -43,6 +44,7 @@ import im.vector.app.features.home.room.detail.timeline.helper.ContentDownloadSt
 import im.vector.app.features.home.room.detail.timeline.helper.ContentUploadStateTrackerBinder
 import im.vector.app.features.home.room.detail.timeline.helper.InvalidateTimelineEventDiffUtilCallback
 import im.vector.app.features.home.room.detail.timeline.helper.MatrixItemColorProvider
+import im.vector.app.features.home.room.detail.timeline.helper.ReactionsSummaryFactory
 import im.vector.app.features.home.room.detail.timeline.helper.TimelineControllerInterceptorHelper
 import im.vector.app.features.home.room.detail.timeline.helper.TimelineEventDiffUtilCallback
 import im.vector.app.features.home.room.detail.timeline.helper.TimelineEventVisibilityHelper
@@ -54,9 +56,11 @@ import im.vector.app.features.home.room.detail.timeline.item.DaySeparatorItem
 import im.vector.app.features.home.room.detail.timeline.item.DaySeparatorItem_
 import im.vector.app.features.home.room.detail.timeline.item.ItemWithEvents
 import im.vector.app.features.home.room.detail.timeline.item.MessageInformationData
+import im.vector.app.features.home.room.detail.timeline.item.ReactionsSummaryEvents
 import im.vector.app.features.home.room.detail.timeline.item.ReadReceiptData
 import im.vector.app.features.home.room.detail.timeline.item.ReadReceiptsItem
 import im.vector.app.features.home.room.detail.timeline.url.PreviewUrlRetriever
+import im.vector.app.features.media.AttachmentData
 import im.vector.app.features.media.ImageContentRenderer
 import im.vector.app.features.media.VideoContentRenderer
 import im.vector.app.features.settings.VectorPreferences
@@ -78,29 +82,33 @@ import javax.inject.Inject
 import kotlin.math.min
 import kotlin.system.measureTimeMillis
 
-class TimelineEventController @Inject constructor(private val dateFormatter: VectorDateFormatter,
-                                                  private val vectorPreferences: VectorPreferences,
-                                                  private val contentUploadStateTrackerBinder: ContentUploadStateTrackerBinder,
-                                                  private val contentDownloadStateTrackerBinder: ContentDownloadStateTrackerBinder,
-                                                  private val timelineItemFactory: TimelineItemFactory,
-                                                  private val timelineMediaSizeProvider: TimelineMediaSizeProvider,
-                                                  private val mergedHeaderItemFactory: MergedHeaderItemFactory,
-                                                  private val session: Session,
-                                                  @TimelineEventControllerHandler
-                                                  private val backgroundHandler: Handler,
-                                                  private val timelineEventVisibilityHelper: TimelineEventVisibilityHelper,
-                                                  private val readReceiptsItemFactory: ReadReceiptsItemFactory
+class TimelineEventController @Inject constructor(
+        private val dateFormatter: VectorDateFormatter,
+        private val vectorPreferences: VectorPreferences,
+        private val contentUploadStateTrackerBinder: ContentUploadStateTrackerBinder,
+        private val contentDownloadStateTrackerBinder: ContentDownloadStateTrackerBinder,
+        private val timelineItemFactory: TimelineItemFactory,
+        private val timelineMediaSizeProvider: TimelineMediaSizeProvider,
+        private val mergedHeaderItemFactory: MergedHeaderItemFactory,
+        private val session: Session,
+        @TimelineEventControllerHandler
+        private val backgroundHandler: Handler,
+        private val timelineEventVisibilityHelper: TimelineEventVisibilityHelper,
+        private val readReceiptsItemFactory: ReadReceiptsItemFactory,
+        private val reactionListFactory: ReactionsSummaryFactory,
+        private val clock: Clock,
 ) : EpoxyController(backgroundHandler, backgroundHandler), Timeline.Listener, EpoxyController.Interceptor {
 
     /**
-     * This is a partial state of the RoomDetailViewState
+     * This is a partial state of the RoomDetailViewState.
      */
     data class PartialState(
             val unreadState: UnreadState = UnreadState.Unknown,
             val highlightedEventId: String? = null,
             val jitsiState: JitsiState = JitsiState(),
             val roomSummary: RoomSummary? = null,
-            val powerLevelsHelper: PowerLevelsHelper? = null
+            val powerLevelsHelper: PowerLevelsHelper? = null,
+            val rootThreadEventId: String? = null
     ) {
 
         constructor(state: RoomDetailViewState) : this(
@@ -109,13 +117,17 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
                 jitsiState = state.jitsiState,
                 roomSummary = state.asyncRoomSummary(),
                 powerLevelsHelper = state.powerLevelsHelper,
+                rootThreadEventId = state.rootThreadEventId
         )
+
+        fun isFromThreadTimeline(): Boolean = rootThreadEventId != null
     }
 
     interface Callback :
             BaseCallback,
             ReactionPillCallback,
             AvatarCallback,
+            ThreadCallback,
             UrlClickCallback,
             ReadReceiptsCallback,
             PreviewUrlCallback {
@@ -124,7 +136,11 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         fun onEventVisible(event: TimelineEvent)
         fun onRoomCreateLinkClicked(url: String)
         fun onEncryptedMessageClicked(informationData: MessageInformationData, view: View)
-        fun onImageMessageClicked(messageImageContent: MessageImageInfoContent, mediaData: ImageContentRenderer.Data, view: View)
+        fun onImageMessageClicked(messageImageContent: MessageImageInfoContent,
+                                  mediaData: ImageContentRenderer.Data,
+                                  view: View,
+                                  inMemory: List<AttachmentData>)
+
         fun onVideoMessageClicked(messageVideoContent: MessageVideoContent, mediaData: VideoContentRenderer.Data, view: View)
 
         //        fun onFileMessageClicked(eventId: String, messageFileContent: MessageFileContent)
@@ -138,6 +154,12 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         fun getPreviewUrlRetriever(): PreviewUrlRetriever
 
         fun onVoiceControlButtonClicked(eventId: String, messageAudioContent: MessageAudioContent)
+        fun onVoiceWaveformTouchedUp(eventId: String, duration: Int, percentage: Float)
+        fun onVoiceWaveformMovedTo(eventId: String, duration: Int, percentage: Float)
+
+        fun onAudioSeekBarMovedTo(eventId: String, duration: Int, percentage: Float)
+
+        fun onAddMoreReaction(event: TimelineEvent)
     }
 
     interface ReactionPillCallback {
@@ -146,13 +168,17 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
     }
 
     interface BaseCallback {
-        fun onEventCellClicked(informationData: MessageInformationData, messageContent: Any?, view: View)
+        fun onEventCellClicked(informationData: MessageInformationData, messageContent: Any?, view: View, isRootThreadEvent: Boolean)
         fun onEventLongClicked(informationData: MessageInformationData, messageContent: Any?, view: View): Boolean
     }
 
     interface AvatarCallback {
         fun onAvatarClicked(informationData: MessageInformationData)
         fun onMemberNameClicked(informationData: MessageInformationData)
+    }
+
+    interface ThreadCallback {
+        fun onThreadSummaryClicked(eventId: String, isRootThreadEvent: Boolean): Boolean
     }
 
     interface ReadReceiptsCallback {
@@ -191,8 +217,10 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         override fun onChanged(position: Int, count: Int, payload: Any?) {
             synchronized(modelCache) {
                 assertUpdateCallbacksAllowed()
-                Timber.v("listUpdateCallback.onChanged(position: $position, count: $count). " +
-                        "\ncurrentSnapshot has size of ${currentSnapshot.size} items")
+                Timber.v(
+                        "listUpdateCallback.onChanged(position: $position, count: $count). " +
+                                "\ncurrentSnapshot has size of ${currentSnapshot.size} items"
+                )
                 (position until position + count).forEach {
                     // Invalidate cache
                     modelCache[it] = null
@@ -203,7 +231,12 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
                 // In some cases onChanged will be called before onRemoved and onInserted so position will be bigger than currentSnapshot.size.
                 val prevList = currentSnapshot.subList(0, min(position, currentSnapshot.size))
                 val prevDisplayableEventIndex = prevList.indexOfLast {
-                    timelineEventVisibilityHelper.shouldShowEvent(it, partialState.highlightedEventId)
+                    timelineEventVisibilityHelper.shouldShowEvent(
+                            timelineEvent = it,
+                            highlightedEventId = partialState.highlightedEventId,
+                            isFromThreadTimeline = partialState.isFromThreadTimeline(),
+                            rootThreadEventId = partialState.rootThreadEventId
+                    )
                 }
                 if (prevDisplayableEventIndex != -1 && currentSnapshot.getOrNull(prevDisplayableEventIndex)?.senderInfo?.userId == invalidatedSenderId) {
                     modelCache[prevDisplayableEventIndex] = null
@@ -215,8 +248,10 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         override fun onMoved(fromPosition: Int, toPosition: Int) {
             synchronized(modelCache) {
                 assertUpdateCallbacksAllowed()
-                Timber.v("listUpdateCallback.onMoved(fromPosition: $fromPosition, toPosition: $toPosition). " +
-                        "\ncurrentSnapshot has size of ${currentSnapshot.size} items")
+                Timber.v(
+                        "listUpdateCallback.onMoved(fromPosition: $fromPosition, toPosition: $toPosition). " +
+                                "\ncurrentSnapshot has size of ${currentSnapshot.size} items"
+                )
                 val model = modelCache.removeAt(fromPosition)
                 modelCache.add(toPosition, model)
                 requestModelBuild()
@@ -226,8 +261,10 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         override fun onInserted(position: Int, count: Int) {
             synchronized(modelCache) {
                 assertUpdateCallbacksAllowed()
-                Timber.v("listUpdateCallback.onInserted(position: $position, count: $count). " +
-                        "\ncurrentSnapshot has size of ${currentSnapshot.size} items")
+                Timber.v(
+                        "listUpdateCallback.onInserted(position: $position, count: $count). " +
+                                "\ncurrentSnapshot has size of ${currentSnapshot.size} items"
+                )
                 repeat(count) {
                     modelCache.add(position, null)
                 }
@@ -238,8 +275,10 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         override fun onRemoved(position: Int, count: Int) {
             synchronized(modelCache) {
                 assertUpdateCallbacksAllowed()
-                Timber.v("listUpdateCallback.onRemoved(position: $position, count: $count). " +
-                        "\ncurrentSnapshot has size of ${currentSnapshot.size} items")
+                Timber.v(
+                        "listUpdateCallback.onRemoved(position: $position, count: $count). " +
+                                "\ncurrentSnapshot has size of ${currentSnapshot.size} items"
+                )
                 repeat(count) {
                     modelCache.removeAt(position)
                 }
@@ -293,6 +332,7 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         super.onAttachedToRecyclerView(recyclerView)
         timeline?.addListener(this)
         timelineMediaSizeProvider.recyclerView = recyclerView
+        reactionListFactory.onRequestBuild = { requestModelBuild() }
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
@@ -300,6 +340,7 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         contentUploadStateTrackerBinder.clear()
         contentDownloadStateTrackerBinder.clear()
         timeline?.removeListener(this)
+        reactionListFactory.onRequestBuild = null
         super.onDetachedFromRecyclerView(recyclerView)
     }
 
@@ -308,7 +349,7 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         if (partialState.roomSummary?.membership != Membership.JOIN) {
             return
         }
-        val timestamp = System.currentTimeMillis()
+        val timestamp = clock.epochMillis()
 
         val showingForwardLoader = LoadingItem_()
                 .id("forward_loading_item_$timestamp")
@@ -336,7 +377,7 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         submitSnapshot(snapshot)
     }
 
-    private fun invalidateFullTimeline() {
+    fun invalidateFullTimeline() {
         backgroundHandler.post {
             inSubmitList = true
             // Invalidate all timeline events to rebuild the whole Room/DM layout
@@ -350,6 +391,7 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
     }
 
     private fun submitSnapshot(newSnapshot: List<TimelineEvent>) {
+        // Update is triggered on any DB change
         backgroundHandler.post {
             inSubmitList = true
             val diffCallback = TimelineEventDiffUtilCallback(currentSnapshot, newSnapshot)
@@ -404,22 +446,41 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         (0 until modelCache.size).forEach { position ->
             val event = currentSnapshot[position]
             val nextEvent = currentSnapshot.nextOrNull(position)
-            val prevEvent = currentSnapshot.prevOrNull(position)
-            val nextDisplayableEvent = currentSnapshot.subList(position + 1, currentSnapshot.size).firstOrNull {
-                timelineEventVisibilityHelper.shouldShowEvent(it, partialState.highlightedEventId)
-            }
             // Should be build if not cached or if model should be refreshed
-            if (modelCache[position] == null || modelCache[position]?.isCacheable(partialState) == false) {
+            if (modelCache[position] == null || modelCache[position]?.isCacheable(partialState) == false || reactionListFactory.needsRebuild(event)) {
+                val prevEvent = currentSnapshot.prevOrNull(position)
+                val prevDisplayableEvent = currentSnapshot.subList(0, position).lastOrNull {
+                    timelineEventVisibilityHelper.shouldShowEvent(
+                            timelineEvent = it,
+                            highlightedEventId = partialState.highlightedEventId,
+                            isFromThreadTimeline = partialState.isFromThreadTimeline(),
+                            rootThreadEventId = partialState.rootThreadEventId
+                    )
+                }
+                val nextDisplayableEvent = currentSnapshot.subList(position + 1, currentSnapshot.size).firstOrNull {
+                    timelineEventVisibilityHelper.shouldShowEvent(
+                            timelineEvent = it,
+                            highlightedEventId = partialState.highlightedEventId,
+                            isFromThreadTimeline = partialState.isFromThreadTimeline(),
+                            rootThreadEventId = partialState.rootThreadEventId
+                    )
+                }
                 val timelineEventsGroup = timelineEventsGroups.getOrNull(event)
                 val params = TimelineItemFactoryParams(
                         event = event,
                         prevEvent = prevEvent,
+                        prevDisplayableEvent = prevDisplayableEvent,
                         nextEvent = nextEvent,
                         nextDisplayableEvent = nextDisplayableEvent,
                         partialState = partialState,
                         lastSentEventIdWithoutReadReceipts = lastSentEventWithoutReadReceipts,
                         callback = callback,
-                        eventsGroup = timelineEventsGroup
+                        eventsGroup = timelineEventsGroup,
+                        reactionsSummaryEvents = ReactionsSummaryEvents(
+                                onAddMoreClicked = { reactionListFactory.onAddMoreClicked(callback, event) },
+                                onShowLessClicked = { reactionListFactory.onShowLessClicked(event.eventId) },
+                                onShowMoreClicked = { reactionListFactory.onShowMoreClicked(event.eventId) }
+                        )
                 )
                 modelCache[position] = buildCacheItem(params)
                 numberOfEventsToBuild++
@@ -455,7 +516,8 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
                                                position: Int,
                                                receiptsByEvents: Map<String, List<ReadReceipt>>): CacheItemData {
         val wantsDateSeparator = wantsDateSeparator(event, nextEvent)
-        val mergedHeaderModel = mergedHeaderItemFactory.create(event,
+        val mergedHeaderModel = mergedHeaderItemFactory.create(
+                event,
                 nextEvent = nextEvent,
                 partialState = partialState,
                 items = this@TimelineEventController.currentSnapshot,
@@ -473,7 +535,12 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
         }
         val readReceipts = receiptsByEvents[event.eventId].orEmpty()
         return copy(
-                readReceiptsItem = readReceiptsItemFactory.create(event.eventId, readReceipts, callback),
+                readReceiptsItem = readReceiptsItemFactory.create(
+                        event.eventId,
+                        readReceipts,
+                        callback,
+                        partialState.isFromThreadTimeline()
+                ),
                 formattedDayModel = formattedDayModel,
                 mergedHeaderModel = mergedHeaderModel
         )
@@ -490,7 +557,12 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
                 return null
             }
             // If the event is not shown, we go to the next one
-            if (!timelineEventVisibilityHelper.shouldShowEvent(event, partialState.highlightedEventId)) {
+            if (!timelineEventVisibilityHelper.shouldShowEvent(
+                            timelineEvent = event,
+                            highlightedEventId = partialState.highlightedEventId,
+                            isFromThreadTimeline = partialState.isFromThreadTimeline(),
+                            rootThreadEventId = partialState.rootThreadEventId
+                    )) {
                 continue
             }
             // If the event is sent by us, we update the holder with the eventId and stop the search
@@ -510,9 +582,14 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
             val event = itr.previous()
             timelineEventsGroups.addOrIgnore(event)
             val currentReadReceipts = ArrayList(event.readReceipts).filter {
-                it.user.userId != session.myUserId
+                it.roomMember.userId != session.myUserId
             }
-            if (timelineEventVisibilityHelper.shouldShowEvent(event, partialState.highlightedEventId)) {
+            if (timelineEventVisibilityHelper.shouldShowEvent(
+                            timelineEvent = event,
+                            highlightedEventId = partialState.highlightedEventId,
+                            isFromThreadTimeline = partialState.isFromThreadTimeline(),
+                            rootThreadEventId = partialState.rootThreadEventId
+                    )) {
                 lastShownEventId = event.eventId
             }
             if (lastShownEventId == null) {
@@ -569,7 +646,7 @@ class TimelineEventController @Inject constructor(private val dateFormatter: Vec
     }
 
     /**
-     * Return true if added
+     * Return true if added.
      */
     private fun LoadingItem_.addWhenLoading(direction: Timeline.Direction): Boolean {
         val host = this@TimelineEventController

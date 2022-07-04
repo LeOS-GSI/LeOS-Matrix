@@ -23,21 +23,31 @@ import org.matrix.android.sdk.api.session.events.model.EventType
 import org.matrix.android.sdk.api.session.events.model.toModel
 import org.matrix.android.sdk.api.session.room.model.RoomMemberContent
 import org.matrix.android.sdk.api.session.room.send.SendState
+import org.matrix.android.sdk.api.settings.LightweightSettingsStorage
 import org.matrix.android.sdk.internal.database.helper.addIfNecessary
 import org.matrix.android.sdk.internal.database.helper.addStateEvent
 import org.matrix.android.sdk.internal.database.helper.addTimelineEvent
+import org.matrix.android.sdk.internal.database.helper.doesNextChunksVerifyCondition
+import org.matrix.android.sdk.internal.database.helper.doesPrevChunksVerifyCondition
+import org.matrix.android.sdk.internal.database.helper.updateThreadSummaryIfNeeded
 import org.matrix.android.sdk.internal.database.mapper.toEntity
 import org.matrix.android.sdk.internal.database.model.ChunkEntity
+import org.matrix.android.sdk.internal.database.model.EventEntity
 import org.matrix.android.sdk.internal.database.model.EventInsertType
 import org.matrix.android.sdk.internal.database.model.RoomEntity
 import org.matrix.android.sdk.internal.database.model.TimelineEventEntity
+import org.matrix.android.sdk.internal.database.model.TimelineEventEntityFields
 import org.matrix.android.sdk.internal.database.query.copyToRealmOrIgnore
 import org.matrix.android.sdk.internal.database.query.create
 import org.matrix.android.sdk.internal.database.query.find
+import org.matrix.android.sdk.internal.database.query.findAll
 import org.matrix.android.sdk.internal.database.query.where
 import org.matrix.android.sdk.internal.di.SessionDatabase
+import org.matrix.android.sdk.internal.di.UserId
 import org.matrix.android.sdk.internal.session.StreamEventsManager
+import org.matrix.android.sdk.internal.session.room.summary.RoomSummaryUpdater
 import org.matrix.android.sdk.internal.util.awaitTransaction
+import org.matrix.android.sdk.internal.util.time.Clock
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -46,7 +56,12 @@ import javax.inject.Inject
  */
 internal class TokenChunkEventPersistor @Inject constructor(
         @SessionDatabase private val monarchy: Monarchy,
-        private val liveEventManager: Lazy<StreamEventsManager>) {
+        @UserId private val userId: String,
+        private val roomSummaryUpdater: RoomSummaryUpdater,
+        private val lightweightSettingsStorage: LightweightSettingsStorage,
+        private val liveEventManager: Lazy<StreamEventsManager>,
+        private val clock: Clock,
+) {
 
     enum class Result {
         SHOULD_FETCH_MORE,
@@ -57,9 +72,24 @@ internal class TokenChunkEventPersistor @Inject constructor(
     suspend fun insertInDb(receivedChunk: TokenChunkEvent,
                            roomId: String,
                            direction: PaginationDirection): Result {
+        if (receivedChunk.events.isEmpty() && receivedChunk.start == receivedChunk.end) {
+            Timber.w("Discard empty chunk with identical start/end token ${receivedChunk.start}")
+
+            return if (receivedChunk.hasMore()) {
+                Result.SHOULD_FETCH_MORE
+            } else {
+                Result.REACHED_END
+            }
+        } else if (receivedChunk.start == receivedChunk.end) {
+            // I don't think we have seen this case so far, but let's log it just in case...
+            // -> if it happens, we need to address it somehow!
+            Timber.e("Non-empty chunk with identical start/end token ${receivedChunk.start}")
+        }
         monarchy
                 .awaitTransaction { realm ->
-                    Timber.v("Start persisting ${receivedChunk.events.size} events in $roomId towards $direction")
+                    Timber.i("Start persisting ${receivedChunk.events.size} events in $roomId towards $direction | " +
+                            "start ${receivedChunk.start}, end ${receivedChunk.end} | " +
+                            "first ${receivedChunk.events.firstOrNull()?.eventId} last ${receivedChunk.events.lastOrNull()?.eventId}")
 
                     val nextToken: String?
                     val prevToken: String?
@@ -73,7 +103,8 @@ internal class TokenChunkEventPersistor @Inject constructor(
 
                     val existingChunk = ChunkEntity.find(realm, roomId, prevToken = prevToken, nextToken = nextToken)
                     if (existingChunk != null) {
-                        Timber.v("This chunk is already in the db, returns")
+                        Timber.v("This chunk is already in the db, checking if this might be caused by broken links")
+                        existingChunk.fixChunkLinks(realm, roomId, direction, prevToken, nextToken)
                         return@awaitTransaction
                     }
                     val prevChunk = ChunkEntity.find(realm, roomId, nextToken = prevToken)
@@ -82,14 +113,21 @@ internal class TokenChunkEventPersistor @Inject constructor(
                         this.nextChunk = nextChunk
                         this.prevChunk = prevChunk
                     }
-                    nextChunk?.prevChunk = currentChunk
-                    prevChunk?.nextChunk = currentChunk
+                    val allNextChunks = ChunkEntity.findAll(realm, roomId, prevToken = nextToken)
+                    val allPrevChunks = ChunkEntity.findAll(realm, roomId, nextToken = prevToken)
+                    allNextChunks?.forEach {
+                        it.prevChunk = currentChunk
+                    }
+                    allPrevChunks?.forEach {
+                        it.nextChunk = currentChunk
+                    }
                     if (receivedChunk.events.isEmpty() && !receivedChunk.hasMore()) {
                         handleReachEnd(roomId, direction, currentChunk)
                     } else {
                         handlePagination(realm, roomId, direction, receivedChunk, currentChunk)
                     }
                 }
+
         return if (receivedChunk.events.isEmpty()) {
             if (receivedChunk.hasMore()) {
                 Result.SHOULD_FETCH_MORE
@@ -98,6 +136,34 @@ internal class TokenChunkEventPersistor @Inject constructor(
             }
         } else {
             Result.SUCCESS
+        }
+    }
+
+    private fun ChunkEntity.fixChunkLinks(
+            realm: Realm,
+            roomId: String,
+            direction: PaginationDirection,
+            prevToken: String?,
+            nextToken: String?,
+    ) {
+        if (direction == PaginationDirection.FORWARDS) {
+            val prevChunks = ChunkEntity.findAll(realm, roomId, nextToken = prevToken)
+            Timber.v("Found ${prevChunks?.size} prevChunks")
+            prevChunks?.forEach {
+                if (it.nextChunk != this) {
+                    Timber.i("Set nextChunk for ${it.identifier()} from ${it.nextChunk?.identifier()} to ${identifier()}")
+                    it.nextChunk = this
+                }
+            }
+        } else {
+            val nextChunks = ChunkEntity.findAll(realm, roomId, prevToken = nextToken)
+            Timber.v("Found ${nextChunks?.size} nextChunks")
+            nextChunks?.forEach {
+                if (it.prevChunk != this) {
+                    Timber.i("Set prevChunk for ${it.identifier()} from ${it.prevChunk?.identifier()} to ${identifier()}")
+                    it.prevChunk = this
+                }
+            }
         }
     }
 
@@ -122,7 +188,7 @@ internal class TokenChunkEventPersistor @Inject constructor(
         val eventList = receivedChunk.events
         val stateEvents = receivedChunk.stateEvents
 
-        val now = System.currentTimeMillis()
+        val now = clock.epochMillis()
 
         stateEvents?.forEach { stateEvent ->
             val ageLocalTs = stateEvent.unsignedData?.age?.let { now - it }
@@ -132,40 +198,90 @@ internal class TokenChunkEventPersistor @Inject constructor(
                 roomMemberContentsByUser[stateEvent.stateKey] = stateEvent.content.toModel<RoomMemberContent>()
             }
         }
+        val optimizedThreadSummaryMap = hashMapOf<String, EventEntity>()
+        var hasNewEvents = false
+        var existingChunkToLink: ChunkEntity? = null
         run processTimelineEvents@{
             eventList.forEach { event ->
                 if (event.eventId == null || event.senderId == null) {
                     return@forEach
                 }
-                // We check for the timeline event with this id
+                // We check for the timeline event with this id, but not in the thread chunk
                 val eventId = event.eventId
-                val existingTimelineEvent = TimelineEventEntity.where(realm, roomId, eventId).findFirst()
+                val existingTimelineEvent = TimelineEventEntity
+                        .where(realm, roomId, eventId)
+                        .equalTo(TimelineEventEntityFields.OWNED_BY_THREAD_CHUNK, false)
+                        .findFirst()
                 // If it exists, we want to stop here, just link the prevChunk
                 val existingChunk = existingTimelineEvent?.chunk?.firstOrNull()
                 if (existingChunk != null) {
+                    if (existingChunk == currentChunk) {
+                        Timber.w("Avoid double insertion of event $eventId, shouldn't happen in an ideal world | " +
+                                "direction: $direction.value " +
+                                "room: $roomId " +
+                                "chunk: ${existingChunk.identifier()} " +
+                                "eventId: $eventId " +
+                                "caughtByOldCheck ${((if (direction == PaginationDirection.BACKWARDS) currentChunk.nextChunk else currentChunk.prevChunk) == existingChunk)} " +
+                                "caughtByOldBackwardCheck ${(currentChunk.nextChunk == existingChunk)} " +
+                                "caughtByOldForwardCheck ${(currentChunk.prevChunk == existingChunk)}"
+                        )
+                        // No idea why this happens, but if it does, we don't want to throw away all the other events
+                        // (or even link chunks to themselves)
+                        return@forEach
+                    }
+                    val alreadyLinkedNext = currentChunk.doesNextChunksVerifyCondition { it == existingChunk }
+                    val alreadyLinkedPrev = currentChunk.doesPrevChunksVerifyCondition { it == existingChunk }
+                    if (alreadyLinkedNext || alreadyLinkedPrev) {
+                        Timber.i("Avoid double link | " +
+                                "direction: $direction " +
+                                "room: $roomId event: $eventId " +
+                                "linkedPrev: $alreadyLinkedPrev linkedNext: $alreadyLinkedNext " +
+                                "oldChunk: ${existingChunk.identifier()} newChunk: ${existingChunk.identifier()} " +
+                                "oldBackwardCheck: ${currentChunk.nextChunk == existingChunk} " +
+                                "oldForwardCheck: ${currentChunk.prevChunk == existingChunk}"
+                        )
+                        if ((direction == PaginationDirection.FORWARDS && !alreadyLinkedNext /* && alreadyLinkedPrev */) ||
+                                (direction == PaginationDirection.BACKWARDS && !alreadyLinkedPrev /* && alreadyLinkedNext */)) {
+                            // Do not stop processing here: even though this event already exists in an already linked chunk,
+                            // we still may have new events to add
+                            return@forEach
+                        }
+                        // Stop processing here
+                        return@processTimelineEvents
+                    }
+                    // If we haven't found a single new event yet, we don't want to link in the pagination direction, as that might cause a
+                    // timeline loop if the other chunk is in the other direction.
+                    if (!hasNewEvents) {
+                        Timber.i("Skip adding event $eventId, already exists")
+                        // Only skip this event, but still process other events.
+                        // Remember this chunk, since in case we don't find any new events, we still want to link this in pagination direction
+                        // in order to link a chunk to the /sync chunk
+                        if (existingChunkToLink == null) {
+                            existingChunkToLink = existingChunk
+                        }
+                        return@forEach
+                    }
                     when (direction) {
                         PaginationDirection.BACKWARDS -> {
-                            if (currentChunk.nextChunk == existingChunk) {
-                                Timber.w("Avoid double link, shouldn't happen in an ideal world")
-                            } else {
-                                currentChunk.prevChunk = existingChunk
-                                existingChunk.nextChunk = currentChunk
-                            }
+                            Timber.i("Backwards insert chunk: ${existingChunk.identifier()} -> ${currentChunk.identifier()}")
+                            currentChunk.prevChunk = existingChunk
+                            existingChunk.nextChunk = currentChunk
                         }
                         PaginationDirection.FORWARDS  -> {
-                            if (currentChunk.prevChunk == existingChunk) {
-                                Timber.w("Avoid double link, shouldn't happen in an ideal world")
-                            } else {
-                                currentChunk.nextChunk = existingChunk
-                                existingChunk.prevChunk = currentChunk
-                            }
+                            Timber.i("Forward insert chunk: ${currentChunk.identifier()} -> ${existingChunk.identifier()}")
+                            currentChunk.nextChunk = existingChunk
+                            existingChunk.prevChunk = currentChunk
                         }
                     }
                     // Stop processing here
                     return@processTimelineEvents
                 }
+
+                // existingChunk == null => this is a new event we haven't seen before
+                hasNewEvents = true
+
                 val ageLocalTs = event.unsignedData?.age?.let { now - it }
-                val eventEntity = event.toEntity(roomId, SendState.SYNCED, ageLocalTs).copyToRealmOrIgnore(realm, EventInsertType.PAGINATION)
+                var eventEntity = event.toEntity(roomId, SendState.SYNCED, ageLocalTs).copyToRealmOrIgnore(realm, EventInsertType.PAGINATION)
                 if (event.type == EventType.STATE_ROOM_MEMBER && event.stateKey != null) {
                     val contentToUse = if (direction == PaginationDirection.BACKWARDS) {
                         event.prevContent
@@ -175,11 +291,52 @@ internal class TokenChunkEventPersistor @Inject constructor(
                     roomMemberContentsByUser[event.stateKey] = contentToUse.toModel<RoomMemberContent>()
                 }
                 liveEventManager.get().dispatchPaginatedEventReceived(event, roomId)
-                currentChunk.addTimelineEvent(roomId, eventEntity, direction, roomMemberContentsByUser)
+                currentChunk.addTimelineEvent(
+                        roomId = roomId,
+                        eventEntity = eventEntity,
+                        direction = direction,
+                        roomMemberContentsByUser = roomMemberContentsByUser
+                )
+                if (lightweightSettingsStorage.areThreadMessagesEnabled()) {
+                    eventEntity.rootThreadEventId?.let {
+                        // This is a thread event
+                        optimizedThreadSummaryMap[it] = eventEntity
+                    } ?: run {
+                        // This is a normal event or a root thread one
+                        optimizedThreadSummaryMap[eventEntity.eventId] = eventEntity
+                    }
+                }
+            }
+        }
+        val existingChunk = existingChunkToLink
+        if (!hasNewEvents && existingChunk != null) {
+            when (direction) {
+                PaginationDirection.BACKWARDS -> {
+                    Timber.i("Backwards insert chunk: ${existingChunk.identifier()} -> ${currentChunk.identifier()}")
+                    currentChunk.prevChunk = existingChunk
+                    existingChunk.nextChunk = currentChunk
+                }
+                PaginationDirection.FORWARDS  -> {
+                    Timber.i("Forward insert chunk: ${currentChunk.identifier()} -> ${existingChunk.identifier()}")
+                    currentChunk.nextChunk = existingChunk
+                    existingChunk.prevChunk = currentChunk
+                }
+
             }
         }
         if (currentChunk.isValid) {
             RoomEntity.where(realm, roomId).findFirst()?.addIfNecessary(currentChunk)
+            // After linking chunks, we may have a new room summary preview
+            roomSummaryUpdater.refreshLatestPreviewContentIfNull(realm, roomId)
+        }
+
+        if (lightweightSettingsStorage.areThreadMessagesEnabled()) {
+            optimizedThreadSummaryMap.updateThreadSummaryIfNeeded(
+                    roomId = roomId,
+                    realm = realm,
+                    currentUserId = userId,
+                    chunkEntity = currentChunk
+            )
         }
     }
 }

@@ -23,11 +23,12 @@ import im.vector.app.features.login.SignMode
 import org.matrix.android.sdk.api.auth.registration.FlowResult
 
 /**
- * Transient events for Login
+ * Transient events for Login.
  */
 sealed class OnboardingViewEvents : VectorViewEvents {
     data class Loading(val message: CharSequence? = null) : OnboardingViewEvents()
     data class Failure(val throwable: Throwable) : OnboardingViewEvents()
+    data class DeeplinkAuthenticationFailure(val retryAction: OnboardingAction) : OnboardingViewEvents()
 
     data class RegistrationFlowResult(val flowResult: FlowResult, val isRegistrationStarted: Boolean) : OnboardingViewEvents()
     object OutdatedHomeserver : OnboardingViewEvents()
@@ -36,8 +37,12 @@ sealed class OnboardingViewEvents : VectorViewEvents {
 
     object OpenUseCaseSelection : OnboardingViewEvents()
     object OpenServerSelection : OnboardingViewEvents()
+    object OpenCombinedRegister : OnboardingViewEvents()
+    object OpenCombinedLogin : OnboardingViewEvents()
+    object EditServerSelection : OnboardingViewEvents()
     data class OnServerSelectionDone(val serverType: ServerType) : OnboardingViewEvents()
     object OnLoginFlowRetrieved : OnboardingViewEvents()
+    object OnHomeserverEdited : OnboardingViewEvents()
     data class OnSignModeSelected(val signMode: SignMode) : OnboardingViewEvents()
     object OnForgetPasswordClicked : OnboardingViewEvents()
     object OnResetPasswordSendThreePidDone : OnboardingViewEvents()
@@ -48,4 +53,11 @@ sealed class OnboardingViewEvents : VectorViewEvents {
     data class OnSendMsisdnSuccess(val msisdn: String) : OnboardingViewEvents()
 
     data class OnWebLoginError(val errorCode: Int, val description: String, val failingUrl: String) : OnboardingViewEvents()
+    object OnAccountCreated : OnboardingViewEvents()
+    object OnAccountSignedIn : OnboardingViewEvents()
+    object OnTakeMeHome : OnboardingViewEvents()
+    object OnChooseDisplayName : OnboardingViewEvents()
+    object OnChooseProfilePicture : OnboardingViewEvents()
+    object OnPersonalizationComplete : OnboardingViewEvents()
+    object OnBack : OnboardingViewEvents()
 }

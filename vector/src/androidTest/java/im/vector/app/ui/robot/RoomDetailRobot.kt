@@ -20,13 +20,13 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.espresso.action.ViewActions
+import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import com.adevinta.android.barista.interaction.BaristaClickInteractions
 import com.adevinta.android.barista.interaction.BaristaClickInteractions.clickOn
-import com.adevinta.android.barista.interaction.BaristaClickInteractions.longClickOn
 import com.adevinta.android.barista.interaction.BaristaEditTextInteractions.writeTo
 import com.adevinta.android.barista.interaction.BaristaMenuClickInteractions.clickMenu
 import com.adevinta.android.barista.interaction.BaristaMenuClickInteractions.openMenu
@@ -60,8 +60,23 @@ class RoomDetailRobot {
         pressBack()
         clickMenu(R.id.video_call)
         pressBack()
-        clickMenu(R.id.search)
-        pressBack()
+    }
+
+    fun replyToThread(message: String) {
+        openMessageMenu(message) {
+            replyInThread()
+        }
+        val threadMessage = "Hello universe - long message to avoid espresso tapping edited!"
+        writeTo(R.id.composerEditText, threadMessage)
+        waitUntilViewVisible(withId(R.id.sendButton))
+        clickOn(R.id.sendButton)
+    }
+
+    fun viewInRoom(message: String) {
+        openMessageMenu(message) {
+            viewInRoom()
+        }
+        waitUntilViewVisible(withId(R.id.composerEditText))
     }
 
     fun crawlMessage(message: String) {
@@ -70,6 +85,7 @@ class RoomDetailRobot {
         openMessageMenu(message) {
             addQuickReaction(quickReaction)
         }
+        waitUntilViewVisible(withText(quickReaction))
         println("Open reactions bottom sheet")
         // Open reactions
         longClickReaction(quickReaction)
@@ -103,7 +119,7 @@ class RoomDetailRobot {
 
     private fun longClickReaction(quickReaction: String) {
         withRetry {
-            longClickOn(quickReaction)
+            onView(withText(quickReaction)).perform(longClick())
         }
     }
 
@@ -111,7 +127,7 @@ class RoomDetailRobot {
         onView(withId(R.id.timelineRecyclerView))
                 .perform(
                         RecyclerViewActions.actionOnItem<RecyclerView.ViewHolder>(
-                                ViewMatchers.hasDescendant(ViewMatchers.withText(message)),
+                                ViewMatchers.hasDescendant(withText(message)),
                                 ViewActions.longClick()
                         )
                 )
@@ -129,6 +145,18 @@ class RoomDetailRobot {
         waitUntilViewVisible(withId(R.id.roomProfileAvatarView))
         sleep(1000)
         block(RoomSettingsRobot())
+        pressBack()
+    }
+
+    fun openThreadSummaries() {
+        clickMenu(R.id.menu_timeline_thread_list)
+        waitUntilViewVisible(withId(R.id.threadListRecyclerView))
+    }
+
+    fun selectThreadSummariesFilter() {
+        clickMenu(R.id.menu_thread_list_filter)
+        sleep(1000)
+        clickOn(R.id.threadListModalMyThreads)
         pressBack()
     }
 }

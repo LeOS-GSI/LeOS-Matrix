@@ -30,7 +30,7 @@
     <string name="settings_room_unread_kind_group">Previsualización del contenido del chat grupal</string>
     <string name="bubble_time_location">Ubicación de la marca de tiempo</string>
     <string name="url_previews_in_encrypted_rooms_summary">Esto va a filtrar las URLs de tus mensajes al servidor central!</string>
-    <string name="login_mobile_device_sc">LeOS-Matrix para Android</string>
+    <string name="login_mobile_device_sc">SchildiChat para Android</string>
     <string name="bottom_action_all">General</string>
     <string name="url_previews_in_encrypted_rooms">Previsualización de URLs en chats encriptados</string>
     <string name="settings_home_overview">Vista general</string>

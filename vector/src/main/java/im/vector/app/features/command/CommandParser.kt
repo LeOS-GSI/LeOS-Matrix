@@ -30,10 +30,11 @@ class CommandParser @Inject constructor() {
     /**
      * Convert the text message into a Slash command.
      *
-     * @param textMessage   the text message
+     * @param textMessage the text message
+     * @param isInThreadTimeline true if the user is currently typing in a thread
      * @return a parsed slash command (ok or error)
      */
-    fun parseSlashCommand(textMessage: CharSequence): ParsedCommand {
+    fun parseSlashCommand(textMessage: CharSequence, isInThreadTimeline: Boolean): ParsedCommand {
         // check if it has the Slash marker
         return if (!textMessage.startsWith("/")) {
             ParsedCommand.ErrorNotACommand
@@ -62,6 +63,10 @@ class CommandParser @Inject constructor() {
 
             val slashCommand = messageParts.first()
             val message = textMessage.substring(slashCommand.length).trim()
+
+            getNotSupportedByThreads(isInThreadTimeline, slashCommand)?.let {
+                return ParsedCommand.ErrorCommandNotSupportedInThreads(it)
+            }
 
             when {
                 Command.PLAIN.matches(slashCommand)                        -> {
@@ -397,6 +402,28 @@ class CommandParser @Inject constructor() {
                     ParsedCommand.ErrorUnknownSlashCommand(slashCommand)
                 }
             }
+        }
+    }
+
+    private val notSupportedThreadsCommands: List<Command> by lazy {
+        Command.values().filter {
+            !it.isThreadCommand
+        }
+    }
+
+    /**
+     * Checks whether or not the current command is not supported by threads.
+     * @param isInThreadTimeline if its true we are in a thread timeline
+     * @param slashCommand the slash command that will be checked
+     * @return The command that is not supported
+     */
+    private fun getNotSupportedByThreads(isInThreadTimeline: Boolean, slashCommand: String): Command? {
+        return if (isInThreadTimeline) {
+            notSupportedThreadsCommands.firstOrNull {
+                it.command == slashCommand
+            }
+        } else {
+            null
         }
     }
 

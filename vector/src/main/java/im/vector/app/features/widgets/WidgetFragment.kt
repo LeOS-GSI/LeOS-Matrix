@@ -26,10 +26,11 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.PermissionRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import com.airbnb.mvrx.Fail
-import com.airbnb.mvrx.Incomplete
 import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.Success
 import com.airbnb.mvrx.Uninitialized
@@ -43,7 +44,8 @@ import im.vector.app.core.platform.OnBackPressed
 import im.vector.app.core.platform.VectorBaseFragment
 import im.vector.app.core.utils.openUrlInExternalBrowser
 import im.vector.app.databinding.FragmentRoomWidgetBinding
-import im.vector.app.features.webview.WebViewEventListener
+import im.vector.app.features.webview.WebEventListener
+import im.vector.app.features.widgets.webview.WebviewPermissionUtils
 import im.vector.app.features.widgets.webview.clearAfterWidget
 import im.vector.app.features.widgets.webview.setupForWidget
 import kotlinx.parcelize.Parcelize
@@ -61,9 +63,11 @@ data class WidgetArgs(
         val urlParams: Map<String, String> = emptyMap()
 ) : Parcelable
 
-class WidgetFragment @Inject constructor() :
+class WidgetFragment @Inject constructor(
+        private val permissionUtils: WebviewPermissionUtils
+) :
         VectorBaseFragment<FragmentRoomWidgetBinding>(),
-        WebViewEventListener,
+        WebEventListener,
         OnBackPressed {
 
     private val fragmentArgs: WidgetArgs by args()
@@ -87,6 +91,7 @@ class WidgetFragment @Inject constructor() :
                 is WidgetViewEvents.OnURLFormatted            -> loadFormattedUrl(it)
                 is WidgetViewEvents.DisplayIntegrationManager -> displayIntegrationManager(it)
                 is WidgetViewEvents.Failure                   -> displayErrorDialog(it.throwable)
+                is WidgetViewEvents.Close                     -> Unit
             }
         }
         viewModel.handle(WidgetAction.LoadFormattedUrl)
@@ -156,7 +161,8 @@ class WidgetFragment @Inject constructor() :
                         integrationManagerActivityResultLauncher,
                         state.roomId,
                         state.widgetId,
-                        state.widgetKind.screenId)
+                        state.widgetKind.screenId
+                )
                 return@withState true
             }
             R.id.action_delete          -> {
@@ -192,13 +198,14 @@ class WidgetFragment @Inject constructor() :
     override fun invalidate() = withState(viewModel) { state ->
         Timber.v("Invalidate state: $state")
         when (state.formattedURL) {
-            is Incomplete -> {
+            Uninitialized,
+            is Loading -> {
                 setStateError(null)
                 views.widgetWebView.isInvisible = true
                 views.widgetProgressBar.isIndeterminate = true
                 views.widgetProgressBar.isVisible = true
             }
-            is Success    -> {
+            is Success -> {
                 setStateError(null)
                 when (state.webviewLoadedUrl) {
                     Uninitialized -> {
@@ -221,7 +228,7 @@ class WidgetFragment @Inject constructor() :
                     }
                 }
             }
-            is Fail       -> {
+            is Fail    -> {
                 // we need to show Error
                 views.widgetWebView.isInvisible = true
                 views.widgetProgressBar.isVisible = false
@@ -267,6 +274,20 @@ class WidgetFragment @Inject constructor() :
 
     override fun onHttpError(url: String, errorCode: Int, description: String) {
         viewModel.handle(WidgetAction.OnWebViewLoadingError(url, true, errorCode, description))
+    }
+
+    private val permissionResultLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        permissionUtils.onPermissionResult(result)
+    }
+
+    override fun onPermissionRequest(request: PermissionRequest) {
+        permissionUtils.promptForPermissions(
+                title = R.string.room_widget_resource_permission_title,
+                request = request,
+                context = requireContext(),
+                activity = requireActivity(),
+                activityResultLauncher = permissionResultLauncher
+        )
     }
 
     private fun displayTerms(displayTerms: WidgetViewEvents.DisplayTerms) {

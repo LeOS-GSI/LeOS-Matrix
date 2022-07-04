@@ -24,6 +24,7 @@ import im.vector.app.core.epoxy.profiles.buildProfileSection
 import im.vector.app.core.resources.ColorProvider
 import im.vector.app.core.resources.StringProvider
 import im.vector.app.core.ui.list.genericFooterItem
+import im.vector.app.features.settings.VectorPreferences
 import im.vector.lib.core.utils.epoxy.charsequence.toEpoxyCharSequence
 import org.matrix.android.sdk.api.session.Session
 import org.matrix.android.sdk.api.session.room.model.Membership
@@ -34,6 +35,7 @@ import javax.inject.Inject
 class RoomMemberProfileController @Inject constructor(
         private val stringProvider: StringProvider,
         private val colorProvider: ColorProvider,
+        private val vectorPreferences: VectorPreferences,
         private val session: Session
 ) : TypedEpoxyController<RoomMemberProfileViewState>() {
 
@@ -186,6 +188,16 @@ class RoomMemberProfileController @Inject constructor(
         // More
         buildProfileSection(stringProvider.getString(R.string.room_profile_section_more))
 
+        if (!state.isMine) {
+            buildProfileAction(
+                    id = "direct",
+                    editable = false,
+                    title = stringProvider.getString(R.string.room_member_open_or_create_dm),
+                    action = { callback?.onOpenDmClicked() }
+            )
+        }
+
+        if (vectorPreferences.canOverrideUserColors()) {
         buildProfileAction(
                 id = "overrideColor",
                 editable = false,
@@ -194,16 +206,10 @@ class RoomMemberProfileController @Inject constructor(
                 divider = !state.isMine,
                 action = { callback?.onOverrideColorClicked() }
         )
+        }
 
         if (!state.isMine) {
             val membership = state.asyncMembership() ?: return
-
-            buildProfileAction(
-                    id = "direct",
-                    editable = false,
-                    title = stringProvider.getString(R.string.room_member_open_or_create_dm),
-                    action = { callback?.onOpenDmClicked() }
-            )
 
             if (!state.isSpace && state.hasReadReceipt) {
                 buildProfileAction(

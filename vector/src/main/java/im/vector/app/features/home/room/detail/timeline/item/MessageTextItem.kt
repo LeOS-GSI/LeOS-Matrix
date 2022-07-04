@@ -16,13 +16,10 @@
 
 package im.vector.app.features.home.room.detail.timeline.item
 
-import android.content.Context
 import android.text.Spanned
-import android.text.TextUtils
 import android.text.method.MovementMethod
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.text.PrecomputedTextCompat
-import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
 import com.airbnb.epoxy.EpoxyAttribute
 import com.airbnb.epoxy.EpoxyModelClass
@@ -31,10 +28,14 @@ import im.vector.app.core.epoxy.onClick
 import im.vector.app.core.epoxy.onLongClickIgnoringLinks
 import im.vector.app.core.ui.views.FooteredTextView
 import im.vector.app.features.home.room.detail.timeline.TimelineEventController
+import im.vector.app.features.home.room.detail.timeline.style.TimelineMessageLayout
 import im.vector.app.features.home.room.detail.timeline.tools.findPillsAndProcess
+import im.vector.app.features.home.room.detail.timeline.url.AbstractPreviewUrlView
 import im.vector.app.features.home.room.detail.timeline.url.PreviewUrlRetriever
 import im.vector.app.features.home.room.detail.timeline.url.PreviewUrlUiState
+import im.vector.app.features.home.room.detail.timeline.url.PreviewUrlView
 import im.vector.app.features.home.room.detail.timeline.url.PreviewUrlViewSc
+import im.vector.app.features.home.room.detail.timeline.view.ScMessageBubbleWrapView
 import im.vector.app.features.media.ImageContentRenderer
 import im.vector.lib.core.utils.epoxy.charsequence.EpoxyCharSequence
 import io.noties.markwon.MarkwonPlugin
@@ -78,6 +79,11 @@ abstract class MessageTextItem : AbsMessageItem<MessageTextItem.Holder>() {
 
     override fun bind(holder: Holder) {
         // Preview URL
+        holder.previewUrlView = if (attributes.informationData.messageLayout is TimelineMessageLayout.ScBubble) {
+            holder.previewUrlViewSc
+        } else {
+            holder.previewUrlViewElement
+        }
         previewUrlViewUpdater.holder = holder
         previewUrlViewUpdater.previewUrlView = holder.previewUrlView
         previewUrlViewUpdater.imageContentRenderer = imageContentRenderer
@@ -88,6 +94,7 @@ abstract class MessageTextItem : AbsMessageItem<MessageTextItem.Holder>() {
             safePreviewUrlRetriever.addListener(attributes.informationData.eventId, previewUrlViewUpdater)
         }
         holder.previewUrlView.delegate = previewUrlCallback
+        holder.previewUrlView.renderMessageLayout(attributes.informationData.messageLayout)
 
         if (useBigFont) {
             holder.messageView.textSize = 44F
@@ -118,9 +125,7 @@ abstract class MessageTextItem : AbsMessageItem<MessageTextItem.Holder>() {
             val textFuture = PrecomputedTextCompat.getTextFuture(message, TextViewCompat.getTextMetricsParams(this), null)
             setTextFuture(textFuture)
         } else {
-            // Remove possible previously set futures that might overwrite our text
             setTextFuture(null)
-
             text = message
         }
     }
@@ -132,15 +137,17 @@ abstract class MessageTextItem : AbsMessageItem<MessageTextItem.Holder>() {
         previewUrlRetriever?.removeListener(attributes.informationData.eventId, previewUrlViewUpdater)
     }
 
-    override fun getViewType() = STUB_ID
+    override fun getViewStubId() = STUB_ID
 
     class Holder : AbsMessageItem.Holder(STUB_ID) {
         val messageView by bind<FooteredTextView>(R.id.messageTextView)
-        val previewUrlView by bind<PreviewUrlViewSc>(R.id.messageUrlPreview)
+        val previewUrlViewElement by bind<PreviewUrlView>(R.id.messageUrlPreviewElement)
+        val previewUrlViewSc by bind<PreviewUrlViewSc>(R.id.messageUrlPreviewSc)
+        lateinit var previewUrlView: AbstractPreviewUrlView // set to either previewUrlViewElement or previewUrlViewSc by layout
     }
 
     inner class PreviewUrlViewUpdater : PreviewUrlRetriever.PreviewUrlRetrieverListener {
-        var previewUrlView: PreviewUrlViewSc? = null
+        var previewUrlView: AbstractPreviewUrlView? = null
         var holder: Holder? = null
         var imageContentRenderer: ImageContentRenderer? = null
 
@@ -168,19 +175,12 @@ abstract class MessageTextItem : AbsMessageItem<MessageTextItem.Holder>() {
         }
     }
 
-    companion object {
-        private const val STUB_ID = R.id.messageContentTextStub
-    }
 
-    override fun messageBubbleAllowed(context: Context): Boolean {
+    override fun allowFooterOverlay(holder: Holder, bubbleWrapView: ScMessageBubbleWrapView): Boolean {
         return true
     }
 
-    override fun allowFooterOverlay(holder: Holder): Boolean {
-        return true
-    }
-
-    override fun needsFooterReservation(holder: Holder): Boolean {
+    override fun needsFooterReservation(): Boolean {
         return true
     }
 
@@ -196,8 +196,12 @@ abstract class MessageTextItem : AbsMessageItem<MessageTextItem.Holder>() {
             holder.messageView.footerWidth = width
             holder.messageView.footerHeight = height
         } // else: will be handled in onStateUpdated
-        holder.previewUrlView.footerWidth = height
-        holder.previewUrlView.footerHeight = height
-        holder.previewUrlView.updateFooterSpace()
+        holder.previewUrlViewSc.footerWidth = height
+        holder.previewUrlViewSc.footerHeight = height
+        holder.previewUrlViewSc.updateFooterSpace()
+    }
+
+    companion object {
+        private const val STUB_ID = R.id.messageContentTextStub
     }
 }

@@ -20,17 +20,17 @@ import android.net.Uri
 import android.view.View
 import im.vector.app.core.platform.VectorViewEvents
 import im.vector.app.features.call.webrtc.WebRtcCall
-import im.vector.app.features.location.LocationData
+import org.matrix.android.sdk.api.session.events.model.content.WithHeldCode
+import org.matrix.android.sdk.api.session.room.timeline.TimelineEvent
 import org.matrix.android.sdk.api.session.widgets.model.Widget
 import org.matrix.android.sdk.api.util.MatrixItem
-import org.matrix.android.sdk.internal.crypto.model.event.WithHeldCode
 import java.io.File
 
 /**
- * Transient events for RoomDetail
+ * Transient events for RoomDetail.
  */
 sealed class RoomDetailViewEvents : VectorViewEvents {
-    data class Failure(val throwable: Throwable) : RoomDetailViewEvents()
+    data class Failure(val throwable: Throwable, val showInDialog: Boolean = false) : RoomDetailViewEvents()
     data class OnNewTimelineEvents(val eventIds: List<String>) : RoomDetailViewEvents()
 
     data class ActionSuccess(val action: RoomDetailAction) : RoomDetailViewEvents()
@@ -84,5 +84,7 @@ sealed class RoomDetailViewEvents : VectorViewEvents {
     object StopChatEffects : RoomDetailViewEvents()
     object RoomReplacementStarted : RoomDetailViewEvents()
 
-    data class ShowLocation(val locationData: LocationData, val userId: String) : RoomDetailViewEvents()
+    data class ScDbgReadTracking(val event: TimelineEvent?, val unreadState: UnreadState, val trackUnreadMessages: Boolean) : RoomDetailViewEvents()
+
+    data class ChangeLocationIndicator(val isVisible: Boolean) : RoomDetailViewEvents()
 }

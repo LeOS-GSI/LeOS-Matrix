@@ -18,6 +18,8 @@ package im.vector.app.features.home.room.detail.timeline.helper
 
 import com.airbnb.epoxy.EpoxyModel
 import com.airbnb.epoxy.VisibilityState
+import de.spiritcroc.matrixsdk.util.DbgUtil
+import de.spiritcroc.matrixsdk.util.Dimber
 import im.vector.app.core.epoxy.LoadingItem_
 import im.vector.app.features.home.room.detail.UnreadState
 import im.vector.app.features.home.room.detail.timeline.TimelineEventController
@@ -26,6 +28,7 @@ import im.vector.app.features.home.room.detail.timeline.item.ItemWithEvents
 import im.vector.app.features.home.room.detail.timeline.item.TimelineReadMarkerItem_
 import org.matrix.android.sdk.api.session.room.timeline.Timeline
 import timber.log.Timber
+import kotlin.random.Random
 import kotlin.reflect.KMutableProperty0
 
 private const val DEFAULT_PREFETCH_THRESHOLD = 30
@@ -35,6 +38,8 @@ class TimelineControllerInterceptorHelper(private val positionOfReadMarker: KMut
 ) {
 
     private var previousModelsSize = 0
+
+    private val rmDimber = Dimber("ReadMarkerDbg", DbgUtil.DBG_READ_MARKER)
 
     // Update position when we are building new items
     fun intercept(
@@ -50,7 +55,7 @@ class TimelineControllerInterceptorHelper(private val positionOfReadMarker: KMut
         models.addBackwardPrefetchIfNeeded(timeline, callback)
         models.addForwardPrefetchIfNeeded(timeline, callback)
 
-        Timber.i("ReadMarker debug: intercept $unreadState")
+        rmDimber.i{"intercept $unreadState"}
 
         val modelsIterator = models.listIterator()
         var index = 0
@@ -84,7 +89,7 @@ class TimelineControllerInterceptorHelper(private val positionOfReadMarker: KMut
                 index++
                 positionOfReadMarker.set(index)
                 appendReadMarker = false
-                Timber.i("ReadMarker debug: read marker appended at $index")
+                rmDimber.i{"ReadMarker debug: read marker appended at $index"}
             }
             index++
         }
@@ -108,7 +113,7 @@ class TimelineControllerInterceptorHelper(private val positionOfReadMarker: KMut
                     .coerceAtLeast(0)
 
             val loadingItem = LoadingItem_()
-                    .id("prefetch_backward_loading${System.currentTimeMillis()}")
+                    .id("prefetch_backward_loading${Random.nextLong()}")
                     .showLoader(false)
                     .setVisibilityStateChangedListener(Timeline.Direction.BACKWARDS, callback)
 
@@ -119,9 +124,12 @@ class TimelineControllerInterceptorHelper(private val positionOfReadMarker: KMut
     private fun MutableList<EpoxyModel<*>>.addForwardPrefetchIfNeeded(timeline: Timeline?, callback: TimelineEventController.Callback?) {
         val shouldAddForwardPrefetch = timeline?.hasMoreToLoad(Timeline.Direction.FORWARDS) ?: false
         if (shouldAddForwardPrefetch) {
-            val indexOfPrefetchForward = DEFAULT_PREFETCH_THRESHOLD.coerceAtMost(size - 1)
+            val indexOfPrefetchForward = DEFAULT_PREFETCH_THRESHOLD
+                    .coerceAtMost(size - 1)
+                    .coerceAtLeast(0)
+
             val loadingItem = LoadingItem_()
-                    .id("prefetch_forward_loading${System.currentTimeMillis()}")
+                    .id("prefetch_forward_loading${Random.nextLong()}")
                     .showLoader(false)
                     .setVisibilityStateChangedListener(Timeline.Direction.FORWARDS, callback)
             add(indexOfPrefetchForward, loadingItem)

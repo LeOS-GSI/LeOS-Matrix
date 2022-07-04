@@ -15,14 +15,11 @@
         <item name="vctr_system">@color/background_dark_sc</item>
 
         <!-- other colors -->
-        <item name="vctr_unread_room_badge">?colorAccent</item>
         <item name="vctr_fab_label_bg">@color/background_floating_sc</item>
         <item name="vctr_fab_label_stroke">@android:color/black</item>
         <item name="vctr_fab_label_color">@android:color/white</item>
         <item name="vctr_touch_guard_bg">@color/background_touch_guard_sc</item>
         <item name="vctr_keys_backup_banner_accent_color">@color/background_floating_sc</item>
-        <item name="vctr_attachment_selector_background">?colorBackgroundFloating</item>
-        <item name="vctr_attachment_selector_border">@color/list_divider_color_sc</item>
         <item name="vctr_room_active_widgets_banner_bg">@color/background_floating_sc</item>
         <item name="vctr_room_active_widgets_banner_text">?vctr_content_secondary</item>
         <item name="vctr_reaction_background_off">@color/background_sc</item>
@@ -43,12 +40,14 @@
 
         <!-- Presence Indicator colors -->
         <item name="vctr_presence_indicator_offline">#ffdddddd</item>
+        <item name="vctr_presence_indicator_online">?colorAccent</item>
 
         <!-- Some alias -->
         <item name="vctr_header_background">?android:colorBackground</item>
         <item name="vctr_list_separator">@color/list_divider_color_sc</item>
         <item name="vctr_list_separator_system">?vctr_list_separator</item>
         <item name="vctr_list_separator_on_surface">?vctr_list_separator</item>
+        <item name="vctr_unread_background">?colorAccent</item>
 
         <!-- Material color -->
         <item name="colorPrimary">?colorAccent</item>
@@ -57,7 +56,7 @@
         <item name="colorSecondary">?colorAccent</item>
         <item name="colorSecondaryVariant">?colorAccent</item>
         <item name="colorOnSecondary">?vctr_content_primary</item>
-        <item name="colorError">@color/element_alert_dark</item>
+        <item name="colorError">@color/sc_alert_dark</item>
         <item name="colorOnError">?vctr_content_primary</item>
         <item name="colorSurface">@color/background_black_sc</item> <!-- same as android:colorBackground, but using attr crashes actionMode? -->
         <item name="colorOnSurface">?vctr_content_primary</item>
@@ -66,7 +65,7 @@
 
         <!-- TODO styles? -->
 
-        <item name="android:textColorLink">@color/element_link_dark</item>
+        <item name="android:textColorLink">@color/sc_blue</item>
 
         <!-- Menu text color -->
         <item name="android:actionMenuTextColor">?colorSecondary</item>
@@ -113,6 +112,8 @@
         <item name="user_color_hash_06">@color/user_color_sc_mxid_6</item>
         <item name="user_color_hash_07">@color/user_color_sc_mxid_7</item>
         <item name="user_color_hash_08">@color/user_color_sc_mxid_8</item>
+        <item name="color_warning">@color/color_warning_sc</item>
+        <item name="shield_color_warning">@color/shield_color_warning_sc</item>
 
         <item name="android:statusBarColor">@color/background_black_sc</item>
         <item name="android:navigationBarColor">@color/background_black_sc</item>

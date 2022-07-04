@@ -1,12 +1,28 @@
 package im.vector.app.core.ui.views
 
-import android.content.Context
-import android.view.ViewGroup
-import androidx.core.view.children
-import im.vector.app.features.themes.BubbleThemeUtils
+import android.content.res.Resources
+import im.vector.app.R
+import im.vector.app.core.epoxy.VectorEpoxyHolder
+import im.vector.app.features.home.room.detail.timeline.item.MessageInformationData
+import im.vector.app.features.home.room.detail.timeline.style.TimelineMessageLayout
+import im.vector.app.features.home.room.detail.timeline.view.ScMessageBubbleWrapView
 
-interface BubbleDependentView<H> {
+interface BubbleDependentView<H: VectorEpoxyHolder> {
 
+    fun getScBubbleMargin(resources: Resources): Int = resources.getDimensionPixelSize(R.dimen.dual_bubble_one_side_without_avatar_margin)
+    fun getViewStubMinimumWidth(holder: H): Int = 0
+
+    fun allowFooterOverlay(holder: H, bubbleWrapView: ScMessageBubbleWrapView): Boolean = false
+    // Whether to show the footer aligned below the viewStub - requires enough width!
+    fun allowFooterBelow(holder: H): Boolean = true
+    fun needsFooterReservation(): Boolean = false
+    fun reserveFooterSpace(holder: H, width: Int, height: Int) {}
+    fun getInformationData(): MessageInformationData? = null
+
+    // TODO: overwrite for remaining setBubbleLayout()s where necessary: ReadReceiptsItem, MessageImageVideoItem
+    fun applyScBubbleStyle(messageLayout: TimelineMessageLayout.ScBubble, holder: H) {}
+
+    /*
     fun messageBubbleAllowed(context: Context): Boolean {
         return false
     }
@@ -20,8 +36,10 @@ interface BubbleDependentView<H> {
     }
 
     fun setBubbleLayout(holder: H, bubbleStyle: String, bubbleStyleSetting: String, reverseBubble: Boolean)
+     */
 }
 
+/*
 // This function belongs to BubbleDependentView, but turned out to raise a NoSuchMethodError since recently
 // when called from an onImageSizeUpdated listener
 fun <H>updateMessageBubble(context: Context, view: BubbleDependentView<H>, holder: H) {
@@ -55,3 +73,4 @@ fun setFlatRtl(layout: ViewGroup, direction: Int, childDirection: Int, depth: In
         }
     }
 }
+ */

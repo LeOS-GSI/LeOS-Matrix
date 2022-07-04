@@ -16,9 +16,9 @@
 
 package org.matrix.android.sdk.internal.session.directory
 
+import org.matrix.android.sdk.api.session.room.alias.RoomAliasDescription
 import org.matrix.android.sdk.internal.network.NetworkConstants
 import org.matrix.android.sdk.internal.session.room.alias.AddRoomAliasBody
-import org.matrix.android.sdk.internal.session.room.alias.RoomAliasDescription
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -55,13 +55,14 @@ internal interface DirectoryAPI {
     /**
      * Add alias to the room.
      * @param roomAlias the room alias.
+     * @param body the Json body
      */
     @PUT(NetworkConstants.URI_API_PREFIX_PATH_R0 + "directory/room/{roomAlias}")
     suspend fun addRoomAlias(@Path("roomAlias") roomAlias: String,
                              @Body body: AddRoomAliasBody)
 
     /**
-     * Delete a room alias
+     * Delete a room alias.
      * @param roomAlias the room alias.
      */
     @DELETE(NetworkConstants.URI_API_PREFIX_PATH_R0 + "directory/room/{roomAlias}")

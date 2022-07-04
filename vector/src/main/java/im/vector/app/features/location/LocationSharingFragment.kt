@@ -16,33 +16,56 @@
 
 package im.vector.app.features.location
 
+import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.view.isGone
+import androidx.lifecycle.lifecycleScope
 import com.airbnb.mvrx.fragmentViewModel
+import com.airbnb.mvrx.withState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.mapbox.mapboxsdk.maps.MapView
 import im.vector.app.R
-import im.vector.app.core.extensions.exhaustive
+import im.vector.app.core.platform.VectorBaseBottomSheetDialogFragment
 import im.vector.app.core.platform.VectorBaseFragment
+import im.vector.app.core.utils.PERMISSIONS_FOR_FOREGROUND_LOCATION_SHARING
+import im.vector.app.core.utils.checkPermissions
+import im.vector.app.core.utils.onPermissionDeniedDialog
+import im.vector.app.core.utils.registerForPermissionsResult
 import im.vector.app.databinding.FragmentLocationSharingBinding
-import im.vector.app.features.home.room.detail.timeline.helper.LocationPinProvider
-import org.matrix.android.sdk.api.session.Session
+import im.vector.app.features.home.AvatarRenderer
+import im.vector.app.features.home.room.detail.timeline.helper.MatrixItemColorProvider
+import im.vector.app.features.location.live.duration.ChooseLiveDurationBottomSheet
+import im.vector.app.features.location.option.LocationSharingOption
+import im.vector.app.features.settings.VectorPreferences
+import org.matrix.android.sdk.api.util.MatrixItem
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
+/**
+ * We should consider using SupportMapFragment for a out of the box lifecycle handling.
+ */
 class LocationSharingFragment @Inject constructor(
-        private val locationTracker: LocationTracker,
-        private val session: Session,
-        private val locationPinProvider: LocationPinProvider
-) : VectorBaseFragment<FragmentLocationSharingBinding>(), LocationTracker.Callback {
-
-    init {
-        locationTracker.callback = this
-    }
+        private val urlMapProvider: UrlMapProvider,
+        private val avatarRenderer: AvatarRenderer,
+        private val matrixItemColorProvider: MatrixItemColorProvider,
+        private val vectorPreferences: VectorPreferences,
+) : VectorBaseFragment<FragmentLocationSharingBinding>(),
+        LocationTargetChangeListener,
+        VectorBaseBottomSheetDialogFragment.ResultListener {
 
     private val viewModel: LocationSharingViewModel by fragmentViewModel()
 
-    private var lastZoomValue: Double = -1.0
+    private val locationSharingNavigator: LocationSharingNavigator by lazy { DefaultLocationSharingNavigator(activity) }
+
+    // Keep a ref to handle properly the onDestroy callback
+    private var mapView: WeakReference<MapView>? = null
+
+    private var hasRenderedUserAvatar = false
 
     override fun getBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentLocationSharingBinding {
         return FragmentLocationSharingBinding.inflate(inflater, container, false)
@@ -51,22 +74,32 @@ class LocationSharingFragment @Inject constructor(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        views.mapView.initialize {
-            if (isAdded) {
-                onMapReady()
-            }
+        mapView = WeakReference(views.mapView)
+        views.mapView.onCreate(savedInstanceState)
+
+        lifecycleScope.launchWhenCreated {
+            views.mapView.initialize(
+                    url = urlMapProvider.getMapUrl(),
+                    locationTargetChangeListener = this@LocationSharingFragment
+            )
         }
 
-        views.shareLocationContainer.debouncedClicks {
-            viewModel.handle(LocationSharingAction.OnShareLocation)
-        }
+        initLocateButton()
+        initOptionsPicker()
 
         viewModel.observeViewEvents {
             when (it) {
-                LocationSharingViewEvents.LocationNotAvailableError    -> handleLocationNotAvailableError()
-                LocationSharingViewEvents.Close                        -> activity?.finish()
-            }.exhaustive
+                LocationSharingViewEvents.Close                       -> locationSharingNavigator.quit()
+                LocationSharingViewEvents.LocationNotAvailableError   -> handleLocationNotAvailableError()
+                is LocationSharingViewEvents.ZoomToUserLocation       -> handleZoomToUserLocationEvent(it)
+                is LocationSharingViewEvents.StartLiveLocationService -> handleStartLiveLocationService(it)
+            }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        views.mapView.onResume()
     }
 
     override fun onPause() {
@@ -74,41 +107,43 @@ class LocationSharingFragment @Inject constructor(
         super.onPause()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        views.mapView.onSaveInstanceState(outState)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        views.mapView.onStart()
+    }
+
     override fun onStop() {
         views.mapView.onStop()
         super.onStop()
     }
 
+    override fun onLowMemory() {
+        super.onLowMemory()
+        views.mapView.onLowMemory()
+    }
+
     override fun onDestroy() {
-        locationTracker.stop()
+        mapView?.get()?.onDestroy()
+        mapView?.clear()
         super.onDestroy()
     }
 
-    private fun onMapReady() {
-        if (!isAdded) return
+    override fun onLocationTargetChange(target: LocationData) {
+        viewModel.handle(LocationSharingAction.LocationTargetChange(target))
+    }
 
-        locationPinProvider.create(session.myUserId) {
-            views.mapView.addPinToMap(
-                    pinId = USER_PIN_NAME,
-                    image = it,
-            )
-            // All set, start location tracker
-            locationTracker.start()
+    override fun invalidate() = withState(viewModel) { state ->
+        updateMap(state)
+        updateUserAvatar(state.userItem)
+        if (state.locationTargetDrawable != null) {
+            updateLocationTargetPin(state.locationTargetDrawable)
         }
-    }
-
-    override fun onLocationUpdate(locationData: LocationData) {
-        lastZoomValue = if (lastZoomValue == -1.0) INITIAL_MAP_ZOOM else views.mapView.getCurrentZoom() ?: INITIAL_MAP_ZOOM
-
-        views.mapView.zoomToLocation(locationData.latitude, locationData.longitude, lastZoomValue)
-        views.mapView.deleteAllPins()
-        views.mapView.updatePinLocation(USER_PIN_NAME, locationData.latitude, locationData.longitude)
-
-        viewModel.handle(LocationSharingAction.OnLocationUpdate(locationData))
-    }
-
-    override fun onLocationProviderIsNotAvailable() {
-        viewModel.handle(LocationSharingAction.OnLocationProviderIsNotAvailable)
+        views.shareLocationGpsLoading.isGone = state.lastKnownUserLocation != null
     }
 
     private fun handleLocationNotAvailableError() {
@@ -116,12 +151,110 @@ class LocationSharingFragment @Inject constructor(
                 .setTitle(R.string.location_not_available_dialog_title)
                 .setMessage(R.string.location_not_available_dialog_content)
                 .setPositiveButton(R.string.ok) { _, _ ->
-                    activity?.finish()
+                    locationSharingNavigator.quit()
                 }
+                .setCancelable(false)
                 .show()
     }
 
-    companion object {
-        const val USER_PIN_NAME = "USER_PIN_NAME"
+    private fun initLocateButton() {
+        views.mapView.locateButton.setOnClickListener {
+            viewModel.handle(LocationSharingAction.ZoomToUserLocation)
+        }
+    }
+
+    private fun handleZoomToUserLocationEvent(event: LocationSharingViewEvents.ZoomToUserLocation) {
+        views.mapView.zoomToLocation(event.userLocation)
+    }
+
+    private fun handleStartLiveLocationService(event: LocationSharingViewEvents.StartLiveLocationService) {
+        val args = LocationSharingService.RoomArgs(event.sessionId, event.roomId, event.durationMillis)
+
+        Intent(requireContext(), LocationSharingService::class.java)
+                .putExtra(LocationSharingService.EXTRA_ROOM_ARGS, args)
+                .also {
+                    ContextCompat.startForegroundService(requireContext(), it)
+                }
+
+        vectorBaseActivity.finish()
+    }
+
+    private fun initOptionsPicker() {
+        // set no option at start
+        views.shareLocationOptionsPicker.render()
+        views.shareLocationOptionsPicker.optionPinned.debouncedClicks {
+            val targetLocation = views.mapView.getLocationOfMapCenter()
+            viewModel.handle(LocationSharingAction.PinnedLocationSharing(targetLocation))
+        }
+        views.shareLocationOptionsPicker.optionUserCurrent.debouncedClicks {
+            viewModel.handle(LocationSharingAction.CurrentUserLocationSharing)
+        }
+        views.shareLocationOptionsPicker.optionUserLive.debouncedClicks {
+            tryStartLiveLocationSharing()
+        }
+    }
+
+    private val foregroundLocationResultLauncher = registerForPermissionsResult { allGranted, deniedPermanently ->
+        if (allGranted) {
+            startLiveLocationSharing()
+        } else if (deniedPermanently) {
+            activity?.onPermissionDeniedDialog(R.string.denied_permission_generic)
+        }
+    }
+
+    private fun tryStartLiveLocationSharing() {
+        // we need to re-check foreground location to be sure it has not changed after landing on this screen
+        if (checkPermissions(PERMISSIONS_FOR_FOREGROUND_LOCATION_SHARING, requireActivity(), foregroundLocationResultLauncher)) {
+            startLiveLocationSharing()
+        }
+    }
+
+    private fun startLiveLocationSharing() {
+        ChooseLiveDurationBottomSheet.newInstance(this)
+                .show(requireActivity().supportFragmentManager, "DISPLAY_CHOOSE_DURATION_OPTIONS")
+    }
+
+    override fun onBottomSheetResult(resultCode: Int, data: Any?) {
+        if (resultCode == VectorBaseBottomSheetDialogFragment.ResultListener.RESULT_OK) {
+            (data as? Long)?.let { viewModel.handle(LocationSharingAction.StartLiveLocationSharing(it)) }
+        }
+    }
+
+    private fun updateMap(state: LocationSharingViewState) {
+        // first, update the options view
+        val options: Set<LocationSharingOption> = when (state.areTargetAndUserLocationEqual) {
+            true  -> {
+                if (vectorPreferences.labsEnableLiveLocation()) {
+                    setOf(LocationSharingOption.USER_CURRENT, LocationSharingOption.USER_LIVE)
+                } else {
+                    setOf(LocationSharingOption.USER_CURRENT)
+                }
+            }
+            false -> setOf(LocationSharingOption.PINNED)
+            else  -> emptySet()
+        }
+        views.shareLocationOptionsPicker.render(options)
+
+        // then, update the map using the height of the options view after it has been rendered
+        views.shareLocationOptionsPicker.post {
+            val mapState = state
+                    .toMapState()
+                    .copy(logoMarginBottom = views.shareLocationOptionsPicker.height)
+            views.mapView.render(mapState)
+        }
+    }
+
+    private fun updateUserAvatar(userItem: MatrixItem.UserItem?) {
+        userItem?.takeUnless { hasRenderedUserAvatar }
+                ?.let {
+                    hasRenderedUserAvatar = true
+                    avatarRenderer.render(it, views.shareLocationOptionsPicker.optionUserCurrent.iconView)
+                    val tintColor = matrixItemColorProvider.getColor(it)
+                    views.shareLocationOptionsPicker.optionUserCurrent.setIconBackgroundTint(tintColor)
+                }
+    }
+
+    private fun updateLocationTargetPin(drawable: Drawable) {
+        views.shareLocationPin.setImageDrawable(drawable)
     }
 }

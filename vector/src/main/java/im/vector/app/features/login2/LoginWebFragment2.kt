@@ -39,14 +39,14 @@ import im.vector.app.features.login.JavascriptResponse
 import im.vector.app.features.signout.soft.SoftLogoutAction
 import im.vector.app.features.signout.soft.SoftLogoutViewModel
 import org.matrix.android.sdk.api.auth.data.Credentials
-import org.matrix.android.sdk.internal.di.MoshiProvider
+import org.matrix.android.sdk.api.util.MatrixJsonParser
 import timber.log.Timber
 import java.net.URLDecoder
 import javax.inject.Inject
 
 /**
  * This screen is displayed when the application does not support login flow or registration flow
- * of the homeserver, as a fallback to login or to create an account
+ * of the homeserver, as a fallback to login or to create an account.
  */
 class LoginWebFragment2 @Inject constructor(
         private val assetReader: AssetReader
@@ -56,7 +56,7 @@ class LoginWebFragment2 @Inject constructor(
         return FragmentLoginWebBinding.inflate(inflater, container, false)
     }
 
-    val softLogoutViewModel: SoftLogoutViewModel by activityViewModel()
+    private val softLogoutViewModel: SoftLogoutViewModel by activityViewModel()
 
     private var isWebViewLoaded = false
     private var isForSessionRecovery = false
@@ -82,7 +82,7 @@ class LoginWebFragment2 @Inject constructor(
     private fun setupTitle(state: LoginViewState2) {
         toolbar?.title = when (state.signMode) {
             SignMode2.SignIn -> getString(R.string.login_signin)
-            else            -> getString(R.string.login_signup)
+            else             -> getString(R.string.login_signup)
         }
     }
 
@@ -142,6 +142,7 @@ class LoginWebFragment2 @Inject constructor(
                         .show()
             }
 
+            @Deprecated("Deprecated in Java")
             override fun onReceivedError(view: WebView, errorCode: Int, description: String, failingUrl: String) {
                 super.onReceivedError(view, errorCode, description, failingUrl)
 
@@ -189,11 +190,13 @@ class LoginWebFragment2 @Inject constructor(
              *             }
              *         }
              *    }
+             *    .
              * </pre>
              * @param view
              * @param url
              * @return
              */
+            @Deprecated("Deprecated in Java")
             override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
                 if (url == null) return super.shouldOverrideUrlLoading(view, url as String?)
 
@@ -204,7 +207,7 @@ class LoginWebFragment2 @Inject constructor(
                     try {
                         // URL decode
                         json = URLDecoder.decode(json, "UTF-8")
-                        val adapter = MoshiProvider.providesMoshi().adapter(JavascriptResponse::class.java)
+                        val adapter = MatrixJsonParser.getMoshi().adapter(JavascriptResponse::class.java)
                         javascriptResponse = adapter.fromJson(json)
                     } catch (e: Exception) {
                         Timber.e(e, "## shouldOverrideUrlLoading() : fromJson failed")

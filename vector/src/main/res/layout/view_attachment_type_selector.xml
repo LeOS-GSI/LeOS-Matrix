@@ -13,11 +13,11 @@
         android:layout_margin="@dimen/composer_attachment_margin"
         android:background="@null"
         android:contentDescription="@string/action_close"
-        android:src="@drawable/ic_attachment"
+        android:src="@drawable/ic_close_24dp"
+        app:tint="?vctr_content_secondary"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:rotation="135" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <HorizontalScrollView
         android:layout_width="0dp"
@@ -25,8 +25,8 @@
         android:layout_marginStart="4dp"
         android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/attachmentCloseButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/attachmentCloseButton"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
@@ -41,7 +41,7 @@
                 android:background="?android:attr/selectableItemBackground"
                 android:contentDescription="@string/attachment_type_gallery"
                 android:src="@drawable/ic_attachment_gallery"
-                app:tint="?colorPrimary"/>
+                app:tint="?colorPrimary" />
 
             <ImageButton
                 android:id="@+id/attachmentStickersButton"

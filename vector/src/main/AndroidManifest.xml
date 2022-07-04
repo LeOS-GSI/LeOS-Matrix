@@ -55,7 +55,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!-- Jitsi SDK is now API23+ -->
-    <uses-sdk tools:overrideLibrary="org.jitsi.meet.sdk,com.oney.WebRTCModule,com.learnium.RNDeviceInfo,com.reactnativecommunity.asyncstorage,com.ocetnik.timer,com.calendarevents,com.reactnativecommunity.netinfo,com.kevinresol.react_native_default_preference,com.rnimmersive,com.corbt.keepawake,com.BV.LinearGradient,com.horcrux.svg,com.oblador.performance,com.reactnativecommunity.slider,com.brentvatne.react" />
+    <uses-sdk tools:overrideLibrary="org.jitsi.meet.sdk,com.oney.WebRTCModule,com.learnium.RNDeviceInfo,com.reactnativecommunity.asyncstorage,com.ocetnik.timer,com.calendarevents,com.reactnativecommunity.netinfo,com.kevinresol.react_native_default_preference,com.rnimmersive,com.corbt.keepawake,com.BV.LinearGradient,com.horcrux.svg,com.oblador.performance,com.reactnativecommunity.slider,com.brentvatne.react,com.reactnativecommunity.clipboard,com.swmansion.gesturehandler.react,org.linusu,org.reactnative.maskedview,com.reactnativepagerview,com.swmansion.reanimated,com.th3rdwave.safeareacontext,com.swmansion.rnscreens,org.devio.rn.splashscreen,com.reactnativecommunity.webview" />
 
     <!-- Adding CAMERA permission prevents Chromebooks to see the application on the PlayStore -->
     <!-- Tell that the Camera is not mandatory to install the application -->
@@ -84,12 +84,13 @@
 
     <application
         android:name=".VectorApplication"
-        android:allowBackup="true"
-        android:icon="@drawable/element_logo_sc"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher_ic"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/network_security_config"
         android:resizeableActivity="true"
         android:supportsRtl="true"
+        android:taskAffinity="${applicationId}.${appTaskAffinitySuffix}"
         android:theme="@style/AppTheme.SC.Light"
         tools:replace="android:allowBackup,android:theme">
 
@@ -184,6 +185,8 @@
         <activity android:name=".features.roomdirectory.RoomDirectoryActivity" />
         <activity android:name=".features.roomdirectory.roompreview.RoomPreviewActivity" />
         <activity android:name=".features.home.room.filtered.FilteredRoomsActivity" />
+        <activity android:name=".features.home.room.threads.ThreadsActivity" />
+
         <activity
             android:name=".features.home.room.detail.RoomDetailActivity"
             android:parentActivityName=".features.home.HomeActivity">
@@ -241,6 +244,9 @@
                     android:host="room"
                     android:scheme="element" />
 
+                <!-- No need to redefine hosts, filter will be merged with element's above:
+                     https://developer.android.com/training/app-links/deep-linking#adding-filters -->
+                <data android:scheme="schildichat" />
             </intent-filter>
         </activity-alias>
 
@@ -302,7 +308,7 @@
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
             android:supportsPictureInPicture="true"
-            android:taskAffinity=".features.call.VectorCallActivity" />
+            android:taskAffinity=".features.call.VectorCallActivity.${appTaskAffinitySuffix}" />
         <!-- PIP Support https://developer.android.com/guide/topics/ui/picture-in-picture -->
         <activity
             android:name=".features.call.conference.VectorJitsiActivity"
@@ -311,7 +317,9 @@
             android:supportsPictureInPicture="true" />
 
         <activity android:name=".features.terms.ReviewTermsActivity" />
-        <activity android:name=".features.widgets.WidgetActivity" />
+        <activity android:name=".features.widgets.WidgetActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation" />
+
         <activity android:name=".features.pin.PinActivity" />
         <activity android:name=".features.analytics.ui.consent.AnalyticsOptInActivity" />
         <activity android:name=".features.home.room.detail.search.SearchActivity" />
@@ -348,6 +356,7 @@
         <activity android:name=".features.spaces.leave.SpaceLeaveAdvancedActivity" />
         <activity android:name=".features.poll.create.CreatePollActivity" />
         <activity android:name=".features.location.LocationSharingActivity" />
+        <activity android:name=".features.location.live.map.LocationLiveMapViewActivity" />
 
         <!-- Services -->
 
@@ -379,6 +388,17 @@
             android:name=".core.services.GuardService"
             android:exported="false"
             tools:ignore="Instantiatable" />
+
+        <service
+            android:name=".features.location.LocationSharingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <service
+            android:name=".features.call.webrtc.ScreenCaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection"
+            tools:targetApi="Q" />
 
         <!-- Receivers -->
 

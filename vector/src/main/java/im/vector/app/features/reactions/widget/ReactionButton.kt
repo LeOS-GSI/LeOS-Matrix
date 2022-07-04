@@ -18,7 +18,6 @@ package im.vector.app.features.reactions.widget
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
-import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
@@ -26,6 +25,8 @@ import androidx.core.content.withStyledAttributes
 import dagger.hilt.android.AndroidEntryPoint
 import im.vector.app.EmojiSpanify
 import im.vector.app.R
+import im.vector.app.core.di.ActiveSessionHolder
+import im.vector.app.core.glide.renderReactionImage
 import im.vector.app.core.utils.DimensionConverter
 import im.vector.app.core.utils.TextUtils
 import im.vector.app.databinding.ReactionButtonBinding
@@ -38,8 +39,12 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ReactionButton @JvmOverloads constructor(context: Context,
                                                attrs: AttributeSet? = null,
-                                               defStyleAttr: Int = 0) :
-        LinearLayout(context, attrs, defStyleAttr), View.OnClickListener, View.OnLongClickListener {
+                                               defStyleAttr: Int = 0,
+                                               defStyleRes: Int = R.style.TimelineReactionView) :
+        LinearLayout(context, attrs, defStyleAttr, defStyleRes), View.OnClickListener, View.OnLongClickListener {
+
+    @Inject lateinit var activeSessionHolder: ActiveSessionHolder
+    @Inject lateinit var dimensionConverter: DimensionConverter
 
     @Inject lateinit var emojiSpanify: EmojiSpanify
 
@@ -61,6 +66,16 @@ class ReactionButton @JvmOverloads constructor(context: Context,
             views.reactionText.text = emojiSpanned
         }
 
+    var reactionUrl: String? = null
+        set(value) {
+            field = value
+
+            activeSessionHolder.getSafeActiveSession()?.let { session ->
+                val size = dimensionConverter.dpToPx(12)
+                renderReactionImage(reactionUrl, reactionString, size, session,views.reactionText, views.reactionImage)
+            }
+        }
+
     private var isChecked: Boolean = false
     private var onDrawable: Drawable? = null
     private var offDrawable: Drawable? = null
@@ -68,8 +83,7 @@ class ReactionButton @JvmOverloads constructor(context: Context,
     init {
         inflate(context, R.layout.reaction_button, this)
         orientation = HORIZONTAL
-        minimumHeight = DimensionConverter(context.resources).dpToPx(30)
-        gravity = Gravity.CENTER
+        layoutDirection = View.LAYOUT_DIRECTION_LOCALE
         views = ReactionButtonBinding.bind(this)
         views.reactionCount.text = TextUtils.formatCountToShortDecimal(reactionCount)
         context.withStyledAttributes(attrs, R.styleable.ReactionButton, defStyleAttr) {

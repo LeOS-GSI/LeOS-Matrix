@@ -16,6 +16,7 @@
 
 package im.vector.app.ui.robot.settings
 
+import com.adevinta.android.barista.interaction.BaristaClickInteractions.clickOn
 import im.vector.app.R
 import im.vector.app.clickOnAndGoBack
 
@@ -43,16 +44,17 @@ class SettingsRobot {
         clickOnAndGoBack(R.string.preference_voice_and_video) { block() }
     }
 
-    fun ignoredUsers(block: () -> Unit = {}) {
-        clickOnAndGoBack(R.string.settings_ignored_users) { block() }
-    }
-
     fun securityAndPrivacy(block: SettingsSecurityRobot.() -> Unit) {
         clickOnAndGoBack(R.string.settings_security_and_privacy) { block(SettingsSecurityRobot()) }
     }
 
-    fun labs(block: () -> Unit = {}) {
-        clickOnAndGoBack(R.string.room_settings_labs_pref_title) { block() }
+    fun labs(shouldGoBack: Boolean = true, block: () -> Unit = {}) {
+        if (shouldGoBack) {
+            clickOnAndGoBack(R.string.room_settings_labs_pref_title) { block() }
+        } else {
+            clickOn(R.string.room_settings_labs_pref_title)
+            block()
+        }
     }
 
     fun advancedSettings(block: SettingsAdvancedRobot.() -> Unit) {
@@ -63,5 +65,9 @@ class SettingsRobot {
 
     fun helpAndAbout(block: SettingsHelpRobot.() -> Unit) {
         clickOnAndGoBack(R.string.preference_root_help_about) { block(SettingsHelpRobot()) }
+    }
+
+    fun legals(block: SettingsLegalsRobot.() -> Unit) {
+        clickOnAndGoBack(R.string.preference_root_legals) { block(SettingsLegalsRobot()) }
     }
 }

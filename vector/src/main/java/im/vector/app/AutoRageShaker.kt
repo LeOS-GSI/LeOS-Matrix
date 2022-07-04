@@ -16,11 +16,12 @@
 
 package im.vector.app
 
-import android.content.Context
 import android.content.SharedPreferences
+import androidx.lifecycle.asFlow
 import im.vector.app.core.di.ActiveSessionHolder
 import im.vector.app.features.rageshake.BugReporter
 import im.vector.app.features.rageshake.ReportType
+import im.vector.app.features.session.coroutineScope
 import im.vector.app.features.settings.VectorPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,7 @@ import kotlinx.coroutines.launch
 import org.matrix.android.sdk.api.session.Session
 import org.matrix.android.sdk.api.session.events.model.Event
 import org.matrix.android.sdk.api.session.events.model.toContent
+import org.matrix.android.sdk.api.session.initsync.SyncStatusService
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,7 +48,6 @@ class AutoRageShaker @Inject constructor(
         private val sessionDataSource: ActiveSessionDataSource,
         private val activeSessionHolder: ActiveSessionHolder,
         private val bugReporter: BugReporter,
-        private val context: Context,
         private val vectorPreferences: VectorPreferences
 ) : Session.Listener, SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -64,10 +65,11 @@ class AutoRageShaker @Inject constructor(
 
     private val e2eDetectedFlow = MutableSharedFlow<E2EMessageDetected>(replay = 0)
     private val matchingRSRequestFlow = MutableSharedFlow<Event>(replay = 0)
-
+    private var hasSynced = false
+    private var preferenceEnabled = false
     fun initialize() {
         observeActiveSession()
-        enable(vectorPreferences.labsAutoReportUISI())
+        preferenceEnabled = vectorPreferences.labsAutoReportUISI()
         // It's a singleton...
         vectorPreferences.subscribeToChanges(this)
 
@@ -76,7 +78,7 @@ class AutoRageShaker @Inject constructor(
         e2eDetectedFlow
                 .onEach {
                     sendRageShake(it)
-                    delay(2_000)
+                    delay(60_000)
                 }
                 .catch { cause ->
                     Timber.w(cause, "Failed to RS")
@@ -86,7 +88,7 @@ class AutoRageShaker @Inject constructor(
         matchingRSRequestFlow
                 .onEach {
                     sendMatchingRageShake(it)
-                    delay(2_000)
+                    delay(60_000)
                 }
                 .catch { cause ->
                     Timber.w(cause, "Failed to send matching rageshake")
@@ -95,14 +97,7 @@ class AutoRageShaker @Inject constructor(
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        enable(vectorPreferences.labsAutoReportUISI())
-    }
-
-    var _enabled = false
-    fun enable(enabled: Boolean) {
-        if (enabled == _enabled) return
-        _enabled = enabled
-        detector.enabled = enabled
+        preferenceEnabled = vectorPreferences.labsAutoReportUISI()
     }
 
     private fun observeActiveSession() {
@@ -117,7 +112,6 @@ class AutoRageShaker @Inject constructor(
     }
 
     fun decryptionErrorDetected(target: E2EMessageDetected) {
-        if (target.source == UISIEventSource.INITIAL_SYNC) return
         if (activeSessionHolder.getSafeActiveSession()?.sessionId != currentActiveSessionId) return
         val shouldSendRS = synchronized(alreadyReportedUisi) {
             val reportInfo = ReportInfo(target.roomId, target.sessionId)
@@ -136,7 +130,6 @@ class AutoRageShaker @Inject constructor(
 
     private fun sendRageShake(target: E2EMessageDetected) {
         bugReporter.sendBugReport(
-                context = context,
                 reportType = ReportType.AUTO_UISI,
                 withDevicesLogs = true,
                 withCrashLogs = true,
@@ -151,7 +144,6 @@ class AutoRageShaker @Inject constructor(
                     append("\"room_id\": \"${target.roomId}\",")
                     append("\"sender_key\": \"${target.senderKey}\",")
                     append("\"device_id\": \"${target.senderDeviceId}\",")
-                    append("\"source\": \"${target.source}\",")
                     append("\"user_id\": \"${target.senderUserId}\",")
                     append("\"session_id\": \"${target.sessionId}\"")
                     append("}")
@@ -177,7 +169,7 @@ class AutoRageShaker @Inject constructor(
 
                         coroutineScope.launch {
                             try {
-                                activeSessionHolder.getSafeActiveSession()?.sendToDevice(
+                                activeSessionHolder.getSafeActiveSession()?.toDeviceService()?.sendToDevice(
                                         eventType = AUTO_RS_REQUEST,
                                         userId = target.senderUserId,
                                         deviceId = target.senderDeviceId,
@@ -218,7 +210,6 @@ class AutoRageShaker @Inject constructor(
         val matchingIssue = event.content?.get("recipient_rageshake")?.toString() ?: ""
 
         bugReporter.sendBugReport(
-                context = context,
                 reportType = ReportType.AUTO_UISI_SENDER,
                 withDevicesLogs = true,
                 withCrashLogs = true,
@@ -249,6 +240,9 @@ class AutoRageShaker @Inject constructor(
             override val reciprocateToDeviceEventType: String
                 get() = AUTO_RS_REQUEST
 
+            override val enabled: Boolean
+                get() = this@AutoRageShaker.preferenceEnabled && this@AutoRageShaker.hasSynced
+
             override fun uisiDetected(source: E2EMessageDetected) {
                 decryptionErrorDetected(source)
             }
@@ -265,14 +259,21 @@ class AutoRageShaker @Inject constructor(
             return
         }
         this.currentActiveSessionId = sessionId
-        this.detector.enabled = _enabled
+
+        hasSynced = session.hasAlreadySynced()
+        session.syncStatusService().getSyncStatusLive()
+                .asFlow()
+                .onEach {
+                    hasSynced = it !is SyncStatusService.Status.InitialSyncProgressing
+                }
+                .launchIn(session.coroutineScope)
         activeSessionIds.add(sessionId)
         session.addListener(this)
-        session.addEventStreamListener(detector)
+        session.eventStreamService().addEventStreamListener(detector)
     }
 
     override fun onSessionStopped(session: Session) {
-        session.removeEventStreamListener(detector)
+        session.eventStreamService().removeEventStreamListener(detector)
         activeSessionIds.remove(session.sessionId)
     }
 }

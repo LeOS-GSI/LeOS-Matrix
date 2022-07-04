@@ -17,15 +17,23 @@
 package im.vector.app.features.home.room.detail.timeline.helper
 
 import com.airbnb.epoxy.VisibilityState
+import de.spiritcroc.matrixsdk.util.DbgUtil
+import de.spiritcroc.matrixsdk.util.Dimber
 import im.vector.app.core.epoxy.VectorEpoxyModel
 import im.vector.app.features.home.room.detail.timeline.TimelineEventController
 import org.matrix.android.sdk.api.session.room.timeline.TimelineEvent
 
 class ReadMarkerVisibilityStateChangedListener(private val callback: TimelineEventController.Callback?) :
-    VectorEpoxyModel.OnVisibilityStateChangedListener {
+        VectorEpoxyModel.OnVisibilityStateChangedListener {
+
+    private val rmDimber = Dimber("ReadMarkerDbg", DbgUtil.DBG_READ_MARKER)
 
     override fun onVisibilityStateChanged(visibilityState: Int) {
-        if (visibilityState == VisibilityState.VISIBLE) {
+        rmDimber.i { "onVisibilityChanged: $visibilityState" }
+        if (visibilityState in listOf(VisibilityState.VISIBLE,
+                        VisibilityState.FOCUSED_VISIBLE,
+                        VisibilityState.UNFOCUSED_VISIBLE,
+                        VisibilityState.FULL_IMPRESSION_VISIBLE)) {
             callback?.onReadMarkerVisible()
         }
     }
@@ -33,7 +41,7 @@ class ReadMarkerVisibilityStateChangedListener(private val callback: TimelineEve
 
 class TimelineEventVisibilityStateChangedListener(private val callback: TimelineEventController.Callback?,
                                                   private val event: TimelineEvent) :
-    VectorEpoxyModel.OnVisibilityStateChangedListener {
+        VectorEpoxyModel.OnVisibilityStateChangedListener {
 
     override fun onVisibilityStateChanged(visibilityState: Int) {
         if (visibilityState == VisibilityState.VISIBLE) {
@@ -46,7 +54,7 @@ class TimelineEventVisibilityStateChangedListener(private val callback: Timeline
 
 class MergedTimelineEventVisibilityStateChangedListener(private val callback: TimelineEventController.Callback?,
                                                         private val events: List<TimelineEvent>) :
-    VectorEpoxyModel.OnVisibilityStateChangedListener {
+        VectorEpoxyModel.OnVisibilityStateChangedListener {
 
     override fun onVisibilityStateChanged(visibilityState: Int) {
         if (visibilityState == VisibilityState.VISIBLE) {

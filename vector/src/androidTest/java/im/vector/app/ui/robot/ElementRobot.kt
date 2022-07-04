@@ -17,9 +17,15 @@
 package im.vector.app.ui.robot
 
 import android.view.View
+import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.pressBack
+import androidx.test.espresso.action.ViewActions
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.assertion.ViewAssertions
 import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import com.adevinta.android.barista.assertion.BaristaVisibilityAssertions.assertDisplayed
 import com.adevinta.android.barista.interaction.BaristaClickInteractions.clickOn
 import com.adevinta.android.barista.interaction.BaristaDialogInteractions.clickDialogNegativeButton
@@ -35,6 +41,8 @@ import im.vector.app.features.home.HomeActivity
 import im.vector.app.features.onboarding.OnboardingActivity
 import im.vector.app.initialSyncIdlingResource
 import im.vector.app.ui.robot.settings.SettingsRobot
+import im.vector.app.ui.robot.settings.labs.LabFeature
+import im.vector.app.ui.robot.space.SpaceRobot
 import im.vector.app.withIdlingResource
 import timber.log.Timber
 
@@ -69,11 +77,11 @@ class ElementRobot {
         }
     }
 
-    fun settings(block: SettingsRobot.() -> Unit) {
+    fun settings(shouldGoBack: Boolean = true, block: SettingsRobot.() -> Unit) {
         openDrawer()
         clickOn(R.id.homeDrawerHeaderSettingsView)
         block(SettingsRobot())
-        pressBack()
+        if (shouldGoBack) pressBack()
         waitUntilViewVisible(withId(R.id.bottomNavigationView))
     }
 
@@ -100,6 +108,42 @@ class ElementRobot {
         clickOn(R.id.bottom_action_rooms)
         block(RoomListRobot())
         waitUntilViewVisible(withId(R.id.bottomNavigationView))
+    }
+
+    fun toggleLabFeature(labFeature: LabFeature) {
+        when (labFeature) {
+            LabFeature.THREAD_MESSAGES -> {
+                settings(shouldGoBack = false) {
+                    labs(shouldGoBack = false) {
+                        onView(withText(R.string.labs_enable_thread_messages))
+                                .check(ViewAssertions.matches(isDisplayed()))
+                                .perform(ViewActions.closeSoftKeyboard(), click())
+                    }
+                }
+                // at this point we are in a race with the app restarting. The steps that happen are:
+                // - (initially) app has started, app has initial synched
+                // - (restart) app has strted, app has not initial synched
+                // - (racey) app shows some UI but overlays with initial sync ui
+                // - (initial sync finishes) app has started, has initial synched
+
+                // We need to wait for the initial sync to complete; but we can't
+                // use waitForHome() like login does.
+
+		// waitForHome() -- does not work because we have already fufilled the initialSync
+                // so we can racily have an IllegalStateException that we have transitioned from busy -> idle
+                // but never having sent the signal.
+
+                // So we need to not start waiting for an initial sync until we have restarted
+                // then we do need to wait for the sync to complete.
+
+                // Which is convoluted especially as it involves the app state refreshing
+                // so; in order to make this be more stable
+                // I hereby cheat and write:
+                Thread.sleep(30_000)
+            }
+            else                       -> {
+            }
+        }
     }
 
     fun signout(expectSignOutWarning: Boolean) {
@@ -145,7 +189,11 @@ class ElementRobot {
             assertDisplayed(R.string.are_you_sure)
             clickOn(R.string.action_skip)
             waitUntilViewVisible(withId(R.id.bottomSheetFragmentContainer))
-        }.onFailure { Timber.w("Verification popup missing", it) }
+        }.onFailure { Timber.w(it, "Verification popup missing") }
+    }
+
+    fun space(block: SpaceRobot.() -> Unit) {
+        block(SpaceRobot())
     }
 }
 

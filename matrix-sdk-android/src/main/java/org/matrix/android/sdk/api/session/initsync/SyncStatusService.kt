@@ -23,18 +23,18 @@ interface SyncStatusService {
 
     sealed class Status {
         /**
-         * For initial sync
+         * For initial sync.
          */
         abstract class InitialSyncStatus : Status()
 
         object Idle : InitialSyncStatus()
-        data class Progressing(
+        data class InitialSyncProgressing(
                 val initSyncStep: InitSyncStep,
                 val percentProgress: Int = 0
         ) : InitialSyncStatus()
 
         /**
-         * For incremental sync
+         * For incremental sync.
          */
         abstract class IncrementalSyncStatus : Status()
 
@@ -43,6 +43,7 @@ interface SyncStatusService {
                 val rooms: Int,
                 val toDevice: Int
         ) : IncrementalSyncStatus()
+
         object IncrementalSyncError : IncrementalSyncStatus()
         object IncrementalSyncDone : IncrementalSyncStatus()
     }

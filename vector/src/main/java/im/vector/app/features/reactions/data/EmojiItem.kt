@@ -20,6 +20,7 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
+ * Example:
  *  name: 'a',
  *  unified: 'b',
  *  non_qualified: 'c',
@@ -34,13 +35,14 @@ import com.squareup.moshi.JsonClass
  *  emoticons: 'l',
  *  text: 'm',
  *  short_names: 'n',
- *  added_in: 'o'
+ *  added_in: 'o'.
  */
 @JsonClass(generateAdapter = true)
 data class EmojiItem(
         @Json(name = "a") val name: String,
         @Json(name = "b") val unicode: String,
-        @Json(name = "j") val keywords: List<String> = emptyList()
+        @Json(name = "j") val keywords: List<String> = emptyList(),
+        val mxcUrl: String = ""
 ) {
     // Cannot be private...
     var cache: String? = null

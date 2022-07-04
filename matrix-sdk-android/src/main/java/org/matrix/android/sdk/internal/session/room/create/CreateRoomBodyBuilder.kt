@@ -16,6 +16,7 @@
 
 package org.matrix.android.sdk.internal.session.room.create
 
+import org.matrix.android.sdk.api.crypto.MXCRYPTO_ALGORITHM_MEGOLM
 import org.matrix.android.sdk.api.extensions.tryOrNull
 import org.matrix.android.sdk.api.session.events.model.Event
 import org.matrix.android.sdk.api.session.events.model.EventType
@@ -24,7 +25,6 @@ import org.matrix.android.sdk.api.session.identity.toMedium
 import org.matrix.android.sdk.api.session.room.model.create.CreateRoomParams
 import org.matrix.android.sdk.api.util.MimeTypes
 import org.matrix.android.sdk.internal.crypto.DeviceListManager
-import org.matrix.android.sdk.internal.crypto.MXCRYPTO_ALGORITHM_MEGOLM
 import org.matrix.android.sdk.internal.di.AuthenticatedIdentity
 import org.matrix.android.sdk.internal.di.UserId
 import org.matrix.android.sdk.internal.network.token.AccessTokenProvider
@@ -112,19 +112,19 @@ internal class CreateRoomBodyBuilder @Inject constructor(
     private suspend fun buildAvatarEvent(params: CreateRoomParams): Event? {
         return params.avatarUri?.let { avatarUri ->
             // First upload the image, ignoring any error
-            tryOrNull {
+            tryOrNull("Failed to upload image") {
                 fileUploader.uploadFromUri(
                         uri = avatarUri,
                         filename = UUID.randomUUID().toString(),
-                        mimeType = MimeTypes.Jpeg)
+                        mimeType = MimeTypes.Jpeg
+                )
             }
-                    ?.let { response ->
-                        Event(
-                                type = EventType.STATE_ROOM_AVATAR,
-                                stateKey = "",
-                                content = mapOf("url" to response.contentUri)
-                        )
-                    }
+        }?.let { response ->
+            Event(
+                    type = EventType.STATE_ROOM_AVATAR,
+                    stateKey = "",
+                    content = mapOf("url" to response.contentUri)
+            )
         }
     }
 
@@ -180,19 +180,19 @@ internal class CreateRoomBodyBuilder @Inject constructor(
                 params.invite3pids.isEmpty() &&
                 params.invitedUserIds.isNotEmpty() &&
                 params.invitedUserIds.let { userIds ->
-            val keys = deviceListManager.downloadKeys(userIds, forceDownload = false)
+                    val keys = deviceListManager.downloadKeys(userIds, forceDownload = false)
 
-            userIds.all { userId ->
-                keys.map[userId].let { deviceMap ->
-                    if (deviceMap.isNullOrEmpty()) {
-                        // A user has no device, so do not enable encryption
-                        false
-                    } else {
-                        // Check that every user's device have at least one key
-                        deviceMap.values.all { !it.keys.isNullOrEmpty() }
+                    userIds.all { userId ->
+                        keys.map[userId].let { deviceMap ->
+                            if (deviceMap.isNullOrEmpty()) {
+                                // A user has no device, so do not enable encryption
+                                false
+                            } else {
+                                // Check that every user's device have at least one key
+                                deviceMap.values.all { !it.keys.isNullOrEmpty() }
+                            }
+                        }
                     }
                 }
-            }
-        }
     }
 }

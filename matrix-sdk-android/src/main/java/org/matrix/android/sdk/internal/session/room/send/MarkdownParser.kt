@@ -18,6 +18,7 @@ package org.matrix.android.sdk.internal.session.room.send
 
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
+import org.matrix.android.sdk.api.util.TextContent
 import org.matrix.android.sdk.internal.session.room.AdvancedCommonmarkParser
 import org.matrix.android.sdk.internal.session.room.SimpleCommonmarkParser
 import org.matrix.android.sdk.internal.session.room.send.pills.TextPillsUtils
@@ -62,7 +63,8 @@ internal class MarkdownParser @Inject constructor(
             htmlText
         }
 
-        return if (isFormattedTextPertinent(source, cleanHtmlText)) {
+        // SC-note: upstream checks with "source" instead of "text.toString()", but this breaks with stuff like "a :turtle:", where :turtle: is a custom emote
+        return if (isFormattedTextPertinent(text.toString(), cleanHtmlText)) {
             // According to https://matrix.org/docs/spec/client_server/latest#m-room-message-msgtypes:
             // The plain text version of the HTML should be provided in the body.
             // But it caused too many problems so it has been removed in #2002
@@ -77,7 +79,7 @@ internal class MarkdownParser @Inject constructor(
             text != htmlText && htmlText != "<p>${text.trim()}</p>\n"
 
     /**
-     * The parser makes some mistakes, so deal with it here
+     * The parser makes some mistakes, so deal with it here.
      */
     private fun String.postTreatment(): String {
         return this

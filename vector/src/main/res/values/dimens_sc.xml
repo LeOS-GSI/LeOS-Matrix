@@ -9,6 +9,7 @@
     <!-- As found in various layout stubs in item_timeline_event_base.xml -->
     <dimen name="no_bubble_margin_end">56dp</dimen>
 
+    <dimen name="sc_bubble_wrap_margin_horizontal">8dp</dimen>
     <dimen name="sc_bubble_radius">3dp</dimen>
     <dimen name="sc_bubble_radius_in_tail">3dp</dimen>
     <dimen name="sc_bubble_tail_size">12dp</dimen>
@@ -18,6 +19,12 @@
     <dimen name="sc_bubble_inner_padding_long_side">20dp</dimen>
     <!-- inner_padding_short_side + inner_padding_long_side (+ some extra to make sure?) -->
     <dimen name="sc_bubble_guess_minimum_width_padding">32dp</dimen>
+
+    <!-- Extra round bubbles -->
+    <dimen name="sc_bubble_r1_radius">8dp</dimen>
+    <dimen name="sc_bubble_r2_radius">12dp</dimen>
+    <dimen name="sc_bubble_r1_radius_in_tail">@dimen/sc_bubble_radius_in_tail</dimen>
+    <dimen name="sc_bubble_r2_radius_in_tail">@dimen/sc_bubble_radius_in_tail</dimen>
 
     <!-- Footer dimensions -->
     <dimen name="sc_footer_overlay_padding">2dp</dimen>
@@ -31,5 +38,9 @@
     <!-- sc_footer_margin_start + sc_footer_padding_compensation -->
     <dimen name="sc_footer_reverse_margin_end">8dp</dimen>
     <dimen name="sc_footer_rtl_mismatch_extra_padding">4dp</dimen>
+    <!-- Android TextView's wrap_content has some bug with italic text: https://stackoverflow.com/q/4353836 -->
+    <dimen name="italic_text_view_extra_padding">2sp</dimen>
+
+    <dimen name="file_icon_size">32dp</dimen>
 
 </resources>

@@ -16,9 +16,9 @@
 
 package org.matrix.android.sdk.internal.crypto.actions
 
+import org.matrix.android.sdk.api.session.crypto.model.MXUsersDevicesMap
 import org.matrix.android.sdk.internal.crypto.MXOlmDevice
 import org.matrix.android.sdk.internal.crypto.model.MXOlmSessionResult
-import org.matrix.android.sdk.internal.crypto.model.MXUsersDevicesMap
 import org.matrix.android.sdk.internal.crypto.store.IMXCryptoStore
 import timber.log.Timber
 import javax.inject.Inject
@@ -29,7 +29,7 @@ internal class EnsureOlmSessionsForUsersAction @Inject constructor(private val o
 
     /**
      * Try to make sure we have established olm sessions for the given users.
-     * @param users    a list of user ids.
+     * @param users a list of user ids.
      */
     suspend fun handle(users: List<String>): MXUsersDevicesMap<MXOlmSessionResult> {
         Timber.v("## ensureOlmSessionsForUsers() : ensureOlmSessionsForUsers $users")

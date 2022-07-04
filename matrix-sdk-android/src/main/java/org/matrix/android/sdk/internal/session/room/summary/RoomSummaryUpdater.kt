@@ -18,10 +18,13 @@ package org.matrix.android.sdk.internal.session.room.summary
 
 import de.spiritcroc.matrixsdk.StaticScSdkHelper
 import io.realm.Realm
+import io.realm.Sort
 import io.realm.kotlin.createObject
+import kotlinx.coroutines.runBlocking
 import org.matrix.android.sdk.api.extensions.orFalse
 import org.matrix.android.sdk.api.extensions.tryOrNull
 import org.matrix.android.sdk.api.session.events.model.EventType
+import org.matrix.android.sdk.api.session.events.model.content.EncryptionEventContent
 import org.matrix.android.sdk.api.session.events.model.toModel
 import org.matrix.android.sdk.api.session.room.accountdata.RoomAccountDataTypes
 import org.matrix.android.sdk.api.session.room.model.Membership
@@ -40,7 +43,6 @@ import org.matrix.android.sdk.api.session.sync.model.RoomSyncSummary
 import org.matrix.android.sdk.api.session.sync.model.RoomSyncUnreadNotifications
 import org.matrix.android.sdk.internal.crypto.EventDecryptor
 import org.matrix.android.sdk.internal.crypto.crosssigning.DefaultCrossSigningService
-import org.matrix.android.sdk.internal.crypto.model.event.EncryptionEventContent
 import org.matrix.android.sdk.internal.database.mapper.ContentMapper
 import org.matrix.android.sdk.internal.database.mapper.asDomain
 import org.matrix.android.sdk.internal.database.model.CurrentStateEventEntity
@@ -51,10 +53,13 @@ import org.matrix.android.sdk.internal.database.model.RoomSummaryEntityFields
 import org.matrix.android.sdk.internal.database.model.SpaceChildSummaryEntity
 import org.matrix.android.sdk.internal.database.model.SpaceParentSummaryEntity
 import org.matrix.android.sdk.internal.database.model.TimelineEventEntity
+import org.matrix.android.sdk.internal.database.model.TimelineEventEntityFields
 import org.matrix.android.sdk.internal.database.query.findAllInRoomWithSendStates
 import org.matrix.android.sdk.internal.database.query.getOrCreate
 import org.matrix.android.sdk.internal.database.query.getOrNull
 import org.matrix.android.sdk.internal.database.query.isEventRead
+import org.matrix.android.sdk.internal.database.query.latestEvent
+import org.matrix.android.sdk.internal.database.query.previewable
 import org.matrix.android.sdk.internal.database.query.where
 import org.matrix.android.sdk.internal.di.UserId
 import org.matrix.android.sdk.internal.extensions.clearWith
@@ -64,7 +69,6 @@ import org.matrix.android.sdk.internal.session.room.accountdata.RoomAccountDataD
 import org.matrix.android.sdk.internal.session.room.membership.RoomDisplayNameResolver
 import org.matrix.android.sdk.internal.session.room.membership.RoomMemberHelper
 import org.matrix.android.sdk.internal.session.room.relationship.RoomChildRelationInfo
-import org.matrix.android.sdk.internal.util.Normalizer
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.math.min
@@ -76,8 +80,54 @@ internal class RoomSummaryUpdater @Inject constructor(
         private val roomAvatarResolver: RoomAvatarResolver,
         private val eventDecryptor: EventDecryptor,
         private val crossSigningService: DefaultCrossSigningService,
-        private val roomAccountDataDataSource: RoomAccountDataDataSource,
-        private val normalizer: Normalizer) {
+        private val roomAccountDataDataSource: RoomAccountDataDataSource
+) {
+
+    fun refreshLatestPreviewContent(realm: Realm, roomId: String, attemptDecrypt: Boolean = true) {
+        val roomSummaryEntity = RoomSummaryEntity.getOrNull(realm, roomId)
+        if (roomSummaryEntity != null) {
+            //roomSummaryEntity.latestPreviewableEvent = RoomSummaryEventsHelper.getLatestPreviewableEventScAll(realm, roomId)?.first
+            //roomSummaryEntity.latestPreviewableOriginalContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEvent(realm, roomId)?.first
+            //val latestPreviewableOriginalContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEventScOriginalContent(realm, roomId)?.first
+            //attemptToDecryptLatestPreviewables(latestPreviewableEvent, latestPreviewableContentEvent, latestPreviewableOriginalContentEvent)
+            refreshLatestPreviewContent(roomSummaryEntity, realm, roomId, attemptDecrypt)
+        }
+    }
+
+    fun refreshLatestPreviewContentIfNull(realm: Realm, roomId: String) {
+        val roomSummaryEntity = RoomSummaryEntity.getOrNull(realm, roomId) ?: return
+        if (roomSummaryEntity.latestPreviewableOriginalContentEvent == null) {
+            refreshLatestPreviewContent(roomSummaryEntity, realm, roomId)
+        }
+    }
+
+    private fun refreshLatestPreviewContent(roomSummaryEntity: RoomSummaryEntity, realm: Realm, roomId: String, attemptDecrypt: Boolean = true) {
+        val latestPreviewableEvent = RoomSummaryEventsHelper.getLatestPreviewableEventScAll(realm, roomId)
+        val latestPreviewableContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEvent(realm, roomId)
+        val latestPreviewableOriginalContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEventScOriginalContent(realm, roomId)
+
+        roomSummaryEntity.latestPreviewableEvent = latestPreviewableEvent.previewable()
+        roomSummaryEntity.latestPreviewableContentEvent = latestPreviewableContentEvent.previewable()
+        roomSummaryEntity.latestPreviewableOriginalContentEvent = latestPreviewableOriginalContentEvent.previewable()
+        val scLatestPreviewableEvent = roomSummaryEntity.scLatestPreviewableEvent()
+
+        val lastActivityFromEvent = scLatestPreviewableEvent?.root?.originServerTs
+        if (lastActivityFromEvent != null) {
+            roomSummaryEntity.lastActivityTime = lastActivityFromEvent
+        }
+        // If we still did not find a timestamp for the last activity:
+        // Any (non-previewable) event is still better for sorting than just dropping the room to the bottom in the list
+        if (roomSummaryEntity.lastActivityTime == null) {
+            roomSummaryEntity.lastActivityTime = latestPreviewableOriginalContentEvent?.first?.root?.originServerTs
+        }
+        if (attemptDecrypt) {
+            attemptToDecryptLatestPreviewables(
+                    roomSummaryEntity.latestPreviewableEvent,
+                    roomSummaryEntity.latestPreviewableContentEvent,
+                    roomSummaryEntity.latestPreviewableOriginalContentEvent
+            )
+        }
+    }
 
     fun update(realm: Realm,
                roomId: String,
@@ -86,7 +136,8 @@ internal class RoomSummaryUpdater @Inject constructor(
                unreadNotifications: RoomSyncUnreadNotifications? = null,
                unreadCount: Int? = null,
                updateMembers: Boolean = false,
-               inviterId: String? = null) {
+               inviterId: String? = null,
+               updateCounts: Boolean = true) {
         val roomSummaryEntity = RoomSummaryEntity.getOrCreate(realm, roomId)
         if (roomSummary != null) {
             if (roomSummary.heroes.isNotEmpty()) {
@@ -100,11 +151,13 @@ internal class RoomSummaryUpdater @Inject constructor(
                 roomSummaryEntity.joinedMembersCount = roomSummary.joinedMembersCount
             }
         }
-        roomSummaryEntity.highlightCount = unreadNotifications?.highlightCount ?: 0
-        roomSummaryEntity.notificationCount = unreadNotifications?.notificationCount ?: 0
-        roomSummaryEntity.unreadCount = unreadCount
-        roomSummaryEntity.aggregatedNotificationCount = roomSummaryEntity.notificationCount
-        roomSummaryEntity.aggregatedUnreadCount = roomSummaryEntity.safeUnreadCount()
+        if (updateCounts) {
+            roomSummaryEntity.highlightCount = unreadNotifications?.highlightCount ?: 0
+            roomSummaryEntity.notificationCount = unreadNotifications?.notificationCount ?: 0
+            roomSummaryEntity.unreadCount = unreadCount
+            roomSummaryEntity.aggregatedNotificationCount = roomSummaryEntity.notificationCount
+            roomSummaryEntity.aggregatedUnreadCount = roomSummaryEntity.safeUnreadCount()
+        }
 
         if (membership != null) {
             roomSummaryEntity.membership = membership
@@ -125,36 +178,36 @@ internal class RoomSummaryUpdater @Inject constructor(
         roomSummaryEntity.roomType = roomType
         Timber.v("## Space: Updating summary room [$roomId] roomType: [$roomType]")
 
-        // Don't use current state for this one as we are only interested in having MXCRYPTO_ALGORITHM_MEGOLM event in the room
         val encryptionEvent = CurrentStateEventEntity.getOrNull(realm, roomId, type = EventType.STATE_ROOM_ENCRYPTION, stateKey = "")?.root
-        Timber.v("## CRYPTO: currentEncryptionEvent is $encryptionEvent")
+        Timber.d("## CRYPTO: currentEncryptionEvent is $encryptionEvent")
 
-        val latestPreviewableEvent = RoomSummaryEventsHelper.getLatestPreviewableEventScAll(realm, roomId)
-        val latestPreviewableContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEvent(realm, roomId)
-        val latestPreviewableOriginalContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEventScOriginalContent(realm, roomId)
+        refreshLatestPreviewContent(roomSummaryEntity, realm, roomId)
 
-        roomSummaryEntity.latestPreviewableEvent = latestPreviewableEvent
-        roomSummaryEntity.latestPreviewableContentEvent = latestPreviewableContentEvent
-        roomSummaryEntity.latestPreviewableOriginalContentEvent = latestPreviewableOriginalContentEvent
-        val scLatestPreviewableEvent = roomSummaryEntity.scLatestPreviewableEvent()
-
-        val lastActivityFromEvent = scLatestPreviewableEvent?.root?.originServerTs
-        if (lastActivityFromEvent != null) {
-            roomSummaryEntity.lastActivityTime = lastActivityFromEvent
+        val roomSummaryUnreadCount = roomSummaryEntity.unreadCount
+        if (roomSummaryUnreadCount != null /* && preferences.prioritizeUnreadCountsOverRoomPreviewsForUnreadCalculation() */) {
+            // MSC2654 says:
+            // In case of a mismatch between this count and the value of notification_count in the Unread Notification Counts section,
+            // clients should use the unread_count.
+            // However, we do not do this here: if the notificationCount > 0, this means we likely got a push notification. Accordingly, it would be confusing
+            // not to show such chat as unread. We can test this e.g. with edits: the unreadCount doesn't count edits, but the notification push rules do.
+            val hasUnreadMessages = roomSummaryUnreadCount > 0 || roomSummaryEntity.notificationCount > 0
+            roomSummaryEntity.hasUnreadMessages = hasUnreadMessages
+            roomSummaryEntity.hasUnreadContentMessages = hasUnreadMessages
+            roomSummaryEntity.hasUnreadOriginalContentMessages = hasUnreadMessages
+        } else {
+            roomSummaryEntity.hasUnreadMessages = roomSummaryEntity.notificationCount > 0 ||
+                    //(roomSummaryEntity.unreadCount?.let { it > 0 } ?: false) ||
+                    // avoid this call if we are sure there are unread events
+                    roomSummaryEntity.latestPreviewableEvent?.let { !isEventRead(realm.configuration, userId, roomId, it.eventId) } ?: false
+            roomSummaryEntity.hasUnreadContentMessages = roomSummaryEntity.notificationCount > 0 ||
+                    //(roomSummaryEntity.unreadCount?.let { it > 0 } ?: false) ||
+                    // avoid this call if we are sure there are unread events
+                    roomSummaryEntity.latestPreviewableContentEvent?.let { !isEventRead(realm.configuration, userId, roomId, it.eventId) } ?: false
+            roomSummaryEntity.hasUnreadOriginalContentMessages = roomSummaryEntity.notificationCount > 0 ||
+                    //(roomSummaryEntity.unreadCount?.let { it > 0 } ?: false) ||
+                    // avoid this call if we are sure there are unread events
+                    roomSummaryEntity.latestPreviewableOriginalContentEvent?.let { !isEventRead(realm.configuration, userId, roomId, it.eventId) } ?: false
         }
-
-        roomSummaryEntity.hasUnreadMessages = roomSummaryEntity.notificationCount > 0 ||
-                (roomSummaryEntity.unreadCount?.let { it > 0 } ?: false) ||
-                // avoid this call if we are sure there are unread events
-                latestPreviewableEvent?.let { !isEventRead(realm.configuration, userId, roomId, it.eventId) } ?: false
-        roomSummaryEntity.hasUnreadContentMessages = roomSummaryEntity.notificationCount > 0 ||
-                (roomSummaryEntity.unreadCount?.let { it > 0 } ?: false) ||
-                // avoid this call if we are sure there are unread events
-                latestPreviewableContentEvent?.let { !isEventRead(realm.configuration, userId, roomId, it.eventId) } ?: false
-        roomSummaryEntity.hasUnreadOriginalContentMessages = roomSummaryEntity.notificationCount > 0 ||
-                (roomSummaryEntity.unreadCount?.let { it > 0 } ?: false) ||
-                // avoid this call if we are sure there are unread events
-                latestPreviewableOriginalContentEvent?.let { !isEventRead(realm.configuration, userId, roomId, it.eventId) } ?: false
 
         roomSummaryEntity.setDisplayName(roomDisplayNameResolver.resolve(realm, roomId))
         roomSummaryEntity.avatarUrl = roomAvatarResolver.resolve(realm, roomId)
@@ -182,16 +235,6 @@ internal class RoomSummaryUpdater @Inject constructor(
         }
         roomSummaryEntity.updateHasFailedSending()
 
-        val root = latestPreviewableOriginalContentEvent?.root
-        if (root?.type == EventType.ENCRYPTED && root.decryptionResultJson == null) {
-            Timber.v("Should decrypt ${latestPreviewableOriginalContentEvent.eventId}")
-            // mmm i want to decrypt now or is it ok to do it async?
-            tryOrNull {
-                eventDecryptor.decryptEvent(root.asDomain(), "")
-            }
-                    ?.let { root.setDecryptionResult(it) }
-        }
-
         if (updateMembers) {
             val otherRoomMembers = RoomMemberHelper(realm, roomId)
                     .queryActiveRoomMembersEvent()
@@ -208,17 +251,28 @@ internal class RoomSummaryUpdater @Inject constructor(
         }
     }
 
-    fun updateRoomPreviews(realm: Realm) {
-        RoomSummaryEntity.where(realm).findAll().forEach { entity ->
-            val previewEvent = entity.scLatestPreviewableEvent()
-            val root = previewEvent?.root
-            if (root?.type == EventType.ENCRYPTED && root.decryptionResultJson == null) {
-                Timber.v("Retry decrypt ${previewEvent.eventId}")
-                // mmm i want to decrypt now or is it ok to do it async?
-                tryOrNull {
-                    eventDecryptor.decryptEvent(root.asDomain(), "")
+    private fun TimelineEventEntity.attemptToDecrypt() {
+        when (val root = this.root) {
+            null -> {
+                Timber.v("Decryption skipped due to missing root event $eventId")
+            }
+            else -> {
+                if (root.type == EventType.ENCRYPTED && root.decryptionResultJson == null) {
+                    Timber.v("Should decrypt $eventId")
+                    tryOrNull {
+                        runBlocking { eventDecryptor.decryptEvent(root.asDomain(), "") }
+                    }?.let { root.setDecryptionResult(it) }
                 }
-                        ?.let { root.setDecryptionResult(it) }
+            }
+        }
+    }
+
+    private fun attemptToDecryptLatestPreviewables(vararg events: TimelineEventEntity?) {
+        val attempted = mutableListOf<String>()
+        events.forEach { event ->
+            if (event != null && event.eventId !in attempted) {
+                attempted.add(event.eventId)
+                event.attemptToDecrypt()
             }
         }
     }
@@ -230,13 +284,14 @@ internal class RoomSummaryUpdater @Inject constructor(
     fun updateSendingInformation(realm: Realm, roomId: String) {
         val roomSummaryEntity = RoomSummaryEntity.getOrCreate(realm, roomId)
         roomSummaryEntity.updateHasFailedSending()
-        roomSummaryEntity.latestPreviewableEvent = RoomSummaryEventsHelper.getLatestPreviewableEvent(realm, roomId)
-        roomSummaryEntity.latestPreviewableContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEvent(realm, roomId)
-        roomSummaryEntity.latestPreviewableOriginalContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEventScOriginalContent(realm, roomId)
+        refreshLatestPreviewContent(realm, roomId, attemptDecrypt = false)
+        //roomSummaryEntity.latestPreviewableEvent = RoomSummaryEventsHelper.getLatestPreviewableEvent(realm, roomId).previewable()
+        //roomSummaryEntity.latestPreviewableContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEvent(realm, roomId).previewable()
+        //roomSummaryEntity.latestPreviewableOriginalContentEvent = RoomSummaryEventsHelper.getLatestPreviewableEventScOriginalContent(realm, roomId).previewable()
     }
 
     /**
-     * Should be called at the end of the room sync, to check and validate all parent/child relations
+     * Should be called at the end of the room sync, to check and validate all parent/child relations.
      */
     fun validateSpaceRelationship(realm: Realm) {
         measureTimeMillis {
@@ -434,6 +489,7 @@ internal class RoomSummaryUpdater @Inject constructor(
                             }
                         }.distinct()
                         if (flattenRelated.isNotEmpty()) {
+                            dmRoom.isOrphanDm = dmRoom.flattenParentIds.isNullOrEmpty()
                             // we keep real m.child/m.parent relations and add the one for common memberships
                             dmRoom.flattenParentIds += "|${flattenRelated.joinToString("|")}|"
                         }
@@ -456,8 +512,6 @@ internal class RoomSummaryUpdater @Inject constructor(
                         realm.where(RoomSummaryEntity::class.java)
                                 .process(RoomSummaryEntityFields.MEMBERSHIP_STR, listOf(Membership.JOIN))
                                 .notEqualTo(RoomSummaryEntityFields.ROOM_TYPE, RoomType.SPACE)
-                                // also we do not count DM in here, because home space will already show them
-                                //.equalTo(RoomSummaryEntityFields.IS_DIRECT, false)
                                 .contains(RoomSummaryEntityFields.FLATTEN_PARENT_IDS, space.roomId)
                                 .findAll().forEach {
                                     if (!it.isHiddenFromUser) {

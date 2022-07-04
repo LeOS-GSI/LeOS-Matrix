@@ -18,9 +18,9 @@ package org.matrix.android.sdk.internal.session.sync
 
 import androidx.work.ExistingPeriodicWorkPolicy
 import com.zhuinden.monarchy.Monarchy
-import org.matrix.android.sdk.api.pushrules.PushRuleService
-import org.matrix.android.sdk.api.pushrules.RuleScope
 import org.matrix.android.sdk.api.session.initsync.InitSyncStep
+import org.matrix.android.sdk.api.session.pushrules.PushRuleService
+import org.matrix.android.sdk.api.session.pushrules.RuleScope
 import org.matrix.android.sdk.api.session.sync.model.GroupsSyncResponse
 import org.matrix.android.sdk.api.session.sync.model.RoomsSyncResponse
 import org.matrix.android.sdk.api.session.sync.model.SyncResponse
@@ -34,14 +34,13 @@ import org.matrix.android.sdk.internal.session.dispatchTo
 import org.matrix.android.sdk.internal.session.group.GetGroupDataWorker
 import org.matrix.android.sdk.internal.session.initsync.ProgressReporter
 import org.matrix.android.sdk.internal.session.initsync.reportSubtask
-import org.matrix.android.sdk.internal.session.notification.ProcessEventForPushTask
+import org.matrix.android.sdk.internal.session.pushrules.ProcessEventForPushTask
 import org.matrix.android.sdk.internal.session.sync.handler.CryptoSyncHandler
 import org.matrix.android.sdk.internal.session.sync.handler.GroupSyncHandler
 import org.matrix.android.sdk.internal.session.sync.handler.PresenceSyncHandler
 import org.matrix.android.sdk.internal.session.sync.handler.SyncResponsePostTreatmentAggregatorHandler
 import org.matrix.android.sdk.internal.session.sync.handler.UserAccountDataSyncHandler
 import org.matrix.android.sdk.internal.session.sync.handler.room.RoomSyncHandler
-import org.matrix.android.sdk.internal.session.sync.handler.room.ThreadsAwarenessHandler
 import org.matrix.android.sdk.internal.util.awaitTransaction
 import org.matrix.android.sdk.internal.worker.WorkerParamsFactory
 import timber.log.Timber
@@ -66,7 +65,6 @@ internal class SyncResponseHandler @Inject constructor(
         private val tokenStore: SyncTokenStore,
         private val processEventForPushTask: ProcessEventForPushTask,
         private val pushRuleService: PushRuleService,
-        private val threadsAwarenessHandler: ThreadsAwarenessHandler,
         private val presenceSyncHandler: PresenceSyncHandler
 ) {
 
@@ -83,7 +81,7 @@ internal class SyncResponseHandler @Inject constructor(
             }
             cryptoService.onSyncWillProcess(isInitialSync)
         }.also {
-            Timber.v("Finish handling start cryptoService in $it ms")
+            Timber.i("Finish handling start cryptoService in $it ms")
         }
 
         // Handle the to device events before the room ones
@@ -96,15 +94,19 @@ internal class SyncResponseHandler @Inject constructor(
                 }
             }
         }.also {
-            Timber.v("Finish handling toDevice in $it ms")
+            Timber.i("Finish handling toDevice in $it ms")
         }
         val aggregator = SyncResponsePostTreatmentAggregator()
 
         // Prerequisite for thread events handling in RoomSyncHandler
-        threadsAwarenessHandler.fetchRootThreadEventsIfNeeded(syncResponse)
+// Disabled due to the new fallback
+//        if (!lightweightSettingsStorage.areThreadMessagesEnabled()) {
+//            threadsAwarenessHandler.fetchRootThreadEventsIfNeeded(syncResponse)
+//        }
 
         // Start one big transaction
         monarchy.awaitTransaction { realm ->
+            // IMPORTANT nothing should be suspend here as we are accessing the realm instance (thread local)
             measureTimeMillis {
                 Timber.v("Handle rooms")
                 reportSubtask(reporter, InitSyncStep.ImportingAccountRoom, 1, 0.7f) {
@@ -113,7 +115,7 @@ internal class SyncResponseHandler @Inject constructor(
                     }
                 }
             }.also {
-                Timber.v("Finish handling rooms in $it ms")
+                Timber.i("Finish handling rooms in $it ms")
             }
 
             measureTimeMillis {
@@ -124,7 +126,7 @@ internal class SyncResponseHandler @Inject constructor(
                     }
                 }
             }.also {
-                Timber.v("Finish handling groups in $it ms")
+                Timber.i("Finish handling groups in $it ms")
             }
 
             measureTimeMillis {
@@ -133,37 +135,63 @@ internal class SyncResponseHandler @Inject constructor(
                     userAccountDataSyncHandler.handle(realm, syncResponse.accountData)
                 }
             }.also {
-                Timber.v("Finish handling accountData in $it ms")
+                Timber.i("Finish handling accountData in $it ms")
             }
 
             measureTimeMillis {
                 Timber.v("Handle Presence")
                 presenceSyncHandler.handle(realm, syncResponse.presence)
             }.also {
-                Timber.v("Finish handling Presence in $it ms")
+                Timber.i("Finish handling Presence in $it ms")
             }
             tokenStore.saveToken(realm, syncResponse.nextBatch)
         }
 
         // Everything else we need to do outside the transaction
+        measureTimeMillis {
+            Timber.v("Handle Aggregator")
         aggregatorHandler.handle(aggregator)
+        }.also {
+            Timber.i("Finish handling Aggregator in $it ms")
+        }
 
+        measureTimeMillis {
+            Timber.v("Handle Push rules")
         syncResponse.rooms?.let {
             checkPushRules(it, isInitialSync)
             userAccountDataSyncHandler.synchronizeWithServerIfNeeded(it.invite)
             dispatchInvitedRoom(it)
         }
+        }.also {
+            Timber.i("Finish handling Push rules in $it ms")
+        }
+        measureTimeMillis {
+            Timber.v("Handle Group data")
         syncResponse.groups?.let {
             scheduleGroupDataFetchingIfNeeded(it)
         }
+        }.also {
+            Timber.i("Finish handling Group data in $it ms")
+        }
 
         Timber.v("On sync completed")
+        measureTimeMillis {
+            Timber.v("Handle onSyncCompleted")
         cryptoSyncHandler.onSyncCompleted(syncResponse)
+        }.also {
+            Timber.i("Finish handling onSyncCompleted in $it ms")
+        }
 
         // post sync stuffs
+        measureTimeMillis {
+            Timber.v("Handle postSyncSpaceHierarchy")
         monarchy.writeAsync {
             roomSyncHandler.postSyncSpaceHierarchyHandle(it)
         }
+        }.also {
+            Timber.i("Finish handling postSyncSpaceHierarchy in $it ms")
+        }
+
     }
 
     private fun dispatchInvitedRoom(roomsSyncResponse: RoomsSyncResponse) {

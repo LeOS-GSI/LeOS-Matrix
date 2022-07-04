@@ -16,7 +16,9 @@
 package org.matrix.android.sdk.internal.session.room.send.pills
 
 import android.text.SpannableString
+import org.matrix.android.sdk.api.session.permalinks.PermalinkService
 import org.matrix.android.sdk.api.session.room.send.MatrixItemSpan
+import org.matrix.android.sdk.api.util.MatrixItem
 import org.matrix.android.sdk.internal.session.displayname.DisplayNameResolver
 import java.util.Collections
 import javax.inject.Inject
@@ -27,7 +29,8 @@ import javax.inject.Inject
  */
 internal class TextPillsUtils @Inject constructor(
         private val mentionLinkSpecComparator: MentionLinkSpecComparator,
-        private val displayNameResolver: DisplayNameResolver
+        private val displayNameResolver: DisplayNameResolver,
+        private val permalinkService: PermalinkService
 ) {
 
     /**
@@ -35,7 +38,7 @@ internal class TextPillsUtils @Inject constructor(
      * @return the transformed String or null if no Span found
      */
     fun processSpecialSpansToHtml(text: CharSequence): String? {
-        return transformPills(text, MENTION_SPAN_TO_HTML_TEMPLATE)
+        return transformPills(text, permalinkService.createMentionSpanTemplate(PermalinkService.SpanTemplateType.HTML))
     }
 
     /**
@@ -43,7 +46,7 @@ internal class TextPillsUtils @Inject constructor(
      * @return the transformed String or null if no Span found
      */
     fun processSpecialSpansToMarkdown(text: CharSequence): String? {
-        return transformPills(text, MENTION_SPAN_TO_MD_TEMPLATE)
+        return transformPills(text, permalinkService.createMentionSpanTemplate(PermalinkService.SpanTemplateType.MARKDOWN))
     }
 
     private fun transformPills(text: CharSequence, template: String): String? {
@@ -51,6 +54,8 @@ internal class TextPillsUtils @Inject constructor(
         val pills = spannableString
                 ?.getSpans(0, text.length, MatrixItemSpan::class.java)
                 ?.map { MentionLinkSpec(it, spannableString.getSpanStart(it), spannableString.getSpanEnd(it)) }
+                // we use the raw text for @room notification instead of a link
+                ?.filterNot { it.span.matrixItem is MatrixItem.EveryoneInRoomItem }
                 ?.toMutableList()
                 ?.takeIf { it.isNotEmpty() }
                 ?: return null
@@ -65,7 +70,15 @@ internal class TextPillsUtils @Inject constructor(
                 // append text before pill
                 append(text, currIndex, start)
                 // append the pill
-                append(String.format(template, urlSpan.matrixItem.id, displayNameResolver.getBestName(urlSpan.matrixItem)))
+                // Different handling necessary for custom emotes
+                if (urlSpan.matrixItem is MatrixItem.EmoteItem) {
+                    // Note we use the same template for both HTML and MARKDOWN conversion. We do this since markdown inline images are not mighty enough
+                    // for custom emotes (i.e., that would drop the data-mx-emoticon tag, which we want to keep). But we can use inline html in markdown.
+                    val imgHtml = "<img data-mx-emoticon height=\"18\" src=\"${urlSpan.matrixItem.avatarUrl}\" title=\":${urlSpan.matrixItem.displayName}:\" alt=\":${urlSpan.matrixItem.displayName}:\">"
+                    append(imgHtml)
+                } else {
+                    append(String.format(template, urlSpan.matrixItem.id, displayNameResolver.getBestName(urlSpan.matrixItem)))
+                }
                 currIndex = end
             }
             // append text after the last pill
@@ -105,10 +118,15 @@ internal class TextPillsUtils @Inject constructor(
             i++
         }
     }
+}
 
-    companion object {
-        private const val MENTION_SPAN_TO_HTML_TEMPLATE = "<a href=\"https://matrix.to/#/%1\$s\">%2\$s</a>"
-
-        private const val MENTION_SPAN_TO_MD_TEMPLATE = "[%2\$s](https://matrix.to/#/%1\$s)"
-    }
+fun CharSequence.requiresFormattedMessage(): Boolean {
+    val spannableString = SpannableString.valueOf(this)
+    val pills = spannableString
+            ?.getSpans(0, length, MatrixItemSpan::class.java)
+            ?.map { MentionLinkSpec(it, spannableString.getSpanStart(it), spannableString.getSpanEnd(it)) }
+            // We cannot send emotes without markdown/formatted messages
+            ?.filter { it.span.matrixItem is MatrixItem.EmoteItem }
+            ?: return false
+    return pills.isNotEmpty()
 }

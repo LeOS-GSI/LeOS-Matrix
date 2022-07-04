@@ -37,6 +37,7 @@ import im.vector.app.core.utils.tappableMatchingText
 import im.vector.app.features.home.AvatarRenderer
 import im.vector.app.features.home.room.detail.RoomDetailAction
 import im.vector.app.features.home.room.detail.timeline.TimelineEventController
+import im.vector.app.features.home.room.detail.timeline.style.TimelineMessageLayout
 import im.vector.app.features.home.room.detail.timeline.tools.linkify
 import me.gujun.android.span.span
 import org.matrix.android.sdk.api.session.room.model.RoomSummary
@@ -51,7 +52,7 @@ abstract class MergedRoomCreationItem : BasedMergedItem<MergedRoomCreationItem.H
     @EpoxyAttribute(EpoxyAttribute.Option.DoNotHash)
     var movementMethod: MovementMethod? = null
 
-    override fun getViewType() = STUB_ID
+    override fun getViewStubId() = STUB_ID
 
     override fun bind(holder: Holder) {
         super.bind(holder)
@@ -133,7 +134,10 @@ abstract class MergedRoomCreationItem : BasedMergedItem<MergedRoomCreationItem.H
         val membersCount = roomSummary?.otherMemberIds?.size ?: 0
 
         if (isDirect) {
-            holder.roomDescriptionText.text = holder.view.resources.getString(R.string.this_is_the_beginning_of_dm, roomSummary?.displayName ?: "")
+            holder.roomDescriptionText.text = holder.view.resources.getString(
+                    R.string.this_is_the_beginning_of_dm,
+                    roomSummary?.displayName ?: ""
+            )
         } else if (roomDisplayName.isNullOrBlank() || roomSummary.name.isBlank()) {
             holder.roomDescriptionText.text = holder.view.resources.getString(R.string.this_is_the_beginning_of_room_no_name)
         } else {
@@ -224,6 +228,7 @@ abstract class MergedRoomCreationItem : BasedMergedItem<MergedRoomCreationItem.H
             override val mergeData: List<Data>,
             override val avatarRenderer: AvatarRenderer,
             override val onCollapsedStateChanged: (Boolean) -> Unit,
+            override val messageLayout: TimelineMessageLayout,
             val callback: TimelineEventController.Callback? = null,
             val currentUserId: String,
             val hasEncryptionEvent: Boolean,

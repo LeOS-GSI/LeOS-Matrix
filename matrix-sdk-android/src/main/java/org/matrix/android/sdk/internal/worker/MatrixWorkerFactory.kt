@@ -22,15 +22,12 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import org.matrix.android.sdk.internal.SessionManager
-import org.matrix.android.sdk.internal.crypto.CancelGossipRequestWorker
-import org.matrix.android.sdk.internal.crypto.SendGossipRequestWorker
-import org.matrix.android.sdk.internal.crypto.SendGossipWorker
 import org.matrix.android.sdk.internal.crypto.crosssigning.UpdateTrustWorker
-import org.matrix.android.sdk.internal.crypto.verification.SendVerificationMessageWorker
 import org.matrix.android.sdk.internal.di.MatrixScope
 import org.matrix.android.sdk.internal.session.content.UploadContentWorker
 import org.matrix.android.sdk.internal.session.group.GetGroupDataWorker
 import org.matrix.android.sdk.internal.session.pushers.AddPusherWorker
+import org.matrix.android.sdk.internal.session.room.aggregation.livelocation.DeactivateLiveLocationShareWorker
 import org.matrix.android.sdk.internal.session.room.send.MultipleEventSendingDispatcherWorker
 import org.matrix.android.sdk.internal.session.room.send.RedactEventWorker
 import org.matrix.android.sdk.internal.session.room.send.SendEventWorker
@@ -56,8 +53,6 @@ internal class MatrixWorkerFactory @Inject constructor(private val sessionManage
                 CheckFactoryWorker(appContext, workerParameters, true)
             AddPusherWorker::class.java.name                      ->
                 AddPusherWorker(appContext, workerParameters, sessionManager)
-            CancelGossipRequestWorker::class.java.name            ->
-                CancelGossipRequestWorker(appContext, workerParameters, sessionManager)
             GetGroupDataWorker::class.java.name                   ->
                 GetGroupDataWorker(appContext, workerParameters, sessionManager)
             MultipleEventSendingDispatcherWorker::class.java.name ->
@@ -66,19 +61,15 @@ internal class MatrixWorkerFactory @Inject constructor(private val sessionManage
                 RedactEventWorker(appContext, workerParameters, sessionManager)
             SendEventWorker::class.java.name                      ->
                 SendEventWorker(appContext, workerParameters, sessionManager)
-            SendGossipRequestWorker::class.java.name              ->
-                SendGossipRequestWorker(appContext, workerParameters, sessionManager)
-            SendGossipWorker::class.java.name                     ->
-                SendGossipWorker(appContext, workerParameters, sessionManager)
-            SendVerificationMessageWorker::class.java.name        ->
-                SendVerificationMessageWorker(appContext, workerParameters, sessionManager)
             SyncWorker::class.java.name                           ->
                 SyncWorker(appContext, workerParameters, sessionManager)
             UpdateTrustWorker::class.java.name                    ->
                 UpdateTrustWorker(appContext, workerParameters, sessionManager)
-            UploadContentWorker::class.java.name                  ->
+            UploadContentWorker::class.java.name                    ->
                 UploadContentWorker(appContext, workerParameters, sessionManager)
-            else                                                  -> {
+            DeactivateLiveLocationShareWorker::class.java.name ->
+                DeactivateLiveLocationShareWorker(appContext, workerParameters, sessionManager)
+            else                                                    -> {
                 Timber.w("No worker defined on MatrixWorkerFactory for $workerClassName will delegate to default.")
                 // Return null to delegate to the default WorkerFactory.
                 null
@@ -93,12 +84,14 @@ internal class MatrixWorkerFactory @Inject constructor(private val sessionManage
     class CheckFactoryWorker(context: Context,
                              workerParameters: WorkerParameters,
                              private val isCreatedByMatrixWorkerFactory: Boolean) :
-        CoroutineWorker(context, workerParameters) {
+            CoroutineWorker(context, workerParameters) {
 
         // Called by WorkManager if there is no MatrixWorkerFactory
-        constructor(context: Context, workerParameters: WorkerParameters) : this(context,
+        constructor(context: Context, workerParameters: WorkerParameters) : this(
+                context,
                 workerParameters,
-                isCreatedByMatrixWorkerFactory = false)
+                isCreatedByMatrixWorkerFactory = false
+        )
 
         override suspend fun doWork(): Result {
             return if (!isCreatedByMatrixWorkerFactory) {

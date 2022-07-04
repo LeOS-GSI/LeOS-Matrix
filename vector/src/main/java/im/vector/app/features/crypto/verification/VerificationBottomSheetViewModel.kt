@@ -28,17 +28,24 @@ import dagger.assisted.AssistedInject
 import im.vector.app.R
 import im.vector.app.core.di.MavericksAssistedViewModelFactory
 import im.vector.app.core.di.hiltMavericksViewModelFactory
-import im.vector.app.core.extensions.exhaustive
 import im.vector.app.core.platform.VectorViewModel
 import im.vector.app.core.resources.StringProvider
+import im.vector.app.features.raw.wellknown.getElementWellknown
+import im.vector.app.features.raw.wellknown.isSecureBackupRequired
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.matrix.android.sdk.api.MatrixCallback
+import org.matrix.android.sdk.api.extensions.orFalse
+import org.matrix.android.sdk.api.raw.RawService
 import org.matrix.android.sdk.api.session.Session
 import org.matrix.android.sdk.api.session.crypto.crosssigning.KEYBACKUP_SECRET_SSSS_NAME
 import org.matrix.android.sdk.api.session.crypto.crosssigning.MASTER_KEY_SSSS_NAME
 import org.matrix.android.sdk.api.session.crypto.crosssigning.SELF_SIGNING_KEY_SSSS_NAME
 import org.matrix.android.sdk.api.session.crypto.crosssigning.USER_SIGNING_KEY_SSSS_NAME
+import org.matrix.android.sdk.api.session.crypto.crosssigning.isVerified
+import org.matrix.android.sdk.api.session.crypto.keysbackup.KeysBackupLastVersionResult
+import org.matrix.android.sdk.api.session.crypto.keysbackup.computeRecoveryKey
+import org.matrix.android.sdk.api.session.crypto.keysbackup.toKeysVersionResult
 import org.matrix.android.sdk.api.session.crypto.verification.CancelCode
 import org.matrix.android.sdk.api.session.crypto.verification.IncomingSasVerificationTransaction
 import org.matrix.android.sdk.api.session.crypto.verification.PendingVerificationRequest
@@ -49,14 +56,11 @@ import org.matrix.android.sdk.api.session.crypto.verification.VerificationServic
 import org.matrix.android.sdk.api.session.crypto.verification.VerificationTransaction
 import org.matrix.android.sdk.api.session.crypto.verification.VerificationTxState
 import org.matrix.android.sdk.api.session.events.model.LocalEcho
+import org.matrix.android.sdk.api.session.getUser
 import org.matrix.android.sdk.api.util.MatrixItem
+import org.matrix.android.sdk.api.util.awaitCallback
+import org.matrix.android.sdk.api.util.fromBase64
 import org.matrix.android.sdk.api.util.toMatrixItem
-import org.matrix.android.sdk.internal.crypto.crosssigning.fromBase64
-import org.matrix.android.sdk.internal.crypto.crosssigning.isVerified
-import org.matrix.android.sdk.internal.crypto.keysbackup.model.rest.KeysVersionResult
-import org.matrix.android.sdk.internal.crypto.keysbackup.util.computeRecoveryKey
-import org.matrix.android.sdk.internal.crypto.model.ImportRoomKeysResult
-import org.matrix.android.sdk.internal.util.awaitCallback
 import timber.log.Timber
 
 data class VerificationBottomSheetViewState(
@@ -78,6 +82,7 @@ data class VerificationBottomSheetViewState(
         val userWantsToCancel: Boolean = false,
         val userThinkItsNotHim: Boolean = false,
         val quadSContainsSecrets: Boolean = true,
+        val isVerificationRequired: Boolean = false,
         val quadSHasBeenReset: Boolean = false,
         val hasAnyOtherSession: Boolean = false
 ) : MavericksState {
@@ -92,6 +97,7 @@ data class VerificationBottomSheetViewState(
 
 class VerificationBottomSheetViewModel @AssistedInject constructor(
         @Assisted initialState: VerificationBottomSheetViewState,
+        private val rawService: RawService,
         private val session: Session,
         private val supportedVerificationMethodsProvider: SupportedVerificationMethodsProvider,
         private val stringProvider: StringProvider) :
@@ -107,6 +113,15 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
 
     init {
         session.cryptoService().verificationService().addListener(this)
+
+        // This is async, but at this point should be in cache
+        // so it's ok to not wait until result
+        viewModelScope.launch(Dispatchers.IO) {
+            val wellKnown = rawService.getElementWellknown(session.sessionParams)
+            setState {
+                copy(isVerificationRequired = wellKnown?.isSecureBackupRequired().orFalse())
+            }
+        }
 
         val userItem = session.getUser(initialState.otherUserId)
 
@@ -149,7 +164,7 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
                     pendingRequest = if (pr != null) Success(pr) else Uninitialized,
                     isMe = initialState.otherUserId == session.myUserId,
                     currentDeviceCanCrossSign = session.cryptoService().crossSigningService().canCrossSign(),
-                    quadSContainsSecrets = session.sharedSecretStorageService.isRecoverySetup(),
+                    quadSContainsSecrets = session.sharedSecretStorageService().isRecoverySetup(),
                     hasAnyOtherSession = hasAnyOtherSession
             )
         }
@@ -182,8 +197,10 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
                     state.verifyingFrom4S) {
                 // you cannot cancel anymore
             } else {
-                setState {
-                    copy(userWantsToCancel = true)
+                if (!state.isVerificationRequired) {
+                    setState {
+                        copy(userWantsToCancel = true)
+                    }
                 }
             }
         }
@@ -231,7 +248,7 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
     override fun handle(action: VerificationAction) = withState { state ->
         val otherUserId = state.otherUserMxItem?.id ?: return@withState
         val roomId = state.roomId
-                ?: session.getExistingDirectRoomWithUser(otherUserId)
+                ?: session.roomService().getExistingDirectRoomWithUser(otherUserId)
 
         when (action) {
             is VerificationAction.RequestVerificationByDM      -> {
@@ -244,7 +261,7 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
                         )
                     }
                     viewModelScope.launch {
-                        val result = runCatching { session.createDirectRoom(otherUserId) }
+                        val result = runCatching { session.roomService().createDirectRoom(otherUserId) }
                         result.fold(
                                 { data ->
                                     setState {
@@ -274,10 +291,11 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
                 } else {
                     setState {
                         copy(
-                                pendingRequest = Success(session
-                                        .cryptoService()
-                                        .verificationService()
-                                        .requestKeyVerificationInDMs(supportedVerificationMethodsProvider.provide(), otherUserId, roomId)
+                                pendingRequest = Success(
+                                        session
+                                                .cryptoService()
+                                                .verificationService()
+                                                .requestKeyVerificationInDMs(supportedVerificationMethodsProvider.provide(), otherUserId, roomId)
                                 )
                         )
                     }
@@ -340,7 +358,18 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
                         ?.shortCodeDoesNotMatch()
             }
             is VerificationAction.GotItConclusion              -> {
-                _viewEvents.post(VerificationBottomSheetViewEvents.Dismiss)
+                if (state.isVerificationRequired && !action.verified) {
+                    // we should go back to first screen
+                    setState {
+                        copy(
+                                pendingRequest = Uninitialized,
+                                sasTransactionState = null,
+                                qrTransactionState = null
+                        )
+                    }
+                } else {
+                    _viewEvents.post(VerificationBottomSheetViewEvents.Dismiss)
+                }
             }
             is VerificationAction.SkipVerification             -> {
                 _viewEvents.post(VerificationBottomSheetViewEvents.Dismiss)
@@ -365,14 +394,14 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
                     copy(verifyingFrom4S = false)
                 }
             }
-        }.exhaustive
+        }
     }
 
     private fun handleSecretBackFromSSSS(action: VerificationAction.GotResultFromSsss) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 action.cypherData.fromBase64().inputStream().use { ins ->
-                    val res = session.loadSecureSecret<Map<String, String>>(ins, action.alias)
+                    val res = session.secureStorageService().loadSecureSecret<Map<String, String>>(ins, action.alias)
                     val trustResult = session.cryptoService().crossSigningService().checkTrustFromPrivateKeys(
                             res?.get(MASTER_KEY_SSSS_NAME),
                             res?.get(USER_SIGNING_KEY_SSSS_NAME),
@@ -415,33 +444,35 @@ class VerificationBottomSheetViewModel @AssistedInject constructor(
                     )
                 }
                 _viewEvents.post(
-                        VerificationBottomSheetViewEvents.ModalError(failure.localizedMessage ?: stringProvider.getString(R.string.unexpected_error)))
+                        VerificationBottomSheetViewEvents.ModalError(failure.localizedMessage ?: stringProvider.getString(R.string.unexpected_error))
+                )
             }
         }
     }
 
     private fun tentativeRestoreBackup(res: Map<String, String>?) {
+        // It's not a good idea to download the full backup, it might take very long
+        // and use a lot of resources
+        // Just check that the key is valid and store it, the backup will be used megolm session per
+        // megolm session when an UISI is encountered
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val secret = res?.get(KEYBACKUP_SECRET_SSSS_NAME) ?: return@launch Unit.also {
                     Timber.v("## Keybackup secret not restored from SSSS")
                 }
 
-                val version = awaitCallback<KeysVersionResult?> {
+                val version = awaitCallback<KeysBackupLastVersionResult> {
                     session.cryptoService().keysBackupService().getCurrentVersion(it)
-                } ?: return@launch
+                }.toKeysVersionResult() ?: return@launch
 
-                awaitCallback<ImportRoomKeysResult> {
-                    session.cryptoService().keysBackupService().restoreKeysWithRecoveryKey(
-                            version,
-                            computeRecoveryKey(secret.fromBase64()),
-                            null,
-                            null,
-                            null,
-                            it
-                    )
+                val recoveryKey = computeRecoveryKey(secret.fromBase64())
+                val isValid = awaitCallback<Boolean> {
+                    session.cryptoService().keysBackupService().isValidRecoveryKeyForCurrentVersion(recoveryKey, it)
                 }
-
+                if (isValid) {
+                    session.cryptoService().keysBackupService().saveBackupRecoveryKey(recoveryKey, version.version)
+                }
                 awaitCallback<Unit> {
                     session.cryptoService().keysBackupService().trustKeysBackupVersion(version, true, it)
                 }

@@ -40,9 +40,18 @@
     <string name="bubble_style_none">None</string>
     <string name="bubble_style_start">Same side</string>
     <string name="bubble_style_both">Both sides</string>
+    <string name="bubble_style_element">Element</string>
     <string name="bubble_time_location">Timestamp location</string>
     <string name="bubble_time_location_top">Top</string>
     <string name="bubble_time_location_bottom">Bottom</string>
+
+    <string name="bubble_appearance">Bubble appearance</string>
+    <string name="bubble_rounded_corners">Corners</string>
+    <string name="bubble_rounded_corners_default">Default</string>
+    <string name="bubble_rounded_corners_r1">Round</string>
+    <string name="bubble_rounded_corners_r2">Extra round</string>
+    <string name="bubble_tail">Bubble tail</string>
+    <string name="bubble_tail_summary">Include bubble tail for a sender\'s first message</string>
 
     <string name="settings_unread_counter">Unread counter</string>
     <string name="settings_unimportant_counter_badge_v2">Count muted messages</string>
@@ -55,7 +64,7 @@
     <string name="url_previews_in_encrypted_rooms">URL previews in encrypted chats</string>
     <string name="url_previews_in_encrypted_rooms_summary">This will leak URLs from your messages to your homeserver!</string>
 
-    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+    <string name="login_mobile_device_sc">SchildiChat Android</string>
     <string name="bottom_action_all">Overview</string>
     <string name="all_list_rooms_empty_title">SchildiChat</string>
     <string name="all_list_rooms_empty_body">Chats will be displayed here</string>
@@ -84,6 +93,7 @@
     <string name="settings_advanced_theme_settings">Advanced theme settings</string>
     <string name="settings_user_colors">User colors</string>
     <string name="settings_theme_colors">Theme colors</string>
+    <string name="setting_sc_accent_color">Accent color</string>
     <string name="setting_sc_accent_color_light">Accent color for light themes</string>
     <string name="setting_sc_accent_color_dark">Accent color for dark themes</string>
     <string name="settings_sc_accent_disclaimer">Note that these color settings only apply to SC themes, and not Element themes.</string>
@@ -116,7 +126,7 @@
     <string name="sc_accent_blue">Blue</string>
     <!-- do not change this comment for accent generation -->
 
-    <string name="send_bug_report_sc_extra">To increase the visibility of your issue and to allow us to contact you, you may want to reference this report (by providing your matrix ID and the approximate time when it was sent) in an issue at https://github.com/SchildiChat/SchildiChat-android/issues (check first if one already exists for your issue, and only create a new one if there is not).</string>
+    <string name="send_bug_report_sc_extra">To increase the visibility of your issue, you may want to reference this report (by providing your matrix ID and the approximate time when it was sent) in an issue at https://github.com/SchildiChat/SchildiChat-android/issues (check first if one already exists for your issue, and only create a new one if there is not).</string>
 
     <!-- Unifiedpush Endpoint -->
     <string name="settings_troubleshoot_test_endpoint_title">Endpoint/FCM</string>
@@ -154,6 +164,48 @@
     <string name="settings_enable_space_pager">Swipe chat list to switch space</string>
     <string name="settings_enable_space_pager_summary">Allow to switch between root spaces by swiping horizontally in the chat list</string>
 
+    <string name="settings_notif_only_alert_once">Only alert once</string>
+    <string name="settings_notif_only_alert_once_summary">Omit alert sounds for new messages if there is already an open notification for that chat</string>
+    <string name="settings_hide_call_buttons">Hide call buttons</string>
+    <string name="settings_hide_call_buttons_summary">Never show buttons in the room toolbar to start voice or video calls</string>
+
     <!-- Default notification rule -->
     <string name="room_settings_default">Default</string>
+
+    <!-- SC debugging -->
+    <string name="settings_sc_debugging">Schildi-debugging</string>
+    <string name="settings_sc_debugging_summary">Enable additional logs or debugging features</string>
+    <string name="settings_sc_dbg_read_marker">Read marker debugging</string>
+    <string name="settings_sc_dbg_timeline_chunks">Timeline consistency debugging</string>
+    <string name="settings_sc_dbg_show_display_index">Show displayIndex in timeline</string>
+    <string name="settings_sc_dbg_show_read_tracking">Show read tracking</string>
+    <string name="settings_sc_dbg_view_pager">ViewPager debugging</string>
+
+    <!-- SC labs -->
+    <string name="settings_upstream_labs">Element features</string>
+    <string name="settings_labs_room_list">Room list</string>
+    <string name="settings_labs_timeline">Timeline</string>
+
+    <string name="settings_read_receipt_follows_read_marker">Only mark chats as read if fully read</string>
+    <string name="settings_read_receipt_follows_read_marker_summary">Do not update your read receipt when opening the room, but only gradually while reading</string>
+
+    <string name="room_list_quick_actions_open_anonymous">Open without reading</string>
+    <string name="settings_show_open_anonymous">Open without reading</string>
+    <string name="settings_show_open_anonymous_summary">Show option to open a room without automatically marking it read</string>
+
+    <string name="settings_floating_date">Floating date</string>
+    <string name="settings_floating_date_summary">Show the date on top of messages while scrolling</string>
+
+    <string name="freeform_react_with">React with \"%1$s\"</string>
+    <string name="freeform_reaction_summary">Free-form reaction</string>
+
+    <string name="dev_tools_menu_hidden_events">Hidden events</string>
+    <string name="dev_tools_menu_event_visibilities">Event visibilities</string>
+    <string name="dev_tools_menu_membership_changes">Membership changes</string>
+    <string name="dev_tools_menu_display_name_changes">Account events</string>
+    <string name="dev_tools_menu_redacted">Deleted messages</string>
+
+    <string name="settings_space_back_navigation">Spaces back stack</string>
+    <string name="settings_space_back_navigation_summary">Press back to show the previously selected space</string>
+
 </resources>

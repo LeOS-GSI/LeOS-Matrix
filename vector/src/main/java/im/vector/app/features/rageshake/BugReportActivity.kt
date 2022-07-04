@@ -26,6 +26,7 @@ import androidx.core.widget.doOnTextChanged
 import com.airbnb.mvrx.viewModel
 import com.airbnb.mvrx.withState
 import dagger.hilt.android.AndroidEntryPoint
+import im.vector.app.BuildConfig
 import im.vector.app.R
 import im.vector.app.core.platform.VectorBaseActivity
 import im.vector.app.databinding.ActivityBugReportBinding
@@ -33,7 +34,7 @@ import org.matrix.android.sdk.api.extensions.tryOrNull
 import timber.log.Timber
 
 /**
- * Form to send a bug report
+ * Form to send a bug report.
  */
 @AndroidEntryPoint
 class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
@@ -49,6 +50,8 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
                 .allowBack()
         setupViews()
 
+        views.bugReportButtonContactMe.isVisible = !isInternalBuild()
+
         if (bugReporter.screenshot != null) {
             views.bugReportScreenshotPreview.setImageBitmap(bugReporter.screenshot)
         } else {
@@ -63,11 +66,11 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
 
         // Default screen is for bug report, so modify it for suggestion
         when (reportType) {
-            ReportType.BUG_REPORT          -> {
+            ReportType.BUG_REPORT            -> {
                 supportActionBar?.setTitle(R.string.title_activity_bug_report)
                 //views.bugReportButtonContactMe.isVisible = true
             }
-            ReportType.SUGGESTION          -> {
+            ReportType.SUGGESTION            -> {
                 supportActionBar?.setTitle(R.string.send_suggestion)
 
                 views.bugReportFirstText.setText(R.string.send_suggestion_content)
@@ -76,7 +79,7 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
 
                 hideBugReportOptions()
             }
-            ReportType.SPACE_BETA_FEEDBACK -> {
+            ReportType.SPACE_BETA_FEEDBACK   -> {
                 supportActionBar?.setTitle(R.string.send_feedback_space_title)
 
                 views.bugReportFirstText.setText(R.string.send_feedback_space_info)
@@ -85,7 +88,16 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
 
                 hideBugReportOptions()
             }
-            else                           -> {
+            ReportType.THREADS_BETA_FEEDBACK -> {
+                supportActionBar?.setTitle(R.string.send_feedback_threads_title)
+
+                views.bugReportFirstText.setText(R.string.send_feedback_threads_info)
+                views.bugReportTextInputLayout.hint = getString(R.string.feedback)
+                //views.bugReportButtonContactMe.isVisible = true
+
+                hideBugReportOptions()
+            }
+            else                             -> {
                 // other types not supported here
             }
         }
@@ -122,10 +134,20 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
         return super.onPrepareOptionsMenu(menu)
     }
 
+    private fun isInternalBuild(): Boolean = BuildConfig.DEBUG || BuildConfig.GIT_BRANCH_NAME == "sm_fdroid"
+
+    private fun minBugReportLength(): Int {
+        return if (isInternalBuild()) {
+            2
+        } else {
+            10
+        }
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.ic_action_send_bug_report -> {
-                if (views.bugReportEditText.text.toString().trim().length >= 10) {
+                if (views.bugReportEditText.text.toString().trim().length >= minBugReportLength()) {
                     sendBugReport()
                 } else {
                     views.bugReportTextInputLayout.error = getString(R.string.bug_report_error_too_short)
@@ -137,7 +159,7 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
     }
 
     /**
-     * Send the bug report
+     * Send the bug report.
      */
     private fun sendBugReport() = withState(viewModel) { state ->
         views.bugReportScrollview.alpha = 0.3f
@@ -151,7 +173,7 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
         views.bugReportProgressView.isVisible = true
         views.bugReportProgressView.progress = 0
 
-        bugReporter.sendBugReport(this,
+        bugReporter.sendBugReport(
                 reportType,
                 views.bugReportButtonIncludeLogs.isChecked,
                 views.bugReportButtonIncludeCrashLogs.isChecked,
@@ -159,7 +181,7 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
                 views.bugReportButtonIncludeScreenshot.isChecked,
                 views.bugReportEditText.text.toString(),
                 state.serverVersion,
-                false, //views.bugReportButtonContactMe.isChecked,
+                views.bugReportButtonContactMe.isChecked && views.bugReportButtonContactMe.isVisible,
                 null,
                 object : BugReporter.IMXBugReportListener {
                     override fun onUploadFailed(reason: String?) {
@@ -167,16 +189,22 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
                             if (!reason.isNullOrEmpty()) {
                                 when (reportType) {
                                     ReportType.BUG_REPORT          -> {
-                                        Toast.makeText(this@BugReportActivity,
-                                                getString(R.string.send_bug_report_failed, reason), Toast.LENGTH_LONG).show()
+                                        Toast.makeText(
+                                                this@BugReportActivity,
+                                                getString(R.string.send_bug_report_failed, reason), Toast.LENGTH_LONG
+                                        ).show()
                                     }
                                     ReportType.SUGGESTION          -> {
-                                        Toast.makeText(this@BugReportActivity,
-                                                getString(R.string.send_suggestion_failed, reason), Toast.LENGTH_LONG).show()
+                                        Toast.makeText(
+                                                this@BugReportActivity,
+                                                getString(R.string.send_suggestion_failed, reason), Toast.LENGTH_LONG
+                                        ).show()
                                     }
                                     ReportType.SPACE_BETA_FEEDBACK -> {
-                                        Toast.makeText(this@BugReportActivity,
-                                                getString(R.string.feedback_failed, reason), Toast.LENGTH_LONG).show()
+                                        Toast.makeText(
+                                                this@BugReportActivity,
+                                                getString(R.string.feedback_failed, reason), Toast.LENGTH_LONG
+                                        ).show()
                                     }
                                     else                           -> {
                                         // nop
@@ -249,7 +277,7 @@ class BugReportActivity : VectorBaseActivity<ActivityBugReportBinding>() {
 
     override fun onBackPressed() {
         // Ensure there is no crash status remaining, which will be sent later on by mistake
-        bugReporter.deleteCrashFile(this)
+        bugReporter.deleteCrashFile()
 
         super.onBackPressed()
     }

@@ -25,8 +25,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import com.airbnb.mvrx.Fail
-import com.airbnb.mvrx.Incomplete
+import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.Success
+import com.airbnb.mvrx.Uninitialized
 import com.airbnb.mvrx.args
 import com.airbnb.mvrx.fragmentViewModel
 import com.airbnb.mvrx.withState
@@ -38,7 +39,6 @@ import im.vector.app.core.dialogs.ConfirmationDialogBuilder
 import im.vector.app.core.extensions.cleanup
 import im.vector.app.core.extensions.configureWith
 import im.vector.app.core.extensions.copyOnLongClick
-import im.vector.app.core.extensions.exhaustive
 import im.vector.app.core.extensions.setTextOrHide
 import im.vector.app.core.platform.StateView
 import im.vector.app.core.platform.VectorBaseFragment
@@ -47,7 +47,7 @@ import im.vector.app.databinding.DialogBaseEditTextBinding
 import im.vector.app.databinding.DialogShareQrCodeBinding
 import im.vector.app.databinding.FragmentMatrixProfileBinding
 import im.vector.app.databinding.ViewStubRoomMemberProfileHeaderBinding
-import im.vector.app.features.analytics.plan.Screen
+import im.vector.app.features.analytics.plan.MobileScreen
 import im.vector.app.features.crypto.verification.VerificationBottomSheet
 import im.vector.app.features.displayname.getBestName
 import im.vector.app.features.home.AvatarRenderer
@@ -57,7 +57,7 @@ import im.vector.app.features.home.room.detail.timeline.helper.MatrixItemColorPr
 import im.vector.app.features.roommemberprofile.devices.DeviceListBottomSheet
 import im.vector.app.features.roommemberprofile.powerlevel.EditPowerLevelDialogs
 import kotlinx.parcelize.Parcelize
-import org.matrix.android.sdk.api.crypto.RoomEncryptionTrustLevel
+import org.matrix.android.sdk.api.session.crypto.model.RoomEncryptionTrustLevel
 import org.matrix.android.sdk.api.session.room.powerlevels.Role
 import org.matrix.android.sdk.api.util.MatrixItem
 import javax.inject.Inject
@@ -91,7 +91,7 @@ class RoomMemberProfileFragment @Inject constructor(
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        analyticsScreenName = Screen.ScreenName.User
+        analyticsScreenName = MobileScreen.ScreenName.User
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -111,7 +111,8 @@ class RoomMemberProfileFragment @Inject constructor(
         headerViews.memberProfileStateView.contentView = headerViews.memberProfileInfoContainer
         views.matrixProfileRecyclerView.configureWith(roomMemberProfileController, hasFixedSize = true, disableItemAnimation = true)
         roomMemberProfileController.callback = this
-        appBarStateChangeListener = MatrixItemAppBarStateChangeListener(headerView,
+        appBarStateChangeListener = MatrixItemAppBarStateChangeListener(
+                headerView,
                 listOf(
                         views.matrixProfileToolbarAvatarImageView,
                         views.matrixProfileToolbarTitleView,
@@ -127,12 +128,13 @@ class RoomMemberProfileFragment @Inject constructor(
                 is RoomMemberProfileViewEvents.ShareRoomMemberProfile      -> handleShareRoomMemberProfile(it.permalink)
                 is RoomMemberProfileViewEvents.ShowPowerLevelValidation    -> handleShowPowerLevelAdminWarning(it)
                 is RoomMemberProfileViewEvents.ShowPowerLevelDemoteWarning -> handleShowPowerLevelDemoteWarning(it)
+                is RoomMemberProfileViewEvents.OpenRoom                    -> handleOpenRoom(it)
                 is RoomMemberProfileViewEvents.OnKickActionSuccess         -> Unit
                 is RoomMemberProfileViewEvents.OnSetPowerLevelSuccess      -> Unit
                 is RoomMemberProfileViewEvents.OnBanActionSuccess          -> Unit
                 is RoomMemberProfileViewEvents.OnIgnoreActionSuccess       -> Unit
                 is RoomMemberProfileViewEvents.OnInviteActionSuccess       -> Unit
-            }.exhaustive
+            }
         }
         setupLongClicks()
     }
@@ -140,6 +142,10 @@ class RoomMemberProfileFragment @Inject constructor(
     private fun setupLongClicks() {
         headerViews.memberProfileNameView.copyOnLongClick()
         headerViews.memberProfileIdView.copyOnLongClick()
+    }
+
+    private fun handleOpenRoom(event: RoomMemberProfileViewEvents.OpenRoom) {
+        navigator.openRoom(requireContext(), event.roomId, null)
     }
 
     private fun handleShowPowerLevelDemoteWarning(event: RoomMemberProfileViewEvents.ShowPowerLevelDemoteWarning) {
@@ -193,18 +199,19 @@ class RoomMemberProfileFragment @Inject constructor(
 
     override fun invalidate() = withState(viewModel) { state ->
         when (val asyncUserMatrixItem = state.userMatrixItem) {
-            is Incomplete -> {
+            Uninitialized,
+            is Loading -> {
                 views.matrixProfileToolbarTitleView.text = state.userId
                 avatarRenderer.render(MatrixItem.UserItem(state.userId, null, null), views.matrixProfileToolbarAvatarImageView)
                 headerViews.memberProfileStateView.state = StateView.State.Loading
             }
-            is Fail       -> {
+            is Fail    -> {
                 avatarRenderer.render(MatrixItem.UserItem(state.userId, null, null), views.matrixProfileToolbarAvatarImageView)
                 views.matrixProfileToolbarTitleView.text = state.userId
                 val failureMessage = errorFormatter.toHumanReadable(asyncUserMatrixItem.error)
                 headerViews.memberProfileStateView.state = StateView.State.Error(failureMessage)
             }
-            is Success    -> {
+            is Success -> {
                 val userMatrixItem = asyncUserMatrixItem()
                 headerViews.memberProfileStateView.state = StateView.State.Content
                 headerViews.memberProfileIdView.text = userMatrixItem.id
@@ -297,8 +304,7 @@ class RoomMemberProfileFragment @Inject constructor(
     }
 
     override fun onOpenDmClicked() {
-        roomDetailPendingActionStore.data = RoomDetailPendingAction.OpenOrCreateDm(fragmentArgs.userId)
-        vectorBaseActivity.finish()
+        viewModel.handle(RoomMemberProfileAction.OpenOrCreateDm(fragmentArgs.userId))
     }
 
     override fun onJumpToReadReceiptClicked() {

@@ -31,13 +31,12 @@ import im.vector.app.core.di.ActiveSessionHolder
 import im.vector.app.core.di.MavericksAssistedViewModelFactory
 import im.vector.app.core.di.hiltMavericksViewModelFactory
 import im.vector.app.core.extensions.configureAndStart
-import im.vector.app.core.extensions.exhaustive
 import im.vector.app.core.platform.VectorViewModel
 import im.vector.app.core.resources.StringProvider
 import im.vector.app.core.utils.ensureTrailingSlash
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import org.matrix.android.sdk.api.MatrixPatterns.getDomain
+import org.matrix.android.sdk.api.MatrixPatterns.getServerName
 import org.matrix.android.sdk.api.auth.AuthenticationService
 import org.matrix.android.sdk.api.auth.HomeServerHistoryService
 import org.matrix.android.sdk.api.auth.data.HomeServerConnectionConfig
@@ -92,11 +91,11 @@ class LoginViewModel @AssistedInject constructor(
     private val matrixOrgUrl = stringProvider.getString(R.string.matrix_org_server_url).ensureTrailingSlash()
 
     val currentThreePid: String?
-        get() = registrationWizard?.currentThreePid
+        get() = registrationWizard?.getCurrentThreePid()
 
     // True when login and password has been sent with success to the homeserver
     val isRegistrationStarted: Boolean
-        get() = authenticationService.isRegistrationStarted
+        get() = authenticationService.isRegistrationStarted()
 
     private val registrationWizard: RegistrationWizard?
         get() = authenticationService.getRegistrationWizard()
@@ -131,7 +130,7 @@ class LoginViewModel @AssistedInject constructor(
             is LoginAction.UserAcceptCertificate      -> handleUserAcceptCertificate(action)
             LoginAction.ClearHomeServerHistory        -> handleClearHomeServerHistory()
             is LoginAction.PostViewEvent              -> _viewEvents.post(action.viewEvent)
-        }.exhaustive
+        }
     }
 
     private fun handleOnGetStarted(action: LoginAction.OnGetStarted) {
@@ -173,6 +172,7 @@ class LoginViewModel @AssistedInject constructor(
                                 .withAllowedFingerPrints(listOf(action.fingerprint))
                                 .build()
                 )
+            else                            -> Unit
         }
     }
 
@@ -275,7 +275,7 @@ class LoginViewModel @AssistedInject constructor(
                            code = MatrixError.FORBIDDEN,
                            message = "Registration is disabled"
                    ), 403))
-                */
+                 */
             } catch (failure: Throwable) {
                 if (failure !is CancellationException) {
                     _viewEvents.post(LoginViewEvents.Failure(failure))
@@ -447,7 +447,7 @@ class LoginViewModel @AssistedInject constructor(
                 handle(LoginAction.UpdateHomeServer(matrixOrgUrl))
             ServerType.EMS,
             ServerType.Other     -> _viewEvents.post(LoginViewEvents.OnServerSelectionDone(action.serverType))
-        }.exhaustive
+        }
     }
 
     private fun handleInitWith(action: LoginAction.InitWith) {
@@ -455,7 +455,7 @@ class LoginViewModel @AssistedInject constructor(
 
         // If there is a pending email validation continue on this step
         try {
-            if (registrationWizard?.isRegistrationStarted == true) {
+            if (registrationWizard?.isRegistrationStarted() == true) {
                 currentThreePid?.let {
                     handle(LoginAction.PostViewEvent(LoginViewEvents.OnSendEmailSuccess(it)))
                 }
@@ -555,7 +555,7 @@ class LoginViewModel @AssistedInject constructor(
             SignMode.SignIn             -> handleLogin(action)
             SignMode.SignUp             -> handleRegisterWith(action)
             SignMode.SignInWithMatrixId -> handleDirectLogin(action, null)
-        }.exhaustive
+        }
     }
 
     private fun handleDirectLogin(action: LoginAction.LoginOrRegister, homeServerConnectionConfig: HomeServerConnectionConfig?) {
@@ -585,7 +585,7 @@ class LoginViewModel @AssistedInject constructor(
                 else                          -> {
                     onWellKnownError()
                 }
-            }.exhaustive
+            }
         }
     }
 
@@ -607,7 +607,7 @@ class LoginViewModel @AssistedInject constructor(
                         identityServerUri = wellKnownPrompt.identityServerUrl?.let { Uri.parse(it) }
                 )
                 ?: HomeServerConnectionConfig(
-                        homeServerUri = Uri.parse("https://${action.username.getDomain()}"),
+                        homeServerUri = Uri.parse("https://${action.username.getServerName()}"),
                         homeServerUriBase = Uri.parse(wellKnownPrompt.homeServerUrl),
                         identityServerUri = wellKnownPrompt.identityServerUrl?.let { Uri.parse(it) }
                 )
@@ -617,7 +617,8 @@ class LoginViewModel @AssistedInject constructor(
                     alteredHomeServerConnectionConfig,
                     action.username,
                     action.password,
-                    action.initialDeviceName)
+                    action.initialDeviceName
+            )
         } catch (failure: Throwable) {
             onDirectLoginError(failure)
             return

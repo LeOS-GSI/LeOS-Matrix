@@ -24,6 +24,10 @@ interface VectorFeatures {
     fun isOnboardingAlreadyHaveAccountSplashEnabled(): Boolean
     fun isOnboardingSplashCarouselEnabled(): Boolean
     fun isOnboardingUseCaseEnabled(): Boolean
+    fun isOnboardingPersonalizeEnabled(): Boolean
+    fun isOnboardingCombinedRegisterEnabled(): Boolean
+    fun isOnboardingCombinedLoginEnabled(): Boolean
+    fun isScreenSharingEnabled(): Boolean
 
     enum class OnboardingVariant {
         LEGACY,
@@ -36,5 +40,9 @@ class DefaultVectorFeatures : VectorFeatures {
     override fun onboardingVariant(): VectorFeatures.OnboardingVariant = BuildConfig.ONBOARDING_VARIANT
     override fun isOnboardingAlreadyHaveAccountSplashEnabled() = true
     override fun isOnboardingSplashCarouselEnabled() = true
-    override fun isOnboardingUseCaseEnabled() = false
+    override fun isOnboardingUseCaseEnabled() = true
+    override fun isOnboardingPersonalizeEnabled() = false
+    override fun isOnboardingCombinedRegisterEnabled() = false
+    override fun isOnboardingCombinedLoginEnabled() = false
+    override fun isScreenSharingEnabled(): Boolean = true
 }

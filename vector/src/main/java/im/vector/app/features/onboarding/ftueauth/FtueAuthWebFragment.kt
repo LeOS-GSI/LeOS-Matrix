@@ -30,7 +30,6 @@ import android.view.ViewGroup
 import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.airbnb.mvrx.activityViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import im.vector.app.R
 import im.vector.app.core.utils.AssetReader
@@ -40,30 +39,25 @@ import im.vector.app.features.login.SignMode
 import im.vector.app.features.onboarding.OnboardingAction
 import im.vector.app.features.onboarding.OnboardingViewEvents
 import im.vector.app.features.onboarding.OnboardingViewState
-import im.vector.app.features.signout.soft.SoftLogoutAction
-import im.vector.app.features.signout.soft.SoftLogoutViewModel
 import org.matrix.android.sdk.api.auth.data.Credentials
-import org.matrix.android.sdk.internal.di.MoshiProvider
+import org.matrix.android.sdk.api.util.MatrixJsonParser
 import timber.log.Timber
 import java.net.URLDecoder
 import javax.inject.Inject
 
 /**
  * This screen is displayed when the application does not support login flow or registration flow
- * of the homeserver, as a fallback to login or to create an account
+ * of the homeserver, as a fallback to login or to create an account.
  */
 class FtueAuthWebFragment @Inject constructor(
         private val assetReader: AssetReader
 ) : AbstractFtueAuthFragment<FragmentLoginWebBinding>() {
-
-    val softLogoutViewModel: SoftLogoutViewModel by activityViewModel()
 
     override fun getBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentLoginWebBinding {
         return FragmentLoginWebBinding.inflate(inflater, container, false)
     }
 
     private var isWebViewLoaded = false
-    private var isForSessionRecovery = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -74,8 +68,6 @@ class FtueAuthWebFragment @Inject constructor(
 
     override fun updateWithState(state: OnboardingViewState) {
         setupTitle(state)
-
-        isForSessionRecovery = state.deviceId?.isNotBlank() == true
 
         if (!isWebViewLoaded) {
             setupWebView(state)
@@ -146,6 +138,7 @@ class FtueAuthWebFragment @Inject constructor(
                         .show()
             }
 
+            @Deprecated("Deprecated in Java")
             override fun onReceivedError(view: WebView, errorCode: Int, description: String, failingUrl: String) {
                 super.onReceivedError(view, errorCode, description, failingUrl)
 
@@ -194,10 +187,12 @@ class FtueAuthWebFragment @Inject constructor(
              *         }
              *    }
              * </pre>
+             * .
              * @param view
              * @param url
              * @return
              */
+            @Deprecated("Deprecated in Java")
             override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
                 if (url == null) return super.shouldOverrideUrlLoading(view, url as String?)
 
@@ -208,7 +203,7 @@ class FtueAuthWebFragment @Inject constructor(
                     try {
                         // URL decode
                         json = URLDecoder.decode(json, "UTF-8")
-                        val adapter = MoshiProvider.providesMoshi().adapter(JavascriptResponse::class.java)
+                        val adapter = MatrixJsonParser.getMoshi().adapter(JavascriptResponse::class.java)
                         javascriptResponse = adapter.fromJson(json)
                     } catch (e: Exception) {
                         Timber.e(e, "## shouldOverrideUrlLoading() : fromJson failed")
@@ -239,15 +234,11 @@ class FtueAuthWebFragment @Inject constructor(
     }
 
     private fun notifyViewModel(credentials: Credentials) {
-        if (isForSessionRecovery) {
-            softLogoutViewModel.handle(SoftLogoutAction.WebLoginSuccess(credentials))
-        } else {
-            viewModel.handle(OnboardingAction.WebLoginSuccess(credentials))
-        }
+        viewModel.handle(OnboardingAction.WebLoginSuccess(credentials))
     }
 
     override fun resetViewModel() {
-        viewModel.handle(OnboardingAction.ResetLogin)
+        viewModel.handle(OnboardingAction.ResetAuthenticationAttempt)
     }
 
     override fun onBackPressed(toolbarButton: Boolean): Boolean {

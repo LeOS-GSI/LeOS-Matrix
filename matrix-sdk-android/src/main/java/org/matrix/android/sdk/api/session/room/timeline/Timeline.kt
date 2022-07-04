@@ -43,7 +43,7 @@ interface Timeline {
     /**
      * This must be called before any other method after creating the timeline. It ensures the underlying database is open
      */
-    fun start()
+    fun start(rootThreadEventId: String? = null)
 
     /**
      * This must be called when you don't need the timeline. It ensures the underlying database get closed.
@@ -59,22 +59,22 @@ interface Timeline {
     /**
      * Event that should be displayed first, before the user scrolls.
      */
-    fun getInitialEventId(): String?
+    fun getTargetEventId(): String?
 
     /**
-     * Change initial event id
+     * The event id we want to display first when showing the timeline
      */
-    fun setInitialEventId(eventId: String?)
+    fun setTargetEventId(eventId: String?)
 
     /**
-     * Offset for the initial event, e.g. if we want to load the event just below said id
+     * Offset for the target event, e.g. if we want to load the event just below said id
      */
-    fun getInitialEventIdOffset(): Int
+    fun getTargetEventOffset(): Int
 
     /**
-     * Set the offset for the initial event, e.g. if we want to load the event just below said id
+     * Set the offset for the target event, e.g. if we want to load the event just below said id
      */
-    fun setInitialEventIdOffset(offset: Int)
+    fun getTargetEventOffset(offset: Int)
 
     /**
      * Check if the timeline can be enriched by paginating.
@@ -120,25 +120,26 @@ interface Timeline {
         fun onTimelineUpdated(snapshot: List<TimelineEvent>) = Unit
 
         /**
-         * Called whenever an error we can't recover from occurred
+         * Called whenever an error we can't recover from occurred.
          */
         fun onTimelineFailure(throwable: Throwable) = Unit
 
         /**
-         * Called when new events come through the sync
+         * Called when new events come through the sync.
          */
         fun onNewTimelineEvents(eventIds: List<String>) = Unit
 
         /**
-         * Called when the pagination state has changed in one direction
+         * Called when the pagination state has changed in one direction.
          */
         fun onStateUpdated(direction: Direction, state: PaginationState) = Unit
     }
 
     /**
-     * Pagination state
+     * Pagination state.
      */
     data class PaginationState(
+            val hasLoadedAtLeastOnce: Boolean = false,
             val hasMoreToLoad: Boolean = true,
             val loading: Boolean = false,
             val inError: Boolean = false

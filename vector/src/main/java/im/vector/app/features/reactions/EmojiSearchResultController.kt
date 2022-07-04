@@ -22,10 +22,13 @@ import im.vector.app.EmojiCompatFontProvider
 import im.vector.app.R
 import im.vector.app.core.resources.StringProvider
 import im.vector.app.core.ui.list.genericFooterItem
+import im.vector.app.features.reactions.data.EmojiItem
+import im.vector.app.features.settings.VectorPreferences
 import im.vector.lib.core.utils.epoxy.charsequence.toEpoxyCharSequence
 import javax.inject.Inject
 
 class EmojiSearchResultController @Inject constructor(
+        private val vectorPreferences: VectorPreferences,
         private val stringProvider: StringProvider,
         private val fontProvider: EmojiCompatFontProvider
 ) : TypedEpoxyController<EmojiSearchResultViewState>() {
@@ -47,6 +50,22 @@ class EmojiSearchResultController @Inject constructor(
     override fun buildModels(data: EmojiSearchResultViewState?) {
         val results = data?.results ?: return
         val host = this
+
+        if (!vectorPreferences.simplifiedMode()) {
+            // Extra EmojiItem to allow reacting with freeform text
+            val freeformReaction = EmojiItem(
+                    name = stringProvider.getString(R.string.freeform_react_with, data.query),
+                    unicode = "",
+                    keywords = listOf(stringProvider.getString(R.string.freeform_reaction_summary))
+            )
+            emojiSearchResultItem {
+                id("de.spiritcroc.riotx.freeform-reaction.${data.query}")
+                emojiItem(freeformReaction)
+                emojiTypeFace(host.emojiTypeface)
+                currentQuery(data.query)
+                onClickListener { host.listener?.onReactionSelected(data.query) }
+            }
+        }
 
         if (results.isEmpty()) {
             if (data.query.isEmpty()) {

@@ -18,7 +18,6 @@ package im.vector.app.features.login2
 
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.viewModelScope
 import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.MavericksViewModelFactory
 import dagger.assisted.Assisted
@@ -29,7 +28,6 @@ import im.vector.app.core.di.ActiveSessionHolder
 import im.vector.app.core.di.MavericksAssistedViewModelFactory
 import im.vector.app.core.di.hiltMavericksViewModelFactory
 import im.vector.app.core.extensions.configureAndStart
-import im.vector.app.core.extensions.exhaustive
 import im.vector.app.core.extensions.tryAsync
 import im.vector.app.core.platform.VectorViewModel
 import im.vector.app.core.resources.StringProvider
@@ -40,7 +38,7 @@ import im.vector.app.features.login.LoginMode
 import im.vector.app.features.login.ReAuthHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import org.matrix.android.sdk.api.MatrixPatterns.getDomain
+import org.matrix.android.sdk.api.MatrixPatterns.getServerName
 import org.matrix.android.sdk.api.auth.AuthenticationService
 import org.matrix.android.sdk.api.auth.HomeServerHistoryService
 import org.matrix.android.sdk.api.auth.data.HomeServerConnectionConfig
@@ -94,11 +92,11 @@ class LoginViewModel2 @AssistedInject constructor(
     private val matrixOrgUrl = stringProvider.getString(R.string.matrix_org_server_url).ensureTrailingSlash()
 
     val currentThreePid: String?
-        get() = registrationWizard?.currentThreePid
+        get() = registrationWizard?.getCurrentThreePid()
 
     // True when login and password has been sent with success to the homeserver
     val isRegistrationStarted: Boolean
-        get() = authenticationService.isRegistrationStarted
+        get() = authenticationService.isRegistrationStarted()
 
     private val registrationWizard: RegistrationWizard?
         get() = authenticationService.getRegistrationWizard()
@@ -137,7 +135,7 @@ class LoginViewModel2 @AssistedInject constructor(
             LoginAction2.ClearHomeServerHistory        -> handleClearHomeServerHistory()
             is LoginAction2.PostViewEvent              -> _viewEvents.post(action.viewEvent)
             is LoginAction2.Finish                     -> handleFinish()
-        }.exhaustive
+        }
     }
 
     private fun handleFinish() {
@@ -172,6 +170,7 @@ class LoginViewModel2 @AssistedInject constructor(
                 handleSetUserPassword(finalLastAction)
             is LoginAction2.LoginWith        ->
                 handleLoginWith(finalLastAction)
+            else                             -> Unit
         }
     }
 
@@ -311,7 +310,7 @@ class LoginViewModel2 @AssistedInject constructor(
     }
 
     /**
-     * Check that the user name is available
+     * Check that the user name is available.
      */
     private fun handleSetUserNameForSignUp(action: LoginAction2.SetUserName) {
         setState { copy(isLoading = true) }
@@ -421,7 +420,7 @@ class LoginViewModel2 @AssistedInject constructor(
 
         // If there is a pending email validation continue on this step
         try {
-            if (registrationWizard?.isRegistrationStarted == true) {
+            if (registrationWizard?.isRegistrationStarted() == true) {
                 currentThreePid?.let {
                     handle(LoginAction2.PostViewEvent(LoginViewEvents2.OnSendEmailSuccess(it)))
                 }
@@ -500,7 +499,7 @@ class LoginViewModel2 @AssistedInject constructor(
             SignMode2.Unknown -> error("Developer error, invalid sign mode")
             SignMode2.SignIn  -> handleSetUserNameForSignIn(action, null)
             SignMode2.SignUp  -> handleSetUserNameForSignUp(action)
-        }.exhaustive
+        }
     }
 
     private fun handleSetUserPassword(action: LoginAction2.SetUserPassword) = withState { state ->
@@ -508,7 +507,7 @@ class LoginViewModel2 @AssistedInject constructor(
             SignMode2.Unknown -> error("Developer error, invalid sign mode")
             SignMode2.SignIn  -> handleSignInWithPassword(action)
             SignMode2.SignUp  -> handleRegisterWithPassword(action)
-        }.exhaustive
+        }
     }
 
     private fun handleRegisterWithPassword(action: LoginAction2.SetUserPassword) = withState { state ->
@@ -563,7 +562,7 @@ class LoginViewModel2 @AssistedInject constructor(
     }
 
     /**
-     * Perform wellknown request
+     * Perform wellknown request.
      */
     private fun handleSetUserNameForSignIn(action: LoginAction2.SetUserName, homeServerConnectionConfig: HomeServerConnectionConfig?) {
         setState { copy(isLoading = true) }
@@ -588,7 +587,7 @@ class LoginViewModel2 @AssistedInject constructor(
                 else                          -> {
                     onWellKnownError()
                 }
-            }.exhaustive
+            }
         }
     }
 
@@ -641,7 +640,7 @@ class LoginViewModel2 @AssistedInject constructor(
         }
         viewEvent?.let { _viewEvents.post(it) }
 
-        val urlFromUser = action.username.getDomain()
+        val urlFromUser = action.username.getServerName()
         setState {
             copy(
                     isLoading = false,
@@ -772,7 +771,7 @@ class LoginViewModel2 @AssistedInject constructor(
                                             ),
                                             httpCode = 403
                                     )
-                                     */
+                                 */
 
                                 LoginViewEvents2.OpenSignUpChooseUsernameScreen
                             } catch (throwable: Throwable) {

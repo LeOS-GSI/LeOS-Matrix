@@ -44,8 +44,8 @@ import javax.inject.Inject
 
 /**
  *
- * TODO: Loading indicator while getting emoji data source?
- * TODO: Finish Refactor to vector base activity
+ * TODO Loading indicator while getting emoji data source?
+ * TODO Finish Refactor to vector base activity
  */
 @AndroidEntryPoint
 class EmojiReactionPickerActivity : VectorBaseActivity<ActivityEmojiReactionPickerBinding>(),
@@ -168,7 +168,7 @@ class EmojiReactionPickerActivity : VectorBaseActivity<ActivityEmojiReactionPick
             }
 
             searchView.queryTextChanges()
-                    .throttleFirst(600)
+                    //.throttleFirst(600)
                     .onEach { query ->
                         onQueryText(query.toString())
                     }

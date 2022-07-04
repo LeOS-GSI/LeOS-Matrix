@@ -28,6 +28,7 @@ import im.vector.app.core.di.MavericksAssistedViewModelFactory
 import im.vector.app.core.di.hiltMavericksViewModelFactory
 import im.vector.app.core.extensions.singletonEntryPoint
 import im.vector.app.core.platform.VectorViewModel
+import im.vector.app.features.VectorOverrides
 import im.vector.app.features.call.dialpad.DialPadLookup
 import im.vector.app.features.call.lookup.CallProtocolsChecker
 import im.vector.app.features.call.webrtc.WebRtcCallManager
@@ -43,19 +44,22 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import org.matrix.android.sdk.api.query.ActiveSpaceFilter
 import org.matrix.android.sdk.api.query.QueryStringValue
 import org.matrix.android.sdk.api.query.RoomCategoryFilter
+import org.matrix.android.sdk.api.query.SpaceFilter
+import org.matrix.android.sdk.api.query.toActiveSpaceOrOrphanRooms
 import org.matrix.android.sdk.api.session.Session
+import org.matrix.android.sdk.api.session.crypto.NewSessionListener
 import org.matrix.android.sdk.api.session.events.model.toModel
 import org.matrix.android.sdk.api.session.initsync.SyncStatusService
+import org.matrix.android.sdk.api.session.room.Room
 import org.matrix.android.sdk.api.session.room.RoomSortOrder
 import org.matrix.android.sdk.api.session.room.accountdata.RoomAccountDataTypes
 import org.matrix.android.sdk.api.session.room.model.Membership
 import org.matrix.android.sdk.api.session.room.roomSummaryQueryParams
+import org.matrix.android.sdk.api.session.room.spaceSummaryQueryParams
 import org.matrix.android.sdk.api.session.space.model.SpaceOrderContent
 import org.matrix.android.sdk.api.session.space.model.TopLevelSpaceComparator
 import org.matrix.android.sdk.api.util.toMatrixItem
@@ -64,7 +68,7 @@ import timber.log.Timber
 
 /**
  * View model used to update the home bottom bar notification counts, observe the sync state and
- * change the selected room list view
+ * change the selected room list view.
  */
 class HomeDetailViewModel @AssistedInject constructor(
         @Assisted initialState: HomeDetailViewState,
@@ -74,7 +78,8 @@ class HomeDetailViewModel @AssistedInject constructor(
         private val callManager: WebRtcCallManager,
         private val directRoomHelper: DirectRoomHelper,
         private val appStateHandler: AppStateHandler,
-        private val autoAcceptInvites: AutoAcceptInvites
+        private val autoAcceptInvites: AutoAcceptInvites,
+        private val vectorOverrides: VectorOverrides
 ) : VectorViewModel<HomeDetailViewState, HomeDetailAction, HomeDetailViewEvents>(initialState),
         CallProtocolsChecker.Listener {
 
@@ -93,9 +98,17 @@ class HomeDetailViewModel @AssistedInject constructor(
         }
     }
 
+    private val refreshRoomSummariesOnCryptoSessionChange = object : NewSessionListener {
+        override fun onNewSession(roomId: String?, senderKey: String, sessionId: String) {
+            // SC: we're doing this directly in MegolmSessionDataImporter
+            //session.roomService().refreshJoinedRoomSummaryPreviews(roomId)
+        }
+    }
+
     init {
         observeSyncState()
         observeRoomGroupingMethod()
+        session.cryptoService().addNewSessionListener(refreshRoomSummariesOnCryptoSessionChange)
         observeRoomSummaries()
         updatePstnSupportFlag()
         observeDataStore()
@@ -114,8 +127,7 @@ class HomeDetailViewModel @AssistedInject constructor(
                     pushCounter = nbOfPush
             )
         }
-
-        vectorDataStore.forceDialPadDisplayFlow.setOnEach { force ->
+        vectorOverrides.forceDialPad.setOnEach { force ->
             copy(
                     forceDialPadTab = force
             )
@@ -157,6 +169,7 @@ class HomeDetailViewModel @AssistedInject constructor(
     override fun onCleared() {
         super.onCleared()
         callManager.removeProtocolsCheckerListener(this)
+        session.cryptoService().removeSessionListener(refreshRoomSummariesOnCryptoSessionChange)
     }
 
     override fun onPSTNSupportUpdated() {
@@ -174,7 +187,7 @@ class HomeDetailViewModel @AssistedInject constructor(
     private fun handleMarkAllRoomsRead() = withState { _ ->
         // questionable to use viewmodelscope
         viewModelScope.launch(Dispatchers.Default) {
-            val roomIds = session.getRoomSummaries(
+            val roomIds = session.roomService().getRoomSummaries(
                     roomSummaryQueryParams {
                         memberships = listOf(Membership.JOIN)
                         roomCategoryFilter = RoomCategoryFilter.ONLY_WITH_NOTIFICATIONS
@@ -182,7 +195,7 @@ class HomeDetailViewModel @AssistedInject constructor(
             )
                     .map { it.roomId }
             try {
-                session.markAllAsRead(roomIds)
+                session.roomService().markAllAsRead(roomIds)
             } catch (failure: Throwable) {
                 Timber.d(failure, "Failed to mark all as read")
             }
@@ -196,7 +209,7 @@ class HomeDetailViewModel @AssistedInject constructor(
                     copy(syncState = syncState)
                 }
 
-        session.getSyncStatusLive()
+        session.syncStatusService().getSyncStatusLive()
                 .asFlow()
                 .filterIsInstance<SyncStatusService.Status.IncrementalSyncStatus>()
                 .setOnEach {
@@ -211,13 +224,19 @@ class HomeDetailViewModel @AssistedInject constructor(
                             roomGroupingMethod = it.orNull() ?: RoomGroupingMethod.BySpace(null)
                     )
                 }
+        appStateHandler.selectedRoomGroupingFlowIgnoreSwipe
+                .setOnEach {
+                    copy(
+                            roomGroupingMethodIgnoreSwipe = it.orNull()
+                    )
+                }
     }
 
     private fun observeRoomSummaries() {
         appStateHandler.selectedRoomGroupingFlow.distinctUntilChanged().flatMapLatest {
             // we use it as a trigger to all changes in room, but do not really load
             // the actual models
-            session.getPagedRoomSummariesLive(
+            session.roomService().getPagedRoomSummariesLive(
                     roomSummaryQueryParams {
                         memberships = Membership.activeMemberships()
                     },
@@ -235,36 +254,36 @@ class HomeDetailViewModel @AssistedInject constructor(
                             var dmInvites = 0
                             var roomsInvite = 0
                             if (autoAcceptInvites.showInvites()) {
-                                dmInvites = session.getRoomSummaries(
+                                dmInvites = session.roomService().getRoomSummaries(
                                         roomSummaryQueryParams {
                                             memberships = listOf(Membership.INVITE)
                                             roomCategoryFilter = RoomCategoryFilter.ONLY_DM
-                                            activeSpaceFilter = activeSpaceRoomId?.let { ActiveSpaceFilter.ActiveSpace(it) } ?: ActiveSpaceFilter.None
+                                            spaceFilter = activeSpaceRoomId?.let { SpaceFilter.ActiveSpace(it) }
                                         }
                                 ).size
 
-                                roomsInvite = session.getRoomSummaries(
+                                roomsInvite = session.roomService().getRoomSummaries(
                                         roomSummaryQueryParams {
                                             memberships = listOf(Membership.INVITE)
                                             roomCategoryFilter = RoomCategoryFilter.ONLY_ROOMS
-                                            activeSpaceFilter = ActiveSpaceFilter.ActiveSpace(groupingMethod.spaceSummary?.roomId)
+                                            spaceFilter = groupingMethod.toActiveSpaceOrOrphanRooms()
                                         }
                                 ).size
                             }
 
-                            val dmRooms = session.getNotificationCountForRooms(
+                            val dmRooms = session.roomService().getNotificationCountForRooms(
                                     roomSummaryQueryParams {
                                         memberships = listOf(Membership.JOIN)
                                         roomCategoryFilter = RoomCategoryFilter.ONLY_DM
-                                        activeSpaceFilter = activeSpaceRoomId?.let { ActiveSpaceFilter.ActiveSpace(it) } ?: ActiveSpaceFilter.None
+                                        spaceFilter = activeSpaceRoomId?.let { SpaceFilter.ActiveSpace(it) }
                                     }
                             )
 
-                            val otherRooms = session.getNotificationCountForRooms(
+                            val otherRooms = session.roomService().getNotificationCountForRooms(
                                     roomSummaryQueryParams {
                                         memberships = listOf(Membership.JOIN)
                                         roomCategoryFilter = RoomCategoryFilter.ONLY_ROOMS
-                                        activeSpaceFilter = ActiveSpaceFilter.ActiveSpace(groupingMethod.spaceSummary?.roomId)
+                                        spaceFilter = groupingMethod.toActiveSpaceOrOrphanRooms()
                                     }
                             )
 
@@ -280,6 +299,7 @@ class HomeDetailViewModel @AssistedInject constructor(
                                 )
                             }
                         }
+                        null                                -> Unit
                     }
                 }
                 .launchIn(viewModelScope)
@@ -287,34 +307,25 @@ class HomeDetailViewModel @AssistedInject constructor(
 
     // Taken from SpaceListViewModel.observeSpaceSummaries()
     private fun observeRootSpaces() {
-        val spaceSummaryQueryParams = roomSummaryQueryParams {
-            memberships = listOf(Membership.JOIN, Membership.INVITE)
+        val params = spaceSummaryQueryParams {
+            memberships = listOf(Membership.JOIN)
             displayName = QueryStringValue.IsNotEmpty
-            excludeType = listOf(/**RoomType.MESSAGING,$*/
-                    null)
         }
-
-        val flowSession = session.flow()
 
         combine(
-                flowSession
-                        .liveUser(session.myUserId)
-                        .map {
-                            it.getOrNull()
-                        },
-                flowSession
-                        .liveSpaceSummaries(spaceSummaryQueryParams),
-                session
-                        .accountDataService()
+                session.flow()
+                        .liveSpaceSummaries(params),
+                session.accountDataService()
                         .getLiveRoomAccountDataEvents(setOf(RoomAccountDataTypes.EVENT_TYPE_SPACE_ORDER))
                         .asFlow()
-        ) { _, communityGroups, _ ->
-            communityGroups
+        ) { spaces, _ ->
+            spaces
         }
-                .execute { //async ->
-                    val rootSpaces = session.spaceService().getRootSpaceSummaries()
-                    val orders = rootSpaces.map {
-                        it.roomId to session.getRoom(it.roomId)
+                .execute { async ->
+                    val rootSpaces = async.invoke().orEmpty().filter { it.flattenParentIds.isEmpty() }
+                    val orders = rootSpaces.associate {
+                        it.roomId to session.roomService().getRoom(it.roomId)
+                                ?.roomAccountDataService()
                                 ?.getAccountDataEvent(RoomAccountDataTypes.EVENT_TYPE_SPACE_ORDER)
                                 ?.content.toModel<SpaceOrderContent>()
                                 ?.safeOrder()
@@ -325,5 +336,13 @@ class HomeDetailViewModel @AssistedInject constructor(
                             //spaceOrderInfo = orders
                     )
                 }
+    }
+
+    fun getRoom(roomId: String): Room? {
+        return session.roomService().getRoom(roomId)
+    }
+
+    private fun RoomGroupingMethod.BySpace.toActiveSpaceOrOrphanRooms(): SpaceFilter {
+        return spaceSummary?.roomId.toActiveSpaceOrOrphanRooms()
     }
 }

@@ -28,13 +28,13 @@ import com.airbnb.mvrx.withState
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import im.vector.app.R
-import im.vector.app.core.extensions.exhaustive
 import im.vector.app.core.intent.getMimeTypeFromUri
 import im.vector.app.core.platform.VectorBaseFragment
+import im.vector.app.core.time.Clock
 import im.vector.app.core.utils.saveMedia
 import im.vector.app.core.utils.shareMedia
 import im.vector.app.databinding.FragmentRoomUploadsBinding
-import im.vector.app.features.analytics.plan.Screen
+import im.vector.app.features.analytics.plan.MobileScreen
 import im.vector.app.features.home.AvatarRenderer
 import im.vector.app.features.notifications.NotificationUtils
 import im.vector.app.features.roomprofile.RoomProfileArgs
@@ -44,7 +44,8 @@ import javax.inject.Inject
 
 class RoomUploadsFragment @Inject constructor(
         private val avatarRenderer: AvatarRenderer,
-        private val notificationUtils: NotificationUtils
+        private val notificationUtils: NotificationUtils,
+        private val clock: Clock,
 ) : VectorBaseFragment<FragmentRoomUploadsBinding>() {
 
     private val roomProfileArgs: RoomProfileArgs by args()
@@ -57,7 +58,7 @@ class RoomUploadsFragment @Inject constructor(
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        analyticsScreenName = Screen.ScreenName.RoomUploads
+        analyticsScreenName = MobileScreen.ScreenName.RoomUploads
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -89,7 +90,8 @@ class RoomUploadsFragment @Inject constructor(
                                     file = it.file,
                                     title = it.title,
                                     mediaMimeType = getMimeTypeFromUri(requireContext(), it.file.toUri()),
-                                    notificationUtils = notificationUtils
+                                    notificationUtils = notificationUtils,
+                                    currentTimeMillis = clock.epochMillis()
                             )
                         }.onFailure { failure ->
                             if (!isAdded) return@onFailure
@@ -99,7 +101,7 @@ class RoomUploadsFragment @Inject constructor(
                     Unit
                 }
                 is RoomUploadsViewEvents.Failure             -> showFailure(it.throwable)
-            }.exhaustive
+            }
         }
     }
 

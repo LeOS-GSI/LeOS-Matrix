@@ -16,8 +16,8 @@
 
 package im.vector.app.features.home.room.detail.timeline.item
 
-import android.content.Context
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -26,14 +26,22 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import com.airbnb.epoxy.EpoxyAttribute
 import com.airbnb.epoxy.EpoxyModelClass
+import com.bumptech.glide.load.Transformation
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import im.vector.app.R
 import im.vector.app.core.epoxy.ClickListener
 import im.vector.app.core.epoxy.onClick
 import im.vector.app.core.files.LocalFilesHelper
 import im.vector.app.core.glide.GlideApp
+import im.vector.app.core.utils.DimensionConverter
 import im.vector.app.features.home.room.detail.timeline.helper.ContentUploadStateTrackerBinder
+import im.vector.app.features.home.room.detail.timeline.style.TimelineMessageLayout
+import im.vector.app.features.home.room.detail.timeline.style.granularRoundedCorners
+import im.vector.app.features.home.room.detail.timeline.view.ScMessageBubbleWrapView
 import im.vector.app.features.media.ImageContentRenderer
-import im.vector.app.features.themes.BubbleThemeUtils
+import im.vector.app.features.themes.defaultScBubbleAppearance
+import kotlin.math.round
+import org.matrix.android.sdk.api.session.room.model.message.MessageType
 import org.matrix.android.sdk.api.util.MimeTypes
 
 @EpoxyModelClass(layout = R.layout.item_timeline_event_base)
@@ -66,22 +74,47 @@ abstract class MessageImageVideoItem : AbsMessageItem<MessageImageVideoItem.Hold
         forceAllowFooterOverlay = null
         super.bind(holder)
 
+        val isImageMessage = attributes.informationData.messageType == MessageType.MSGTYPE_IMAGE
+        val autoplayAnimatedImages = attributes.autoplayAnimatedImages
+
+        val bubbleWrapView = (holder.view as? ScMessageBubbleWrapView)
+        val host = this
         val onImageSizeListener = object: ImageContentRenderer.OnImageSizeListener {
             override fun onImageSizeUpdated(width: Int, height: Int) {
+                bubbleWrapView ?: return
                 // Image size change -> different footer space situation possible
-                val footerMeasures = getFooterMeasures(holder)
+                val footerMeasures = bubbleWrapView.getFooterMeasures(attributes.informationData)
                 forceAllowFooterOverlay = shouldAllowFooterOverlay(footerMeasures, width, height)
                 val newShowFooterBellow = shouldShowFooterBellow(footerMeasures, width, height)
                 if (lastAllowedFooterOverlay != forceAllowFooterOverlay || newShowFooterBellow != lastShowFooterBellow) {
                     showFooterBellow = newShowFooterBellow
-                    updateMessageBubble(holder.imageView.context, holder)
+                    bubbleWrapView.renderMessageLayout(attributes.informationData.messageLayout, host, holder)
                 }
             }
         }
-        val animate = mediaData.mimeType == MimeTypes.Gif
+        val animate = playable && isImageMessage && autoplayAnimatedImages
         // Do not use thumbnails for animated GIFs - sometimes thumbnails do not animate while the original GIF does
         val effectiveMode = if (animate && mode == ImageContentRenderer.Mode.THUMBNAIL) ImageContentRenderer.Mode.ANIMATED_THUMBNAIL else mode
-        imageContentRenderer.render(mediaData, effectiveMode, holder.imageView, onImageSizeListener, animate)
+
+        val messageLayout = baseAttributes.informationData.messageLayout
+        val dimensionConverter = DimensionConverter(holder.view.resources)
+        val cornerRoundnessDp: Int
+        val imageCornerTransformation: Transformation<Bitmap>
+        when (messageLayout) {
+            is TimelineMessageLayout.ScBubble -> {
+                cornerRoundnessDp = round(messageLayout.bubbleAppearance.getBubbleRadiusDp(holder.view.context)).toInt()
+                imageCornerTransformation = RoundedCorners(dimensionConverter.dpToPx(cornerRoundnessDp))
+            }
+            is TimelineMessageLayout.Bubble   -> {
+                cornerRoundnessDp = 8
+                imageCornerTransformation = messageLayout.cornersRadius.granularRoundedCorners()
+            }
+            else -> {
+                cornerRoundnessDp = 8
+                imageCornerTransformation = RoundedCorners(dimensionConverter.dpToPx(cornerRoundnessDp))
+            }
+        }
+        imageContentRenderer.render(mediaData, effectiveMode, holder.imageView, cornerRoundnessDp, imageCornerTransformation, onImageSizeListener, animate = animate)
         if (!attributes.informationData.sendState.hasFailed()) {
             contentUploadStateTrackerBinder.bind(
                     attributes.informationData.eventId,
@@ -96,7 +129,14 @@ abstract class MessageImageVideoItem : AbsMessageItem<MessageImageVideoItem.Hold
         ViewCompat.setTransitionName(holder.imageView, "imagePreview_${id()}")
         holder.mediaContentView.onClick(attributes.itemClickListener)
         holder.mediaContentView.setOnLongClickListener(attributes.itemLongClickListener)
-        holder.playContentView.visibility = if (playable && !animate) View.VISIBLE else View.GONE
+
+        holder.playContentView.visibility = if (animate) {
+            View.GONE
+        } else if (playable) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
     }
 
     override fun unbind(holder: Holder) {
@@ -108,44 +148,7 @@ abstract class MessageImageVideoItem : AbsMessageItem<MessageImageVideoItem.Hold
         super.unbind(holder)
     }
 
-    override fun getViewType() = STUB_ID
-
-    override fun messageBubbleAllowed(context: Context): Boolean {
-        return false
-    }
-
-    override fun pseudoBubbleAllowed(): Boolean {
-        return true
-    }
-
-    override fun getBubbleMargin(resources: Resources, bubbleStyle: String, reverseBubble: Boolean): Int {
-        return 0
-    }
-
-    override fun setBubbleLayout(holder: Holder, bubbleStyle: String, bubbleStyleSetting: String, reverseBubble: Boolean) {
-        super.setBubbleLayout(holder, bubbleStyle, bubbleStyleSetting, reverseBubble)
-
-        // Case: ImageContentRenderer.processSize only sees width=height=0 -> width of the ImageView not adapted to the actual content
-        // -> Align image within ImageView to same side as message bubbles
-        holder.imageView.scaleType = if (reverseBubble) ImageView.ScaleType.FIT_END else ImageView.ScaleType.FIT_START
-        // Case: Message information (sender name + date) makes the containing view wider than the ImageView
-        // -> Align ImageView within its parent to the same side as message bubbles
-        (holder.imageView.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = if (reverseBubble) 1f else 0f
-
-        // Image outline
-        when {
-            bubbleStyle == BubbleThemeUtils.BUBBLE_STYLE_NONE || mode != ImageContentRenderer.Mode.THUMBNAIL -> {
-                // Don't show it for non-bubble layouts, don't show for Stickers, ...
-                holder.mediaContentView.background = null
-            }
-            attributes.informationData.sentByMe                                                           -> {
-                holder.mediaContentView.setBackgroundResource(R.drawable.background_image_border_outgoing)
-            }
-            else                                        -> {
-                holder.mediaContentView.setBackgroundResource(R.drawable.background_image_border_incoming)
-            }
-        }
-    }
+    override fun getViewStubId() = STUB_ID
 
     private fun shouldAllowFooterOverlay(footerMeasures: Array<Int>, imageWidth: Int, imageHeight: Int): Boolean {
         val footerWidth = footerMeasures[0]
@@ -164,7 +167,7 @@ abstract class MessageImageVideoItem : AbsMessageItem<MessageImageVideoItem.Hold
         return imageWidth > 1.5*footerWidth && imageHeight < 1.5*footerHeight
     }
 
-    override fun allowFooterOverlay(holder: Holder): Boolean {
+    override fun allowFooterOverlay(holder: Holder, bubbleWrapView: ScMessageBubbleWrapView): Boolean {
         val rememberedAllowFooterOverlay = forceAllowFooterOverlay
         if (rememberedAllowFooterOverlay != null) {
             lastAllowedFooterOverlay = rememberedAllowFooterOverlay
@@ -178,7 +181,7 @@ abstract class MessageImageVideoItem : AbsMessageItem<MessageImageVideoItem.Hold
             return true
         }
         // If the footer covers most of the image, or is even larger than the image, move it outside
-        val footerMeasures = getFooterMeasures(holder)
+        val footerMeasures = bubbleWrapView.getFooterMeasures(baseAttributes.informationData)
         lastAllowedFooterOverlay = shouldAllowFooterOverlay(footerMeasures, imageWidth, imageHeight)
         return lastAllowedFooterOverlay
     }
@@ -189,7 +192,33 @@ abstract class MessageImageVideoItem : AbsMessageItem<MessageImageVideoItem.Hold
         return showBellow
     }
 
+    override fun getScBubbleMargin(resources: Resources): Int {
+        return 0
+    }
 
+    override fun applyScBubbleStyle(messageLayout: TimelineMessageLayout.ScBubble, holder: Holder) {
+        // Case: ImageContentRenderer.processSize only sees width=height=0 -> width of the ImageView not adapted to the actual content
+        // -> Align image within ImageView to same side as message bubbles
+        holder.imageView.scaleType = if (messageLayout.reverseBubble) ImageView.ScaleType.FIT_END else ImageView.ScaleType.FIT_START
+        // Case: Message information (sender name + date) makes the containing view wider than the ImageView
+        // -> Align ImageView within its parent to the same side as message bubbles
+        (holder.imageView.layoutParams as ConstraintLayout.LayoutParams).horizontalBias = if (messageLayout.reverseBubble) 1f else 0f
+
+        // Image outline
+        when {
+            // Don't show it for non-bubble layouts, don't show for Stickers, ...
+            // Also only supported for default corner radius
+            !(messageLayout.isRealBubble || messageLayout.isPseudoBubble) || mode != ImageContentRenderer.Mode.THUMBNAIL -> {
+                holder.mediaContentView.background = null
+            }
+            attributes.informationData.sentByMe                                    -> {
+                holder.mediaContentView.setBackgroundResource(messageLayout.bubbleAppearance.imageBorderOutgoing)
+            }
+            else                                                                   -> {
+                holder.mediaContentView.setBackgroundResource(messageLayout.bubbleAppearance.imageBorderIncoming)
+            }
+        }
+    }
 
     class Holder : AbsMessageItem.Holder(STUB_ID) {
         val progressLayout by bind<ViewGroup>(R.id.messageMediaUploadProgressLayout)

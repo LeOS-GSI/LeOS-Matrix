@@ -155,7 +155,7 @@ object ThemeUtils {
     }
 
     /**
-     * Provides the selected application theme
+     * Provides the selected application theme.
      *
      * @param context the context
      * @return the selected application theme
@@ -244,8 +244,9 @@ object ThemeUtils {
     */
 
     /**
-     * Update the application theme
+     * Update the application theme.
      *
+     * @param context the Android context
      * @param aTheme the new theme
      */
     fun setApplicationTheme(context: Context, aLightTheme: String, aDarkTheme: String, aLightAccent: String, aDarkAccent: String) {
@@ -273,6 +274,52 @@ object ThemeUtils {
         mColorByAttr.clear()
     }
 
+    // For developer quick options
+    fun setCurrentActiveTheme(context: Context, theme: String) {
+        var darkTheme = getApplicationDarkTheme(context)
+        var lightTheme = getApplicationLightTheme(context)
+        val darkAccent = getApplicationDarkThemeAccent(context)
+        val lightAccent = getApplicationLightThemeAccent(context)
+        if (useDarkTheme(context)) {
+            darkTheme = theme
+        } else {
+            lightTheme = theme
+        }
+        setApplicationTheme(context, lightTheme, darkTheme, lightAccent, darkAccent)
+    }
+
+    // For developer quick options
+    fun getCurrentActiveTheme(context: Context): String {
+        return if (useDarkTheme(context)) {
+            getApplicationDarkTheme(context)
+        } else {
+            getApplicationLightTheme(context)
+        }
+    }
+
+    // For developer quick options
+    fun setCurrentActiveThemeAccent(context: Context, accent: String) {
+        val darkTheme = getApplicationDarkTheme(context)
+        val lightTheme = getApplicationLightTheme(context)
+        var darkAccent = getApplicationDarkThemeAccent(context)
+        var lightAccent = getApplicationLightThemeAccent(context)
+        if (useDarkTheme(context)) {
+            darkAccent = accent
+        } else {
+            lightAccent = accent
+        }
+        setApplicationTheme(context, lightTheme, darkTheme, lightAccent, darkAccent)
+    }
+
+    // For developer quick options
+    fun getCurrentActiveThemeAccent(context: Context): String {
+        return if (useDarkTheme(context)) {
+            getApplicationDarkThemeAccent(context)
+        } else {
+            getApplicationLightThemeAccent(context)
+        }
+    }
+
     fun setApplicationLightTheme(context: Context, theme: String) {
         setApplicationTheme(context, theme, getApplicationDarkTheme(context),
                 getApplicationLightThemeAccent(context), getApplicationDarkThemeAccent(context))
@@ -294,9 +341,11 @@ object ThemeUtils {
     }
 
     /**
-     * Set the activity theme according to the selected one.
+     * Set the activity theme according to the selected one. Default is Light, so if this is the current
+     * theme, the theme is not changed.
      *
      * @param activity the activity
+     * @param otherThemes themes to apply for dark and black theme
      */
     fun setActivityTheme(activity: Activity, otherThemes: ActivityOtherThemes) {
         when (getApplicationTheme(activity)) {
@@ -315,9 +364,9 @@ object ThemeUtils {
     }
 
     /**
-     * Translates color attributes to colors
+     * Translates color attributes to colors.
      *
-     * @param c              Context
+     * @param c Context
      * @param colorAttribute Color Attribute
      * @return Requested Color
      */
@@ -353,10 +402,10 @@ object ThemeUtils {
     }
 
     /**
-     * Tint the drawable with a theme attribute
+     * Tint the drawable with a theme attribute.
      *
-     * @param context   the context
-     * @param drawable  the drawable to tint
+     * @param context the context
+     * @param drawable the drawable to tint
      * @param attribute the theme color
      * @return the tinted drawable
      */
@@ -365,10 +414,10 @@ object ThemeUtils {
     }
 
     /**
-     * Tint the drawable with a color integer
+     * Tint the drawable with a color integer.
      *
      * @param drawable the drawable to tint
-     * @param color    the color
+     * @param color the color
      * @return the tinted drawable
      */
     fun tintDrawableWithColor(drawable: Drawable, @ColorInt color: Int): Drawable {
@@ -503,6 +552,31 @@ object ThemeUtils {
                     "blue" -> R.style.AppTheme_SC_Dark_Colored_Blue
                     "greendark" -> R.style.AppTheme_SC_Dark_Colored_GreenDark
                     // Do not change this comment for automatic dark colored theme insertion
+                    else -> resId
+                }
+            }
+            R.style.AppTheme_AttachmentsPreview_SC -> {
+                when (themeAccent) {
+                    "green" -> resId
+                    "amber" -> R.style.AppTheme_AttachmentsPreview_SC_Amber
+                    "bluelight" -> R.style.AppTheme_AttachmentsPreview_SC_BlueLight
+                    "blue" -> R.style.AppTheme_AttachmentsPreview_SC_Blue
+                    "carnation" -> R.style.AppTheme_AttachmentsPreview_SC_Carnation
+                    "cyan" -> R.style.AppTheme_AttachmentsPreview_SC_Cyan
+                    "denim" -> R.style.AppTheme_AttachmentsPreview_SC_Denim
+                    "gold" -> R.style.AppTheme_AttachmentsPreview_SC_Gold
+                    "greendark" -> R.style.AppTheme_AttachmentsPreview_SC_GreenDark
+                    "indigo" -> R.style.AppTheme_AttachmentsPreview_SC_Indigo
+                    "lava" -> R.style.AppTheme_AttachmentsPreview_SC_Lava
+                    "lime" -> R.style.AppTheme_AttachmentsPreview_SC_Lime
+                    "orange" -> R.style.AppTheme_AttachmentsPreview_SC_Orange
+                    "pink" -> R.style.AppTheme_AttachmentsPreview_SC_Pink
+                    "purple" -> R.style.AppTheme_AttachmentsPreview_SC_Purple
+                    "red" -> R.style.AppTheme_AttachmentsPreview_SC_Red
+                    "teal" -> R.style.AppTheme_AttachmentsPreview_SC_Teal
+                    "turquoise" -> R.style.AppTheme_AttachmentsPreview_SC_Turquoise
+                    "yellow" -> R.style.AppTheme_AttachmentsPreview_SC_Yellow
+                    // Do not change this comment for automatic attachment theme insertion
                     else -> resId
                 }
             }

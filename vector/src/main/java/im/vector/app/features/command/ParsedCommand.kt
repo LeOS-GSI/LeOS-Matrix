@@ -20,13 +20,15 @@ import im.vector.app.features.home.room.detail.ChatEffect
 import org.matrix.android.sdk.api.session.identity.ThreePid
 
 /**
- * Represent a parsed command
+ * Represent a parsed command.
  */
 sealed interface ParsedCommand {
     // This is not a Slash command
     object ErrorNotACommand : ParsedCommand
 
     object ErrorEmptySlashCommand : ParsedCommand
+
+    class ErrorCommandNotSupportedInThreads(val command: Command) : ParsedCommand
 
     // Unknown/Unsupported slash command
     data class ErrorUnknownSlashCommand(val slashCommand: String) : ParsedCommand

@@ -22,20 +22,27 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.airbnb.mvrx.UniqueOnly
 import com.airbnb.mvrx.activityViewModel
 import com.airbnb.mvrx.fragmentViewModel
 import com.airbnb.mvrx.withState
 import com.google.android.material.badge.BadgeDrawable
+import de.spiritcroc.matrixsdk.util.DbgUtil
+import de.spiritcroc.matrixsdk.util.Dimber
 import de.spiritcroc.viewpager.reduceDragSensitivity
 import im.vector.app.AppStateHandler
 import im.vector.app.R
 import im.vector.app.RoomGroupingMethod
+import im.vector.app.SelectSpaceFrom
 import im.vector.app.core.extensions.restart
 import im.vector.app.core.extensions.toMvRxBundle
+import im.vector.app.core.platform.OnBackPressed
+import im.vector.app.core.platform.StateView
 import im.vector.app.core.platform.VectorBaseActivity
 import im.vector.app.core.platform.VectorBaseFragment
 import im.vector.app.core.resources.ColorProvider
@@ -59,9 +66,9 @@ import im.vector.app.features.settings.VectorSettingsActivity.Companion.EXTRA_DI
 import im.vector.app.features.themes.ThemeUtils
 import im.vector.app.features.workers.signout.BannerState
 import im.vector.app.features.workers.signout.ServerBackupStatusViewModel
+import org.matrix.android.sdk.api.session.crypto.model.DeviceInfo
 import org.matrix.android.sdk.api.session.group.model.GroupSummary
 import org.matrix.android.sdk.api.session.room.model.RoomSummary
-import org.matrix.android.sdk.internal.crypto.model.rest.DeviceInfo
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.math.abs
@@ -75,11 +82,11 @@ class HomeDetailFragment @Inject constructor(
         private val appStateHandler: AppStateHandler
 ) : VectorBaseFragment<FragmentHomeDetailBinding>(),
         KeysBackupBanner.Delegate,
-        CurrentCallsView.Callback {
+        CurrentCallsView.Callback,
+        OnBackPressed {
 
-    companion object {
-        const val DEBUG_VIEW_PAGER = true
-    }
+    private val DEBUG_VIEW_PAGER = DbgUtil.isDbgEnabled(DbgUtil.DBG_VIEW_PAGER)
+    private val viewPagerDimber = Dimber("Home pager", DbgUtil.DBG_VIEW_PAGER)
 
     private val viewModel: HomeDetailViewModel by fragmentViewModel()
     private val unknownDeviceDetectorSharedViewModel: UnknownDeviceDetectorSharedViewModel by activityViewModel()
@@ -105,7 +112,7 @@ class HomeDetailFragment @Inject constructor(
     private var pagerSpaces: List<String?>? = null
     private var pagerTab: HomeTab? = null
     private var pagerPagingEnabled: Boolean = false
-    private val pendingSpaceIds = mutableListOf<String?>()
+    private var previousRoomGroupingMethodPair: Pair<RoomGroupingMethod, SelectSpaceFrom>? = null
 
     override fun getMenuRes() = R.menu.room_list
 
@@ -151,7 +158,7 @@ class HomeDetailFragment @Inject constructor(
         // space pager: update appStateHandler's current page to update rest of the UI accordingly
         views.roomListContainerPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                if (DEBUG_VIEW_PAGER) Timber.i("Home pager: selected page $position $initialPageSelected")
+                viewPagerDimber.i{"Home pager: selected page $position $initialPageSelected"}
                 super.onPageSelected(position)
                 if (!initialPageSelected) {
                     // Do not apply before we have restored the previous value
@@ -162,20 +169,18 @@ class HomeDetailFragment @Inject constructor(
                         initialPageSelected = true
                     }
                 }
-                val selectedId = getSpaceIdForPageIndex(position)
-                pendingSpaceIds.add(selectedId)
-                appStateHandler.setCurrentSpace(selectedId)
+                selectSpaceFromSwipe(position)
             }
         })
 
         viewModel.onEach(HomeDetailViewState::roomGroupingMethod) { roomGroupingMethod ->
+            // While paging is enabled, make title follow the view pager directly
+            if (pagerPagingEnabled) {
+                return@onEach
+            }
             when (roomGroupingMethod) {
-                is RoomGroupingMethod.ByLegacyGroup -> {
-                    onGroupChange(roomGroupingMethod.groupSummary)
-                }
-                is RoomGroupingMethod.BySpace       -> {
-                    onSpaceChange(roomGroupingMethod.spaceSummary)
-                }
+                is RoomGroupingMethod.ByLegacyGroup -> onGroupChange(roomGroupingMethod.groupSummary)
+                is RoomGroupingMethod.BySpace       -> onSpaceChange(roomGroupingMethod.spaceSummary)
             }
         }
 
@@ -198,7 +203,6 @@ class HomeDetailFragment @Inject constructor(
 
         unknownDeviceDetectorSharedViewModel.onEach { state ->
             state.unknownSessions.invoke()?.let { unknownDevices ->
-//                Timber.v("## Detector Triggerred in fragment - ${unknownDevices.firstOrNull()}")
                 if (unknownDevices.firstOrNull()?.currentSessionTrust == true) {
                     val uid = "review_login"
                     alertManager.cancelAlert(uid)
@@ -225,8 +229,17 @@ class HomeDetailFragment @Inject constructor(
             )
         }
 
-        viewModel.onEach(HomeDetailViewState::roomGroupingMethod, HomeDetailViewState::rootSpacesOrdered, HomeDetailViewState::currentTab) { roomGroupingMethod, rootSpacesOrdered, currentTab ->
+        viewModel.onEach(HomeDetailViewState::roomGroupingMethodIgnoreSwipe,
+                HomeDetailViewState::rootSpacesOrdered,
+                HomeDetailViewState::currentTab,
+                UniqueOnly("HomeDetail_${System.identityHashCode(this)}"))
+        { roomGroupingMethod, rootSpacesOrdered, currentTab ->
+            if (roomGroupingMethod == null) {
+                // Uninitialized
+                return@onEach
+            }
             setupViewPager(roomGroupingMethod, rootSpacesOrdered, currentTab)
+            previousRoomGroupingMethodPair = roomGroupingMethod
         }
 
         sharedCallActionViewModel
@@ -236,6 +249,37 @@ class HomeDetailFragment @Inject constructor(
                     invalidateOptionsMenu()
                 }
     }
+
+    private fun selectSpaceFromSwipe(position: Int) {
+        val selectedId = getSpaceIdForPageIndex(position)
+        appStateHandler.setCurrentSpace(selectedId, from = SelectSpaceFrom.SWIPE)
+        if (pagerPagingEnabled) {
+            onSpaceChange(
+                    selectedId?.let { viewModel.getRoom(it)?.roomSummary() }
+            )
+        }
+    }
+
+    private fun navigateBack() {
+        try {
+            val lastSpace = appStateHandler.getSpaceBackstack().removeLast()
+            setCurrentSpace(lastSpace)
+        } catch (e: NoSuchElementException) {
+            navigateUpOneSpace()
+        }
+    }
+
+    private fun setCurrentSpace(spaceId: String?) {
+        appStateHandler.setCurrentSpace(spaceId, isForwardNavigation = false)
+        sharedActionViewModel.post(HomeActivitySharedAction.CloseGroup)
+    }
+
+    private fun navigateUpOneSpace() {
+        val parentId = getCurrentSpace()?.flattenParentIds?.lastOrNull()
+        setCurrentSpace(parentId)
+    }
+
+    private fun getCurrentSpace() = (appStateHandler.getCurrentRoomGroupingMethod() as? RoomGroupingMethod.BySpace)?.spaceSummary
 
     private fun handleCallStarted() {
         dismissLoadingDialog()
@@ -257,14 +301,27 @@ class HomeDetailFragment @Inject constructor(
             return
         }
 
-        // update notification tab if needed
-
         //updateTabVisibilitySafely(R.id.bottom_action_notification, vectorPreferences.labAddNotificationTab())
         checkNotificationTabStatus()
         callManager.checkForProtocolsSupportIfNeeded()
+        refreshSpaceState()
+    }
+
+    private fun refreshSpaceState() {
+        /* Upstream impl without care for viewPager
+        when (val roomGroupingMethod = appStateHandler.getCurrentRoomGroupingMethod()) {
+            is RoomGroupingMethod.ByLegacyGroup -> onGroupChange(roomGroupingMethod.groupSummary)
+            is RoomGroupingMethod.BySpace       -> onSpaceChange(roomGroupingMethod.spaceSummary)
+            else                                -> Unit
+        }
+        */
 
         // Current space/group is not live so at least refresh toolbar on resume
         appStateHandler.getCurrentRoomGroupingMethod()?.let { roomGroupingMethod ->
+            // While paging is enabled, make title follow the view pager directly
+            if (pagerPagingEnabled) {
+                return@let
+            }
             when (roomGroupingMethod) {
                 is RoomGroupingMethod.ByLegacyGroup -> {
                     onGroupChange(roomGroupingMethod.groupSummary)
@@ -274,6 +331,13 @@ class HomeDetailFragment @Inject constructor(
                 }
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        // Persist swiped
+        appStateHandler.persistSelectedSpace()
     }
 
     private fun checkNotificationTabStatus(enableDialPad: Boolean? = null) {
@@ -368,12 +432,12 @@ class HomeDetailFragment @Inject constructor(
                     viewBinder = VerificationVectorAlert.ViewBinder(user, avatarRenderer)
                     colorInt = colorProvider.getColorFromAttribute(R.attr.colorPrimary)
                     contentAction = Runnable {
-                        (weakCurrentActivity?.get() as? VectorBaseActivity<*>)?.let {
+                        (weakCurrentActivity?.get() as? VectorBaseActivity<*>)?.let { activity ->
                             // mark as ignored to avoid showing it again
                             unknownDeviceDetectorSharedViewModel.handle(
                                     UnknownDeviceDetectorSharedViewModel.Action.IgnoreDevice(oldUnverified.mapNotNull { it.deviceId })
                             )
-                            it.navigator.openSettings(it, EXTRA_DIRECT_ACCESS_SECURITY_PRIVACY_MANAGE_SESSIONS)
+                            activity.navigator.openSettings(activity, EXTRA_DIRECT_ACCESS_SECURITY_PRIVACY_MANAGE_SESSIONS)
                         }
                     }
                     dismissedAction = Runnable {
@@ -432,11 +496,11 @@ class HomeDetailFragment @Inject constructor(
             withState(viewModel) {
                 when (it.roomGroupingMethod) {
                     is RoomGroupingMethod.ByLegacyGroup -> {
-                        // nothing do far
+                        // do nothing
                     }
                     is RoomGroupingMethod.BySpace       -> {
-                        it.roomGroupingMethod.spaceSummary?.let {
-                            sharedActionViewModel.post(HomeActivitySharedAction.ShowSpaceSettings(it.roomId))
+                        it.roomGroupingMethod.spaceSummary?.let { spaceSummary ->
+                            sharedActionViewModel.post(HomeActivitySharedAction.ShowSpaceSettings(spaceSummary.roomId))
                         }
                     }
                 }
@@ -461,17 +525,6 @@ class HomeDetailFragment @Inject constructor(
             viewModel.handle(HomeDetailAction.SwitchTab(tab))
             true
         }
-
-//        val menuView = bottomNavigationView.getChildAt(0) as BottomNavigationMenuView
-
-//        bottomNavigationView.getOrCreateBadge()
-//        menuView.forEachIndexed { index, view ->
-//            val itemView = view as BottomNavigationItemView
-//            val badgeLayout = LayoutInflater.from(requireContext()).inflate(R.layout.vector_home_badge_unread_layout, menuView, false)
-//            val unreadCounterBadgeView: UnreadCounterBadgeView = badgeLayout.findViewById(R.id.actionUnreadCounterBadgeView)
-//            itemView.addView(badgeLayout)
-//            unreadCounterBadgeViews.add(index, unreadCounterBadgeView)
-//        }
     }
 
     private fun updateUIForTab(tab: HomeTab) {
@@ -513,31 +566,48 @@ class HomeDetailFragment @Inject constructor(
     }
      */
 
-    private fun setupViewPager(roomGroupingMethod: RoomGroupingMethod, spaces: List<RoomSummary>?, tab: HomeTab) {
+    private fun setupViewPager(roomGroupingMethodPair: Pair<RoomGroupingMethod, SelectSpaceFrom>, spaces: List<RoomSummary>?, tab: HomeTab) {
+        val roomGroupingMethod = roomGroupingMethodPair.first
         val oldAdapter = views.roomListContainerPager.adapter as? FragmentStateAdapter
         val pagingAllowed = vectorPreferences.enableSpacePager() && tab is HomeTab.RoomList
-        if (DEBUG_VIEW_PAGER) Timber.i("Home pager: setup, old adapter: $oldAdapter")
+        if (pagingAllowed && spaces == null) {
+            viewPagerDimber.i{"Home pager: Skip initial setup, root spaces not known yet"}
+            views.roomListContainerStateView.state = StateView.State.Loading
+            return
+        } else {
+            views.roomListContainerStateView.state = StateView.State.Content
+        }
+        viewPagerDimber.i{"Home pager: setup, old adapter: $oldAdapter"}
         val unsafeSpaces = spaces?.map { it.roomId } ?: listOf()
         val selectedSpaceId = (roomGroupingMethod as? RoomGroupingMethod.BySpace)?.spaceSummary?.roomId
-        val selectedIndex = getPageIndexForSpaceId(selectedSpaceId, unsafeSpaces)
-        val pagingEnabled = pagingAllowed && roomGroupingMethod is RoomGroupingMethod.BySpace && unsafeSpaces.size > 0 && selectedIndex != null
+        val selectedIndex = if (previousRoomGroupingMethodPair == roomGroupingMethodPair && tab != pagerTab) {
+            // Stick with previously selected space for tab changes
+            views.roomListContainerPager.currentItem
+        } else {
+            getPageIndexForSpaceId(selectedSpaceId, unsafeSpaces)
+        }
+        val pagingEnabled = pagingAllowed && roomGroupingMethod is RoomGroupingMethod.BySpace && unsafeSpaces.isNotEmpty() && selectedIndex != null
         val safeSpaces = if (pagingEnabled) unsafeSpaces else listOf()
         // Check if we need to recreate the adapter for a new tab
         if (oldAdapter != null) {
             val changed = pagerTab != tab || pagerSpaces != safeSpaces || pagerPagingEnabled != pagingEnabled
-            if (DEBUG_VIEW_PAGER) Timber.i("Home pager: has changed: $changed (${pagerTab != tab} ${pagerSpaces != safeSpaces} ${pagerPagingEnabled != pagingEnabled} $selectedIndex ${views.roomListContainerPager.currentItem}) | $safeSpaces")
+            viewPagerDimber.i{ "has changed: $changed (${pagerTab != tab} ${pagerSpaces != safeSpaces} ${pagerPagingEnabled != pagingEnabled} $selectedIndex ${roomGroupingMethodPair.second} ${views.roomListContainerPager.currentItem}) | $safeSpaces" }
             if (!changed) {
+                // No need to re-setup pager, just check for selected page
                 if (pagingEnabled) {
-                    // No need to re-setup pager, just check for selected page
-                    // Discard state changes that we created ourselves by swiping on the pager
-                    while (pendingSpaceIds.size > 0) {
-                        val pendingSpaceId = pendingSpaceIds.removeAt(0)
-                        if (pendingSpaceId == selectedSpaceId) {
-                            return
+                    // Prioritize the actually displayed space for all space changes except for SELECT ones, to avoid
+                    // unexpected page changes onResume for old updates
+                    if (roomGroupingMethodPair.second != SelectSpaceFrom.SELECT) {
+                        // Tell the rest of the UI that we want to keep displaying the current space
+                        viewPagerDimber.i { "Discard space change from ${roomGroupingMethodPair.second} (${selectedSpaceId}/$selectedIndex), persist own (${views.roomListContainerPager.currentItem})" }
+                        if (views.roomListContainerPager.currentItem != selectedIndex) {
+                            selectSpaceFromSwipe(views.roomListContainerPager.currentItem)
                         }
+                        return
                     }
                     if (selectedIndex != null) {
-                        if (selectedIndex != views.roomListContainerPager.currentItem) {
+                        // Somehow, currentItem sometimes claims to be 0 after tab changes even if it is not right after that, so enforce setting that either way
+                        if (selectedIndex != views.roomListContainerPager.currentItem || selectedIndex == 0) {
                             // post() mitigates a case where we could end up in an endless loop circling around the same few spaces
                             views.roomListContainerPager.post {
                                 // Do not smooth scroll large distances to avoid loading unnecessary many room lists
@@ -562,11 +632,12 @@ class HomeDetailFragment @Inject constructor(
                 transaction.commit()
             }
         }
+        // In case the last space change was caused by swiping, we don't want to lose it
+        appStateHandler.persistSelectedSpace()
         pagerSpaces = safeSpaces
         pagerTab = tab
         pagerPagingEnabled = pagingEnabled
         initialPageSelected = false
-        pendingSpaceIds.clear()
 
         // OFFSCREEN_PAGE_LIMIT_DEFAULT: default recyclerview caching mechanism instead of explicit fixed prefetching
         //views.roomListContainerPager.offscreenPageLimit = 2
@@ -583,13 +654,16 @@ class HomeDetailFragment @Inject constructor(
             }
 
             override fun createFragment(position: Int): Fragment {
-                if (DEBUG_VIEW_PAGER) Timber.i("Home pager: create fragment for position $position")
+                viewPagerDimber.i{"Home pager: create fragment for position $position"}
                 return when (tab) {
                     is HomeTab.DialPad -> createDialPadFragment()
                     is HomeTab.RoomList -> {
                         val params = if (pagingEnabled) {
-                            RoomListParams(tab.displayMode, getSpaceIdForPageIndex(position)).toMvRxBundle()
+                            val spaceId = getSpaceIdForPageIndex(position)
+                            viewPagerDimber.i{"Home pager: position $position -> space $spaceId"}
+                            RoomListParams(tab.displayMode, spaceId).toMvRxBundle()
                         } else {
+                            viewPagerDimber.i{"Home pager: paging disabled; position $position -> follow"}
                             RoomListParams(tab.displayMode, SPACE_ID_FOLLOW_APP).toMvRxBundle()
                         }
                         childFragmentManager.fragmentFactory.instantiate(activity!!.classLoader, RoomListFragment::class.java.name).apply {
@@ -602,13 +676,33 @@ class HomeDetailFragment @Inject constructor(
 
         views.roomListContainerPager.adapter = adapter
         if (pagingEnabled) {
-            views.roomListContainerPager.post {
-                try {
-                    if (DEBUG_VIEW_PAGER) Timber.i("Home pager: set initial page $selectedIndex")
-                    views.roomListContainerPager.setCurrentItem(selectedIndex ?: 0, false)
-                    initialPageSelected = true
-                } catch (e: Exception) {
-                    Timber.e("Home pager: Could not set initial page after creating adapter: $e")
+            // May be better than viewPager.post()? https://stackoverflow.com/a/57516428
+            val pagerRecyclerView = views.roomListContainerPager.getChildAt(0)
+            pagerRecyclerView.apply {
+                viewTreeObserver.addOnGlobalLayoutListener(object: ViewTreeObserver.OnGlobalLayoutListener {
+                    override fun onGlobalLayout() {
+                        viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        if (initialPageSelected) {
+                            return
+                        }
+                        try {
+                            viewPagerDimber.i{"Home pager: set initial page $selectedIndex"}
+                            views.roomListContainerPager.setCurrentItem(selectedIndex ?: 0, false)
+                            initialPageSelected = true
+                        } catch (e: Exception) {
+                            Timber.e("Home pager: Could not set initial page after creating adapter: $e")
+                        }
+                    }
+                })
+            }
+        } else {
+            // Set title, in case we missed it while paging
+            when (roomGroupingMethod) {
+                is RoomGroupingMethod.ByLegacyGroup -> {
+                    onGroupChange(roomGroupingMethod.groupSummary)
+                }
+                is RoomGroupingMethod.BySpace       -> {
+                    onSpaceChange(roomGroupingMethod.spaceSummary)
                 }
             }
         }
@@ -626,8 +720,14 @@ class HomeDetailFragment @Inject constructor(
     }
 
     private fun getSpaceIdForPageIndex(position: Int, spaces: List<String?>? = pagerSpaces): String? {
-        val safeSpaces = spaces ?: return null
-        return if (position == 0) null else safeSpaces[position-1]
+        if (spaces == null) {
+            Timber.e(Exception("getSpaceIdForPageIndex: null spaces!"))
+            return null
+        }
+        if (DEBUG_VIEW_PAGER && position > 0 && spaces[position-1] == null) {
+            Timber.e(Exception("getSpaceIdForPageIndex: null space!"))
+        }
+        return if (position == 0) null else spaces[position-1]
     }
 
     private fun createDialPadFragment(): Fragment {
@@ -673,7 +773,6 @@ class HomeDetailFragment @Inject constructor(
     }
 
     override fun invalidate() = withState(viewModel) {
-//        Timber.v(it.toString())
         views.bottomNavigationView.getOrCreateBadge(R.id.bottom_action_people).render(it.notificationCountPeople, it.notificationHighlightPeople)
         views.bottomNavigationView.getOrCreateBadge(R.id.bottom_action_rooms).render(it.notificationCountRooms, it.notificationHighlightRooms)
         views.bottomNavigationView.getOrCreateBadge(R.id.bottom_action_notification).render(it.notificationCountCatchup, it.notificationHighlightCatchup)
@@ -682,7 +781,8 @@ class HomeDetailFragment @Inject constructor(
                 it.syncState,
                 it.incrementalSyncStatus,
                 it.pushCounter,
-                vectorPreferences.developerShowDebugInfo())
+                vectorPreferences.developerShowDebugInfo()
+        )
 
         hasUnreadRooms = it.hasUnreadMessages
     }
@@ -695,7 +795,7 @@ class HomeDetailFragment @Inject constructor(
         backgroundColor = if (highlight) {
             ThemeUtils.getColor(requireContext(), R.attr.colorError)
         } else {
-            ThemeUtils.getColor(requireContext(), R.attr.vctr_unread_room_badge)
+            ThemeUtils.getColor(requireContext(), R.attr.vctr_unread_background)
         }
     }
 
@@ -733,5 +833,12 @@ class HomeDetailFragment @Inject constructor(
             }
         }
         return this
+    }
+
+    override fun onBackPressed(toolbarButton: Boolean) = if (vectorPreferences.spaceBackNavigation() && getCurrentSpace() != null) {
+        navigateBack()
+        true
+    } else {
+        false
     }
 }

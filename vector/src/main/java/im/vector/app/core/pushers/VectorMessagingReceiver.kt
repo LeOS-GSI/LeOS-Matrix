@@ -36,7 +36,6 @@ import im.vector.app.BuildConfig
 import im.vector.app.core.di.ActiveSessionHolder
 import im.vector.app.core.network.WifiDetector
 import im.vector.app.core.services.GuardServiceStarter
-import im.vector.app.features.badge.BadgeProxy
 import im.vector.app.features.notifications.NotifiableEventResolver
 import im.vector.app.features.notifications.NotificationDrawerManager
 import im.vector.app.features.notifications.NotificationUtils
@@ -152,14 +151,19 @@ val upHandler = object: VectorMessagingReceiverHandler {
                 .build()
         lateinit var notification: Notification
 
-        if (UPHelper.isEmbeddedDistributor(context!!)) {
-            notification = moshi.adapter(Notification::class.java)
-                    .fromJson(message) ?: return
-        } else {
-            val data = moshi.adapter(UnifiedPushMessage::class.java)
-                    .fromJson(message) ?: return
-            notification = data.notification
-            notification.unread = notification.counts.unread
+        try {
+            if (UPHelper.isEmbeddedDistributor(context!!)) {
+                notification = moshi.adapter(Notification::class.java)
+                        .fromJson(message) ?: return
+            } else {
+                val data = moshi.adapter(UnifiedPushMessage::class.java)
+                        .fromJson(message) ?: return
+                notification = data.notification
+                notification.unread = notification.counts.unread
+            }
+        } catch (t: Throwable) {
+            Timber.e(t, "Error parsing push notification")
+            return
         }
 
         // Diagnostic Push
@@ -179,7 +183,7 @@ val upHandler = object: VectorMessagingReceiverHandler {
                 // we are in foreground, let the sync do the things?
                 Timber.tag(loggerTag.value).d("PUSH received in a foreground state, ignore")
             } else {
-                onMessageReceivedInternal(context, notification)
+                onMessageReceivedInternal(notification)
             }
         }
     }
@@ -238,16 +242,13 @@ val upHandler = object: VectorMessagingReceiverHandler {
      *
      * @param notification Notification containing message data.
      */
-    private fun onMessageReceivedInternal(context: Context, notification: Notification) {
+    private fun onMessageReceivedInternal(notification: Notification) {
         try {
             if (BuildConfig.LOW_PRIVACY_LOG_ENABLE) {
                 Timber.tag(loggerTag.value).d("## onMessageReceivedInternal() : $notification")
             } else {
                 Timber.tag(loggerTag.value).d("## onMessageReceivedInternal()")
             }
-
-            // update the badge counter
-            BadgeProxy.updateBadgeCount(context, notification.unread)
 
             val session = activeSessionHolder.getSafeActiveSession()
 
@@ -286,7 +287,7 @@ val upHandler = object: VectorMessagingReceiverHandler {
 
         coroutineScope.launch {
             Timber.tag(loggerTag.value).d("Fast lane: start request")
-            val event = tryOrNull { session.getEvent(roomId, eventId) } ?: return@launch
+            val event = tryOrNull { session.eventService().getEvent(roomId, eventId) } ?: return@launch
 
             val resolvedEvent = notifiableEventResolver.resolveInMemoryEvent(session, event, canBeReplaced = true)
 
@@ -304,8 +305,8 @@ val upHandler = object: VectorMessagingReceiverHandler {
         if (null != eventId && null != roomId) {
             try {
                 val session = activeSessionHolder.getSafeActiveSession() ?: return false
-                val room = session.getRoom(roomId) ?: return false
-                return room.getTimeLineEvent(eventId) != null
+                val room = session.roomService().getRoom(roomId) ?: return false
+                return room.timelineService().getTimelineEvent(eventId) != null
             } catch (e: Exception) {
                 Timber.tag(loggerTag.value).e(e, "## isEventAlreadyKnown() : failed to check if the event was already defined")
             }

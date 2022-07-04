@@ -20,6 +20,7 @@ import im.vector.app.BuildConfig
 import im.vector.app.R
 import im.vector.app.core.extensions.takeAs
 import im.vector.app.core.resources.StringProvider
+import im.vector.app.core.time.Clock
 import im.vector.app.features.displayname.getBestName
 import im.vector.app.features.home.room.detail.timeline.format.DisplayableEventFormatter
 import im.vector.app.features.home.room.detail.timeline.format.NoticeEventFormatter
@@ -27,11 +28,17 @@ import org.matrix.android.sdk.api.extensions.orFalse
 import org.matrix.android.sdk.api.session.Session
 import org.matrix.android.sdk.api.session.content.ContentUrlResolver
 import org.matrix.android.sdk.api.session.crypto.MXCryptoError
+import org.matrix.android.sdk.api.session.crypto.model.OlmDecryptionResult
 import org.matrix.android.sdk.api.session.events.model.Event
 import org.matrix.android.sdk.api.session.events.model.EventType
 import org.matrix.android.sdk.api.session.events.model.isEdition
 import org.matrix.android.sdk.api.session.events.model.isImageMessage
+import org.matrix.android.sdk.api.session.events.model.supportsNotification
 import org.matrix.android.sdk.api.session.events.model.toModel
+import org.matrix.android.sdk.api.session.getRoom
+import org.matrix.android.sdk.api.session.getRoomSummary
+import org.matrix.android.sdk.api.session.getUser
+import org.matrix.android.sdk.api.session.room.getTimelineEvent
 import org.matrix.android.sdk.api.session.room.model.Membership
 import org.matrix.android.sdk.api.session.room.model.RoomMemberContent
 import org.matrix.android.sdk.api.session.room.model.message.MessageWithAttachmentContent
@@ -40,7 +47,6 @@ import org.matrix.android.sdk.api.session.room.timeline.TimelineEvent
 import org.matrix.android.sdk.api.session.room.timeline.getEditedEventId
 import org.matrix.android.sdk.api.session.room.timeline.getLastMessageContent
 import org.matrix.android.sdk.api.util.toMatrixItem
-import org.matrix.android.sdk.internal.crypto.algorithms.olm.OlmDecryptionResult
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -54,7 +60,8 @@ import javax.inject.Inject
 class NotifiableEventResolver @Inject constructor(
         private val stringProvider: StringProvider,
         private val noticeEventFormatter: NoticeEventFormatter,
-        private val displayableEventFormatter: DisplayableEventFormatter
+        private val displayableEventFormatter: DisplayableEventFormatter,
+        private val clock: Clock,
 ) {
 
     // private val eventDisplay = RiotEventDisplay(context)
@@ -65,7 +72,7 @@ class NotifiableEventResolver @Inject constructor(
         if (event.getClearType() == EventType.STATE_ROOM_MEMBER) {
             return resolveStateRoomEvent(event, session, canBeReplaced = false, isNoisy = isNoisy)
         }
-        val timelineEvent = session.getRoom(roomID)?.getTimeLineEvent(eventId) ?: return null
+        val timelineEvent = session.getRoom(roomID)?.getTimelineEvent(eventId) ?: return null
         return when (event.getClearType()) {
             EventType.MESSAGE,
             EventType.ENCRYPTED -> {
@@ -82,7 +89,7 @@ class NotifiableEventResolver @Inject constructor(
                         eventId = event.eventId!!,
                         editedEventId = timelineEvent.getEditedEventId(),
                         noisy = false, // will be updated
-                        timestamp = event.originServerTs ?: System.currentTimeMillis(),
+                        timestamp = event.originServerTs ?: clock.epochMillis(),
                         description = bodyPreview,
                         title = stringProvider.getString(R.string.notification_unknown_new_event),
                         soundName = null,
@@ -94,12 +101,12 @@ class NotifiableEventResolver @Inject constructor(
     }
 
     suspend fun resolveInMemoryEvent(session: Session, event: Event, canBeReplaced: Boolean): NotifiableEvent? {
-        if (event.getClearType() != EventType.MESSAGE) return null
+        if (!event.supportsNotification()) return null
 
         // Ignore message edition
         if (event.isEdition()) return null
 
-        val actions = session.getActions(event)
+        val actions = session.pushRuleService().getActions(event)
         val notificationAction = actions.toNotificationAction()
 
         return if (notificationAction.shouldNotify) {
@@ -144,7 +151,7 @@ class NotifiableEventResolver @Inject constructor(
                     senderName = senderDisplayName,
                     senderId = event.root.senderId,
                     body = body.toString(),
-                    imageUri = event.fetchImageIfPresent(session),
+                    imageUriString = event.fetchImageIfPresent(session)?.toString(),
                     roomId = event.root.roomId!!,
                     roomName = roomName,
                     matrixID = session.myUserId
@@ -153,7 +160,9 @@ class NotifiableEventResolver @Inject constructor(
             event.attemptToDecryptIfNeeded(session)
             // only convert encrypted messages to NotifiableMessageEvents
             when (event.root.getClearType()) {
-                EventType.MESSAGE -> {
+                EventType.MESSAGE,
+                in EventType.POLL_START,
+                in EventType.STATE_ROOM_BEACON_INFO -> {
                     val body = displayableEventFormatter.format(event, isDm = room.roomSummary()?.isDirect.orFalse(), appendAuthor = false).toString()
                     val roomName = room.roomSummary()?.displayName ?: ""
                     val senderDisplayName = event.senderInfo.disambiguatedDisplayName
@@ -167,30 +176,34 @@ class NotifiableEventResolver @Inject constructor(
                             senderName = senderDisplayName,
                             senderId = event.root.senderId,
                             body = body,
-                            imageUri = event.fetchImageIfPresent(session),
+                            imageUriString = event.fetchImageIfPresent(session)?.toString(),
                             roomId = event.root.roomId!!,
                             roomName = roomName,
                             roomIsDirect = room.roomSummary()?.isDirect ?: false,
                             roomAvatarPath = session.contentUrlResolver()
-                                    .resolveThumbnail(room.roomSummary()?.avatarUrl,
+                                    .resolveThumbnail(
+                                            room.roomSummary()?.avatarUrl,
                                             250,
                                             250,
-                                            ContentUrlResolver.ThumbnailMethod.SCALE),
+                                            ContentUrlResolver.ThumbnailMethod.SCALE
+                                    ),
                             senderAvatarPath = session.contentUrlResolver()
-                                    .resolveThumbnail(event.senderInfo.avatarUrl,
+                                    .resolveThumbnail(
+                                            event.senderInfo.avatarUrl,
                                             250,
                                             250,
-                                            ContentUrlResolver.ThumbnailMethod.SCALE),
+                                            ContentUrlResolver.ThumbnailMethod.SCALE
+                                    ),
                             matrixID = session.myUserId,
                             soundName = null
                     )
                 }
-                else              -> null
+                else                                -> null
             }
         }
     }
 
-    private fun TimelineEvent.attemptToDecryptIfNeeded(session: Session) {
+    private suspend fun TimelineEvent.attemptToDecryptIfNeeded(session: Session) {
         if (root.isEncrypted() && root.mxDecryptionResult == null) {
             // TODO use a global event decryptor? attache to session and that listen to new sessionId?
             // for now decrypt sync
@@ -202,7 +215,7 @@ class NotifiableEventResolver @Inject constructor(
                         keysClaimed = result.claimedEd25519Key?.let { mapOf("ed25519" to it) },
                         forwardingCurve25519KeyChain = result.forwardingCurve25519KeyChain
                 )
-            } catch (e: MXCryptoError) {
+            } catch (ignore: MXCryptoError) {
             }
         }
     }
@@ -230,7 +243,7 @@ class NotifiableEventResolver @Inject constructor(
     private fun resolveStateRoomEvent(event: Event, session: Session, canBeReplaced: Boolean, isNoisy: Boolean): NotifiableEvent? {
         val content = event.content?.toModel<RoomMemberContent>() ?: return null
         val roomId = event.roomId ?: return null
-        val dName = event.senderId?.let { session.getRoomMember(it, roomId)?.displayName }
+        val dName = event.senderId?.let { session.roomService().getRoomMember(it, roomId)?.displayName }
         if (Membership.INVITE == content.membership) {
             val roomSummary = session.getRoomSummary(roomId)
             val body = noticeEventFormatter.format(event, dName, isDm = roomSummary?.isDirect.orFalse())

@@ -21,8 +21,8 @@ import io.realm.RealmList
 import io.realm.RealmObject
 import io.realm.annotations.Index
 import io.realm.annotations.PrimaryKey
-import org.matrix.android.sdk.api.crypto.RoomEncryptionTrustLevel
 import org.matrix.android.sdk.api.extensions.tryOrNull
+import org.matrix.android.sdk.api.session.crypto.model.RoomEncryptionTrustLevel
 import org.matrix.android.sdk.api.session.room.model.Membership
 import org.matrix.android.sdk.api.session.room.model.RoomJoinRules
 import org.matrix.android.sdk.api.session.room.model.RoomSummary
@@ -310,6 +310,11 @@ internal open class RoomSummaryEntity(
         set(value) {
             if (value != field) field = value
         }
+
+    /**
+     * Whether the flattenParentIds thing is only non-empty because of DMs auto-added to spaces
+     */
+    var isOrphanDm: Boolean = false
 
     var groupIds: String? = null
         set(value) {

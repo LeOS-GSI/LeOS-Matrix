@@ -58,9 +58,10 @@ import im.vector.app.features.home.HomeDetailFragment
 import im.vector.app.features.home.HomeDrawerFragment
 import im.vector.app.features.home.LoadingFragment
 import im.vector.app.features.home.room.breadcrumbs.BreadcrumbsFragment
-import im.vector.app.features.home.room.detail.RoomDetailFragment
+import im.vector.app.features.home.room.detail.TimelineFragment
 import im.vector.app.features.home.room.detail.search.SearchFragment
 import im.vector.app.features.home.room.list.RoomListFragment
+import im.vector.app.features.home.room.threads.list.views.ThreadListFragment
 import im.vector.app.features.location.LocationPreviewFragment
 import im.vector.app.features.location.LocationSharingFragment
 import im.vector.app.features.login.LoginCaptchaFragment
@@ -75,6 +76,7 @@ import im.vector.app.features.login.LoginSignUpSignInSelectionFragment
 import im.vector.app.features.login.LoginSplashFragment
 import im.vector.app.features.login.LoginWaitForEmailFragment
 import im.vector.app.features.login.LoginWebFragment
+import im.vector.app.features.login.PromptSimplifiedModeFragment
 import im.vector.app.features.login.terms.LoginTermsFragment
 import im.vector.app.features.login2.LoginCaptchaFragment2
 import im.vector.app.features.login2.LoginFragmentSigninPassword2
@@ -96,9 +98,19 @@ import im.vector.app.features.login2.created.AccountCreatedFragment
 import im.vector.app.features.login2.terms.LoginTermsFragment2
 import im.vector.app.features.matrixto.MatrixToRoomSpaceFragment
 import im.vector.app.features.matrixto.MatrixToUserFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthAccountCreatedFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthCaptchaFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthChooseDisplayNameFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthChooseProfilePictureFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthCombinedLoginFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthCombinedRegisterFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthCombinedServerSelectionFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthEmailEntryFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthGenericTextInputFormFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthLegacyStyleCaptchaFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthLegacyWaitForEmailFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthLoginFragment
+import im.vector.app.features.onboarding.ftueauth.FtueAuthPersonalizationCompleteFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthResetPasswordFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthResetPasswordMailConfirmationFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthResetPasswordSuccessFragment
@@ -109,6 +121,7 @@ import im.vector.app.features.onboarding.ftueauth.FtueAuthSplashFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthUseCaseFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthWaitForEmailFragment
 import im.vector.app.features.onboarding.ftueauth.FtueAuthWebFragment
+import im.vector.app.features.onboarding.ftueauth.terms.FtueAuthLegacyStyleTermsFragment
 import im.vector.app.features.onboarding.ftueauth.terms.FtueAuthTermsFragment
 import im.vector.app.features.pin.PinFragment
 import im.vector.app.features.poll.create.CreatePollFragment
@@ -183,7 +196,7 @@ import im.vector.app.features.widgets.WidgetFragment
 @Module
 interface FragmentModule {
     /**
-     * Fragments with @IntoMap will be injected by this factory
+     * Fragments with @IntoMap will be injected by this factory.
      */
     @Binds
     fun bindFragmentFactory(factory: VectorFragmentFactory): FragmentFactory
@@ -205,8 +218,8 @@ interface FragmentModule {
 
     @Binds
     @IntoMap
-    @FragmentKey(RoomDetailFragment::class)
-    fun bindRoomDetailFragment(fragment: RoomDetailFragment): Fragment
+    @FragmentKey(TimelineFragment::class)
+    fun bindTimelineFragment(fragment: TimelineFragment): Fragment
 
     @Binds
     @IntoMap
@@ -405,6 +418,11 @@ interface FragmentModule {
 
     @Binds
     @IntoMap
+    @FragmentKey(FtueAuthLegacyStyleCaptchaFragment::class)
+    fun bindFtueAuthLegacyStyleCaptchaFragment(fragment: FtueAuthLegacyStyleCaptchaFragment): Fragment
+
+    @Binds
+    @IntoMap
     @FragmentKey(FtueAuthCaptchaFragment::class)
     fun bindFtueAuthCaptchaFragment(fragment: FtueAuthCaptchaFragment): Fragment
 
@@ -465,13 +483,63 @@ interface FragmentModule {
 
     @Binds
     @IntoMap
+    @FragmentKey(FtueAuthLegacyWaitForEmailFragment::class)
+    fun bindFtueAuthLegacyWaitForEmailFragment(fragment: FtueAuthLegacyWaitForEmailFragment): Fragment
+
+    @Binds
+    @IntoMap
     @FragmentKey(FtueAuthWebFragment::class)
     fun bindFtueAuthWebFragment(fragment: FtueAuthWebFragment): Fragment
 
     @Binds
     @IntoMap
+    @FragmentKey(FtueAuthLegacyStyleTermsFragment::class)
+    fun bindFtueAuthLegacyStyleTermsFragment(fragment: FtueAuthLegacyStyleTermsFragment): Fragment
+
+    @Binds
+    @IntoMap
     @FragmentKey(FtueAuthTermsFragment::class)
     fun bindFtueAuthTermsFragment(fragment: FtueAuthTermsFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(FtueAuthAccountCreatedFragment::class)
+    fun bindFtueAuthAccountCreatedFragment(fragment: FtueAuthAccountCreatedFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(FtueAuthEmailEntryFragment::class)
+    fun bindFtueAuthEmailEntryFragment(fragment: FtueAuthEmailEntryFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(FtueAuthChooseDisplayNameFragment::class)
+    fun bindFtueAuthChooseDisplayNameFragment(fragment: FtueAuthChooseDisplayNameFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(FtueAuthChooseProfilePictureFragment::class)
+    fun bindFtueAuthChooseProfilePictureFragment(fragment: FtueAuthChooseProfilePictureFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(FtueAuthPersonalizationCompleteFragment::class)
+    fun bindFtueAuthPersonalizationCompleteFragment(fragment: FtueAuthPersonalizationCompleteFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(FtueAuthCombinedLoginFragment::class)
+    fun bindFtueAuthCombinedLoginFragment(fragment: FtueAuthCombinedLoginFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(FtueAuthCombinedRegisterFragment::class)
+    fun bindFtueAuthCombinedRegisterFragment(fragment: FtueAuthCombinedRegisterFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(FtueAuthCombinedServerSelectionFragment::class)
+    fun bindFtueAuthCombinedServerSelectionFragment(fragment: FtueAuthCombinedServerSelectionFragment): Fragment
 
     @Binds
     @IntoMap
@@ -945,8 +1013,18 @@ interface FragmentModule {
 
     @Binds
     @IntoMap
+    @FragmentKey(ThreadListFragment::class)
+    fun bindThreadListFragment(fragment: ThreadListFragment): Fragment
+
+    @Binds
+    @IntoMap
     @FragmentKey(CreatePollFragment::class)
     fun bindCreatePollFragment(fragment: CreatePollFragment): Fragment
+
+    @Binds
+    @IntoMap
+    @FragmentKey(PromptSimplifiedModeFragment::class)
+    fun bindPromptSimplifiedModeFragment(fragment: PromptSimplifiedModeFragment): Fragment
 
     @Binds
     @IntoMap

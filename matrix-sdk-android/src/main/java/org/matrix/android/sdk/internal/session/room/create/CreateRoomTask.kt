@@ -17,7 +17,6 @@
 package org.matrix.android.sdk.internal.session.room.create
 
 import com.zhuinden.monarchy.Monarchy
-import io.realm.Realm
 import io.realm.RealmConfiguration
 import kotlinx.coroutines.TimeoutCancellationException
 import org.matrix.android.sdk.api.failure.Failure
@@ -28,6 +27,7 @@ import org.matrix.android.sdk.api.session.room.model.Membership
 import org.matrix.android.sdk.api.session.room.model.create.CreateRoomParams
 import org.matrix.android.sdk.api.session.room.model.create.CreateRoomPreset
 import org.matrix.android.sdk.internal.database.awaitNotEmptyResult
+import org.matrix.android.sdk.internal.database.awaitTransaction
 import org.matrix.android.sdk.internal.database.model.RoomSummaryEntity
 import org.matrix.android.sdk.internal.database.model.RoomSummaryEntityFields
 import org.matrix.android.sdk.internal.database.query.where
@@ -41,6 +41,7 @@ import org.matrix.android.sdk.internal.session.user.accountdata.DirectChatsHelpe
 import org.matrix.android.sdk.internal.session.user.accountdata.UpdateUserAccountDataTask
 import org.matrix.android.sdk.internal.task.Task
 import org.matrix.android.sdk.internal.util.awaitTransaction
+import org.matrix.android.sdk.internal.util.time.Clock
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -56,7 +57,8 @@ internal class DefaultCreateRoomTask @Inject constructor(
         @SessionDatabase
         private val realmConfiguration: RealmConfiguration,
         private val createRoomBodyBuilder: CreateRoomBodyBuilder,
-        private val globalErrorReceiver: GlobalErrorReceiver
+        private val globalErrorReceiver: GlobalErrorReceiver,
+        private val clock: Clock,
 ) : CreateRoomTask {
 
     override suspend fun execute(params: CreateRoomParams): String {
@@ -105,8 +107,8 @@ internal class DefaultCreateRoomTask @Inject constructor(
             throw CreateRoomFailure.CreatedWithTimeout(roomId)
         }
 
-        Realm.getInstance(realmConfiguration).executeTransactionAsync {
-            RoomSummaryEntity.where(it, roomId).findFirst()?.lastActivityTime = System.currentTimeMillis()
+        awaitTransaction(realmConfiguration) {
+            RoomSummaryEntity.where(it, roomId).findFirst()?.lastActivityTime = clock.epochMillis()
         }
 
         if (otherUserId != null) {

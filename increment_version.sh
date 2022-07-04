@@ -147,18 +147,20 @@ git_changelog() {
     git log $git_args --pretty=format:"- %s" "$last_tag".. --committer="$(git config user.name)" \
         | grep -v 'Automatic revert to unchanged upstream strings' \
         | grep -v 'Automatic upstream merge preparation' \
-        | sed "s|Merge tag '\\(.*\\)' into sc|Update codebase to Element \1|" \
+        | sed "s|Merge tag '\\(.*\\)' into sc.*|Update codebase to Element \1|" \
+        | sed "s|Merge tag '\\(.*\\)' into merge.*|Update codebase to Element \1|" \
         | grep -v "Merge .*branch" \
         | grep -v "Automatic color correction" \
         | grep -v "Automatic upstream merge postprocessing" \
         | grep -v "Automatic SchildiChat string correction" \
         | grep -v 'merge_helpers\|README\|increment_version' \
         | grep -v "\\.sh" \
+        | grep -v "\\.md" \
         | grep -v "Update string correction" \
         | grep -v "Added translation using Weblate" \
         | grep -v "Translated using Weblate" \
         | grep -v "weblate/sc" \
-        | grep -v "\\[merge.*\\]" \
+        | grep -v "\\[.*merge.*\\]" \
         | grep -v "Disable Android Auto supports" \
         || echo "No significant changes since the last stable release"
 }

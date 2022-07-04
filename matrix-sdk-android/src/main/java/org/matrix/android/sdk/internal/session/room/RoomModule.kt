@@ -79,6 +79,10 @@ import org.matrix.android.sdk.internal.session.room.relation.DefaultUpdateQuickR
 import org.matrix.android.sdk.internal.session.room.relation.FetchEditHistoryTask
 import org.matrix.android.sdk.internal.session.room.relation.FindReactionEventForUndoTask
 import org.matrix.android.sdk.internal.session.room.relation.UpdateQuickReactionTask
+import org.matrix.android.sdk.internal.session.room.relation.threads.DefaultFetchThreadSummariesTask
+import org.matrix.android.sdk.internal.session.room.relation.threads.DefaultFetchThreadTimelineTask
+import org.matrix.android.sdk.internal.session.room.relation.threads.FetchThreadSummariesTask
+import org.matrix.android.sdk.internal.session.room.relation.threads.FetchThreadTimelineTask
 import org.matrix.android.sdk.internal.session.room.reporting.DefaultReportContentTask
 import org.matrix.android.sdk.internal.session.room.reporting.ReportContentTask
 import org.matrix.android.sdk.internal.session.room.state.DefaultSendStateTask
@@ -106,14 +110,14 @@ import retrofit2.Retrofit
 import javax.inject.Qualifier
 
 /**
- * Used to inject the simple commonmark Parser
+ * Used to inject the simple commonmark Parser.
  */
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
 internal annotation class SimpleCommonmarkParser
 
 /**
- * Used to inject the advanced commonmark Parser
+ * Used to inject the advanced commonmark Parser.
  */
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
@@ -294,4 +298,10 @@ internal abstract class RoomModule {
 
     @Binds
     abstract fun bindGetRoomSummaryTask(task: DefaultGetRoomSummaryTask): GetRoomSummaryTask
+
+    @Binds
+    abstract fun bindFetchThreadTimelineTask(task: DefaultFetchThreadTimelineTask): FetchThreadTimelineTask
+
+    @Binds
+    abstract fun bindFetchThreadSummariesTask(task: DefaultFetchThreadSummariesTask): FetchThreadSummariesTask
 }

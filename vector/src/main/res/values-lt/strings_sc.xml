@@ -19,7 +19,7 @@
     <string name="labs_mark_rooms_unread">Pažymėti pokalbius neskaitytais</string>
     <string name="url_previews_in_encrypted_rooms">URL peržiūros užšifruotose pokalbiuose</string>
     <string name="url_previews_in_encrypted_rooms_summary">Tai atskleis nuorodas jūsų žinutėse namų serveriui!</string>
-    <string name="login_mobile_device_sc">LeOS-Matrix Android</string>
+    <string name="login_mobile_device_sc">SchildiChat Android</string>
     <string name="bottom_action_all">Apžvalga</string>
     <string name="all_list_rooms_empty_title">SchildiChat</string>
     <string name="all_list_rooms_empty_body">Pokalbiai bus rodomi čia</string>

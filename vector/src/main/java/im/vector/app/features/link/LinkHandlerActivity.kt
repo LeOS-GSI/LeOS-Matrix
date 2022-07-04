@@ -67,6 +67,7 @@ class LinkHandlerActivity : VectorBaseActivity<ActivityProgressBinding>() {
             uri.getQueryParameter(LoginConfig.CONFIG_HS_PARAMETER) != null                 -> handleConfigUrl(uri)
             uri.toString().startsWith(PermalinkService.MATRIX_TO_URL_BASE)                 -> handleSupportedHostUrl()
             uri.toString().startsWith(PermalinkHandler.MATRIX_TO_CUSTOM_SCHEME_URL_BASE)   -> handleSupportedHostUrl()
+            uri.toString().startsWith(PermalinkHandler.SC_MATRIX_TO_CUSTOM_SCHEME_URL_BASE) -> handleSupportedHostUrl()
             resources.getStringArray(R.array.permalink_supported_hosts).contains(uri.host) -> handleSupportedHostUrl()
             else                                                                           -> {
                 // Other links are not yet handled, but should not come here (manifest configuration error?)
@@ -101,7 +102,7 @@ class LinkHandlerActivity : VectorBaseActivity<ActivityProgressBinding>() {
     }
 
     /**
-     * Start the login screen with identity server and homeserver pre-filled, if any
+     * Start the login screen with identity server and homeserver pre-filled, if any.
      */
     private fun startLoginActivity(uri: Uri? = null) {
         navigator.openLogin(
@@ -113,7 +114,7 @@ class LinkHandlerActivity : VectorBaseActivity<ActivityProgressBinding>() {
     }
 
     /**
-     * Propose to disconnect from a previous HS, when clicking on an auto config link
+     * Propose to disconnect from a previous HS, when clicking on an auto config link.
      */
     private fun displayAlreadyLoginPopup(uri: Uri) {
         MaterialAlertDialogBuilder(this)
@@ -133,7 +134,7 @@ class LinkHandlerActivity : VectorBaseActivity<ActivityProgressBinding>() {
         } else {
             lifecycleScope.launch {
                 try {
-                    session.signOut(true)
+                    session.signOutService().signOut(true)
                     Timber.d("## displayAlreadyLoginPopup(): logout succeeded")
                     sessionHolder.clearActiveSession()
                     startLoginActivity(uri)

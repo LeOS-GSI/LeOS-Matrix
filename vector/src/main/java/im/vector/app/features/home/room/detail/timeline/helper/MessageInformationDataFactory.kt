@@ -16,7 +16,7 @@
 
 package im.vector.app.features.home.room.detail.timeline.helper
 
-import android.content.Context;
+import de.spiritcroc.matrixsdk.util.DbgUtil
 import im.vector.app.core.date.DateFormatKind
 import im.vector.app.core.date.VectorDateFormatter
 import im.vector.app.core.extensions.localDateTime
@@ -26,15 +26,17 @@ import im.vector.app.features.home.room.detail.timeline.item.E2EDecoration
 import im.vector.app.features.home.room.detail.timeline.item.MessageInformationData
 import im.vector.app.features.home.room.detail.timeline.item.PollResponseData
 import im.vector.app.features.home.room.detail.timeline.item.PollVoteSummaryData
-import im.vector.app.features.home.room.detail.timeline.item.ReactionInfoData
 import im.vector.app.features.home.room.detail.timeline.item.ReferencesInfoData
 import im.vector.app.features.home.room.detail.timeline.item.SendStateDecoration
+import im.vector.app.features.home.room.detail.timeline.style.TimelineMessageLayoutFactory
 import im.vector.app.features.settings.VectorPreferences
 import im.vector.app.features.themes.BubbleThemeUtils
-import org.matrix.android.sdk.api.crypto.VerificationState
 import org.matrix.android.sdk.api.extensions.orFalse
 import org.matrix.android.sdk.api.session.Session
+import org.matrix.android.sdk.api.session.crypto.verification.VerificationState
 import org.matrix.android.sdk.api.session.events.model.EventType
+import org.matrix.android.sdk.api.session.events.model.content.EncryptedEventContent
+import org.matrix.android.sdk.api.session.events.model.getMsgType
 import org.matrix.android.sdk.api.session.events.model.isAttachmentMessage
 import org.matrix.android.sdk.api.session.events.model.toModel
 import org.matrix.android.sdk.api.session.room.members.roomMemberQueryParams
@@ -46,43 +48,41 @@ import org.matrix.android.sdk.api.session.room.send.SendState
 import org.matrix.android.sdk.api.session.room.timeline.TimelineEvent
 import org.matrix.android.sdk.api.session.room.timeline.getLastMessageContent
 import org.matrix.android.sdk.api.session.room.timeline.hasBeenEdited
-import org.matrix.android.sdk.api.session.room.timeline.isEdition
-import org.matrix.android.sdk.internal.crypto.model.event.EncryptedEventContent
 import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * TODO Update this comment
- * This class compute if data of an event (such has avatar, display name, ...) should be displayed, depending on the previous event in the timeline
+ * This class is responsible of building extra information data associated to a given event.
  */
 class MessageInformationDataFactory @Inject constructor(private val session: Session,
+                                                        private val vectorPreferences: VectorPreferences,
                                                         private val dateFormatter: VectorDateFormatter,
-                                                        private val context: Context,
-                                                        private val visibilityHelper: TimelineEventVisibilityHelper,
-                                                        private val vectorPreferences: VectorPreferences) {
+                                                        private val messageLayoutFactory: TimelineMessageLayoutFactory,
+                                                        private val reactionsSummaryFactory: ReactionsSummaryFactory) {
 
     fun create(params: TimelineItemFactoryParams): MessageInformationData {
         val event = params.event
         val nextDisplayableEvent = params.nextDisplayableEvent
+        val prevDisplayableEvent = params.prevDisplayableEvent
         val eventId = event.eventId
+        val isSentByMe = event.root.senderId == session.myUserId
+        val roomSummary = params.partialState.roomSummary
 
         val date = event.root.localDateTime()
         val nextDate = nextDisplayableEvent?.root?.localDateTime()
         val addDaySeparator = date.toLocalDate() != nextDate?.toLocalDate()
-        val isNextMessageReceivedMoreThanOneHourAgo = nextDate?.isBefore(date.minusMinutes(60))
-                ?: false
 
-        val showInformation =
-                addDaySeparator ||
-                        event.senderInfo.avatarUrl != nextDisplayableEvent?.senderInfo?.avatarUrl ||
-                        event.senderInfo.disambiguatedDisplayName != nextDisplayableEvent?.senderInfo?.disambiguatedDisplayName ||
-                        nextDisplayableEvent.root.getClearType() !in listOf(EventType.MESSAGE, EventType.STICKER, EventType.ENCRYPTED) ||
-                        isNextMessageReceivedMoreThanOneHourAgo ||
-                        isTileTypeMessage(nextDisplayableEvent) ||
-                        nextDisplayableEvent.isEdition()
+        val isFirstFromThisSender = nextDisplayableEvent?.root?.senderId != event.root.senderId || addDaySeparator
+        val isLastFromThisSender = prevDisplayableEvent?.root?.senderId != event.root.senderId ||
+                prevDisplayableEvent?.root?.localDateTime()?.toLocalDate() != date.toLocalDate()
 
-        val time = dateFormatter.format(event.root.originServerTs, DateFormatKind.MESSAGE_SIMPLE)
-        val roomSummary = params.partialState.roomSummary
+        val time = dateFormatter.format(event.root.originServerTs, DateFormatKind.MESSAGE_SIMPLE).let {
+            if (DbgUtil.isDbgEnabled(DbgUtil.DBG_SHOW_DISPLAY_INDEX)) {
+                "$it | ${event.displayIndex}"
+            } else {
+                it
+            }
+        }
         val e2eDecoration = getE2EDecoration(roomSummary, event)
 
         // Sometimes, member information is not available at this point yet, so let's completely rely on the DM flag for now.
@@ -95,7 +95,8 @@ class MessageInformationDataFactory @Inject constructor(private val session: Ses
         //var isEffectivelyDirect = false
         var dmOtherMemberId: String? = null
         if ((roomSummary?.isDirect == true) && event.root.roomId != null) {
-            val members = session.getRoom(event.root.roomId!!)
+            val members = session.roomService().getRoom(event.root.roomId!!)
+                    ?.membershipService()
                     ?.getRoomMembers(roomMemberQueryParams { memberships = listOf(Membership.JOIN) })
                     ?.map { it.userId }
                     .orEmpty()
@@ -114,7 +115,6 @@ class MessageInformationDataFactory @Inject constructor(private val session: Ses
         }
 
         // SendState Decoration
-        val isSentByMe = event.root.senderId == session.myUserId
         val sendStateDecoration = if (isSentByMe) {
             getSendStateDecoration(
                     event = event,
@@ -128,6 +128,8 @@ class MessageInformationDataFactory @Inject constructor(private val session: Ses
         // Sender power level
         val senderPowerLevel = params.partialState.powerLevelsHelper?.getUserPowerLevelValue(event.senderInfo.userId)
 
+        val messageLayout = messageLayoutFactory.create(params)
+
         return MessageInformationData(
                 eventId = eventId,
                 senderId = event.root.senderId ?: "",
@@ -136,13 +138,8 @@ class MessageInformationDataFactory @Inject constructor(private val session: Ses
                 ageLocalTS = event.root.ageLocalTs,
                 avatarUrl = event.senderInfo.avatarUrl,
                 memberName = event.senderInfo.disambiguatedDisplayName,
-                showInformation = showInformation,
-                forceShowTimestamp = vectorPreferences.alwaysShowTimeStamps() || BubbleThemeUtils.forceAlwaysShowTimestamps(context),
-                orderedReactionList = event.annotations?.reactionsSummary
-                        // ?.filter { isSingleEmoji(it.key) }
-                        ?.map {
-                            ReactionInfoData(it.key, it.count, it.addedByMe, it.localEchoEvents.isEmpty())
-                        },
+                messageLayout = messageLayout,
+                reactionsSummary = reactionsSummaryFactory.create(event),
                 pollResponseAggregatedSummary = event.annotations?.pollResponseSummary?.let {
                     PollResponseData(
                             myVote = it.aggregatedContent?.myVote,
@@ -165,22 +162,16 @@ class MessageInformationDataFactory @Inject constructor(private val session: Ses
                     ReferencesInfoData(verificationState)
                 },
                 sentByMe = isSentByMe,
-                readReceiptAnonymous = if (event.root.sendState == SendState.SYNCED || event.root.sendState == SendState.SENT) {
-                    /*if (event.readByOther) {
-                        AnonymousReadReceipt.READ
-                    } else {
-                        AnonymousReadReceipt.SENT
-                    }*/
-                    AnonymousReadReceipt.NONE
-                } else {
-                    AnonymousReadReceipt.PROCESSING
-                },
+                readReceiptAnonymous = BubbleThemeUtils.anonymousReadReceiptForEvent(event),
                 senderPowerLevel = senderPowerLevel,
                 isDirect = isEffectivelyDirect,
                 isPublic = roomSummary?.isPublic ?: false,
                 dmChatPartnerId = dmOtherMemberId,
+                isFirstFromThisSender = isFirstFromThisSender,
+                isLastFromThisSender = isLastFromThisSender,
                 e2eDecoration = e2eDecoration,
-                sendStateDecoration = sendStateDecoration
+                sendStateDecoration = sendStateDecoration,
+                messageType = event.root.getMsgType()
         )
     }
 
@@ -251,7 +242,7 @@ class MessageInformationDataFactory @Inject constructor(private val session: Ses
 
     /**
      * Tiles type message never show the sender information (like verification request), so we should repeat it for next message
-     * even if same sender
+     * even if same sender.
      */
     private fun isTileTypeMessage(event: TimelineEvent?): Boolean {
         return when (event?.root?.getClearType()) {

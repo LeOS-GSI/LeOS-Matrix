@@ -16,12 +16,10 @@
 
 package im.vector.app.features.home.room.detail.timeline.item
 
-import android.content.Context
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.RelativeLayout
+import androidx.core.view.isVisible
 import com.airbnb.epoxy.EpoxyAttribute
 import com.airbnb.epoxy.EpoxyModelClass
 import com.airbnb.epoxy.EpoxyModelWithHolder
@@ -29,19 +27,22 @@ import im.vector.app.R
 import im.vector.app.core.epoxy.ClickListener
 import im.vector.app.core.epoxy.VectorEpoxyHolder
 import im.vector.app.core.epoxy.onClick
+import im.vector.app.core.resources.LocaleProvider
+import im.vector.app.core.resources.getLayoutDirectionFromCurrentLocale
 import im.vector.app.core.ui.views.BubbleDependentView
 import im.vector.app.core.ui.views.ReadReceiptsView
-import im.vector.app.core.ui.views.setFlatRtl
-import im.vector.app.core.ui.views.updateMessageBubble
 import im.vector.app.features.home.AvatarRenderer
-import im.vector.app.features.themes.BubbleThemeUtils
-import timber.log.Timber
+import im.vector.app.features.home.room.detail.timeline.style.TimelineMessageLayout
+import im.vector.app.features.home.room.detail.timeline.view.ScMessageBubbleWrapView
+import im.vector.app.features.home.room.detail.timeline.view.setFlatRtl
 
 @EpoxyModelClass(layout = R.layout.item_timeline_event_read_receipts)
 abstract class ReadReceiptsItem : EpoxyModelWithHolder<ReadReceiptsItem.Holder>(), ItemWithEvents, BubbleDependentView<ReadReceiptsItem.Holder> {
 
     @EpoxyAttribute lateinit var eventId: String
     @EpoxyAttribute lateinit var readReceipts: List<ReadReceiptData>
+    @EpoxyAttribute lateinit var messageLayout: TimelineMessageLayout
+    @EpoxyAttribute var shouldHideReadReceipts: Boolean = false
     @EpoxyAttribute(EpoxyAttribute.Option.DoNotHash) lateinit var avatarRenderer: AvatarRenderer
     @EpoxyAttribute(EpoxyAttribute.Option.DoNotHash) lateinit var clickListener: ClickListener
 
@@ -54,7 +55,9 @@ abstract class ReadReceiptsItem : EpoxyModelWithHolder<ReadReceiptsItem.Holder>(
         holder.readReceiptsView.onClick(clickListener)
         holder.readReceiptsView.render(readReceipts, avatarRenderer)
 
-        updateMessageBubble(holder.readReceiptsView.context, holder)
+        (messageLayout as? TimelineMessageLayout.ScBubble)?.let { applyScBubbleStyle(it, holder) }
+
+        holder.readReceiptsView.isVisible = !shouldHideReadReceipts
     }
 
     override fun unbind(holder: Holder) {
@@ -62,17 +65,10 @@ abstract class ReadReceiptsItem : EpoxyModelWithHolder<ReadReceiptsItem.Holder>(
         super.unbind(holder)
     }
 
-    class Holder : VectorEpoxyHolder() {
-        val readReceiptsView by bind<ReadReceiptsView>(R.id.readReceiptsView)
-    }
-
-    override fun setBubbleLayout(holder: Holder, bubbleStyle: String, bubbleStyleSetting: String, reverseBubble: Boolean) {
-        val defaultDirection = holder.readReceiptsView.resources.configuration.layoutDirection;
+    override fun applyScBubbleStyle(messageLayout: TimelineMessageLayout.ScBubble, holder: Holder) {
+        val defaultDirection = LocaleProvider(holder.view.resources).getLayoutDirectionFromCurrentLocale()
         val defaultRtl = defaultDirection == View.LAYOUT_DIRECTION_RTL
         val reverseDirection = if (defaultRtl) View.LAYOUT_DIRECTION_LTR else View.LAYOUT_DIRECTION_RTL
-
-        // Always keep read receipts of others on other side for dual side bubbles
-        val dualBubbles = BubbleThemeUtils.drawsDualSide(bubbleStyleSetting)
 
         /*
         val receiptParent = holder.readReceiptsView.parent
@@ -94,10 +90,10 @@ abstract class ReadReceiptsItem : EpoxyModelWithHolder<ReadReceiptsItem.Holder>(
             }
         } else if (receiptParent is FrameLayout) {
          */
-        if (dualBubbles) {
-            (holder.readReceiptsView.layoutParams as FrameLayout.LayoutParams).gravity = Gravity.START
-        } else {
+        if (messageLayout.singleSidedLayout) {
             (holder.readReceiptsView.layoutParams as FrameLayout.LayoutParams).gravity = Gravity.END
+        } else {
+            (holder.readReceiptsView.layoutParams as FrameLayout.LayoutParams).gravity = Gravity.START
         }
         /*
         } else {
@@ -106,11 +102,11 @@ abstract class ReadReceiptsItem : EpoxyModelWithHolder<ReadReceiptsItem.Holder>(
          */
 
         // Also set rtl to have members fill from the natural side
-        setFlatRtl(holder.readReceiptsView, if (dualBubbles) reverseDirection else defaultDirection, defaultDirection)
+        setFlatRtl(holder.readReceiptsView, if (messageLayout.singleSidedLayout) defaultDirection else reverseDirection, defaultDirection)
     }
 
-    fun updateMessageBubble(context: Context, holder: Holder) {
-        return updateMessageBubble(context, this, holder)
+    class Holder : VectorEpoxyHolder() {
+        val readReceiptsView by bind<ReadReceiptsView>(R.id.readReceiptsView)
     }
 
 }

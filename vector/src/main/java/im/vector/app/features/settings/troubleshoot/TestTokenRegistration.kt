@@ -36,7 +36,7 @@ class TestTokenRegistration @Inject constructor(private val context: FragmentAct
                                                 private val stringProvider: StringProvider,
                                                 private val pushersManager: PushersManager,
                                                 private val activeSessionHolder: ActiveSessionHolder) :
-    TroubleshootTest(R.string.settings_troubleshoot_test_pusher_registration_title) {
+        TroubleshootTest(R.string.settings_troubleshoot_test_pusher_registration_title) {
 
     override fun perform(activityResultLauncher: ActivityResultLauncher<Intent>) {
         // Check if we have a registered pusher for this token
@@ -52,12 +52,14 @@ class TestTokenRegistration @Inject constructor(private val context: FragmentAct
             status = TestStatus.FAILED
             return
         }
-        val pushers = session.getPushers().filter {
+        val pushers = session.pushersService().getPushers().filter {
             it.pushKey == pushToken && it.state == PusherState.REGISTERED
         }
         if (pushers.isEmpty()) {
-            description = stringProvider.getString(R.string.settings_troubleshoot_test_pusher_registration_failed,
-                    stringProvider.getString(R.string.sas_error_unknown))
+            description = stringProvider.getString(
+                    R.string.settings_troubleshoot_test_pusher_registration_failed,
+                    stringProvider.getString(R.string.sas_error_unknown)
+            )
             quickFix = object : TroubleshootQuickFix(R.string.settings_troubleshoot_test_token_registration_quick_fix) {
                 override fun doFix() {
                     val workId = pushersManager.enqueueRegisterPusher(context, pushToken, pushGateway)

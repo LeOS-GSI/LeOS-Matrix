@@ -18,6 +18,7 @@ package im.vector.app.features.crypto.verification.request
 
 import androidx.core.text.toSpannable
 import com.airbnb.epoxy.EpoxyController
+import com.airbnb.mvrx.Fail
 import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.Success
 import com.airbnb.mvrx.Uninitialized
@@ -87,17 +88,19 @@ class VerificationRequestController @Inject constructor(
                 }
             }
 
-            bottomSheetDividerItem {
-                id("sep1")
-            }
+            if (!state.isVerificationRequired) {
+                bottomSheetDividerItem {
+                    id("sep1")
+                }
 
-            bottomSheetVerificationActionItem {
-                id("skip")
-                title(host.stringProvider.getString(R.string.action_skip))
-                titleColor(host.colorProvider.getColorFromAttribute(R.attr.colorError))
-                iconRes(R.drawable.ic_arrow_right)
-                iconColor(host.colorProvider.getColorFromAttribute(R.attr.colorError))
-                listener { host.listener?.onClickSkip() }
+                bottomSheetVerificationActionItem {
+                    id("skip")
+                    title(host.stringProvider.getString(R.string.action_skip))
+                    titleColor(host.colorProvider.getColorFromAttribute(R.attr.colorError))
+                    iconRes(R.drawable.ic_arrow_right)
+                    iconColor(host.colorProvider.getColorFromAttribute(R.attr.colorError))
+                    listener { host.listener?.onClickSkip() }
+                }
             }
         } else {
             val styledText =
@@ -153,6 +156,7 @@ class VerificationRequestController @Inject constructor(
                         }
                     }
                 }
+                is Fail          -> Unit
             }
         }
 

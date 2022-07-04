@@ -30,7 +30,7 @@ import im.vector.app.core.extensions.replaceChildFragment
 import im.vector.app.core.platform.VectorBaseFragment
 import im.vector.app.core.utils.startSharePlainTextIntent
 import im.vector.app.databinding.FragmentHomeDrawerBinding
-import im.vector.app.features.analytics.plan.Screen
+import im.vector.app.features.analytics.plan.MobileScreen
 import im.vector.app.features.login.PromptSimplifiedModeActivity
 import im.vector.app.features.settings.VectorPreferences
 import im.vector.app.features.settings.VectorSettingsActivity
@@ -61,7 +61,7 @@ class HomeDrawerFragment @Inject constructor(
         if (savedInstanceState == null) {
             replaceChildFragment(R.id.homeDrawerGroupListContainer, SpaceListFragment::class.java)
         }
-        session.getUserLive(session.myUserId).observeK(viewLifecycleOwner) { optionalUser ->
+        session.userService().getUserLive(session.myUserId).observeK(viewLifecycleOwner) { optionalUser ->
             val user = optionalUser?.getOrNull()
             if (user != null) {
                 avatarRenderer.render(user.toMatrixItem(), views.homeDrawerHeaderAvatarView)
@@ -99,7 +99,7 @@ class HomeDrawerFragment @Inject constructor(
 
         views.homeDrawerInviteFriendButton.debouncedClicks {
             session.permalinkService().createPermalink(sharedActionViewModel.session.myUserId)?.let { permalink ->
-                analyticsTracker.screen(Screen(screenName = Screen.ScreenName.MobileInviteFriends))
+                analyticsTracker.screen(MobileScreen(screenName = MobileScreen.ScreenName.InviteFriends))
                 val text = getString(R.string.invite_friends_text, permalink)
 
                 startSharePlainTextIntent(

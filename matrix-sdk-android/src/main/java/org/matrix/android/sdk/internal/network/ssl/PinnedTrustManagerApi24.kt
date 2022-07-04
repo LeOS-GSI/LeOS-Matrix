@@ -18,6 +18,7 @@ package org.matrix.android.sdk.internal.network.ssl
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import org.matrix.android.sdk.api.network.ssl.Fingerprint
 import java.net.Socket
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
@@ -27,11 +28,9 @@ import javax.net.ssl.X509ExtendedTrustManager
 /**
  * Implements a TrustManager that checks Certificates against an explicit list of known
  * fingerprints.
- */
-
-/**
- * @param fingerprints        An array of SHA256 cert fingerprints
- * @param defaultTrustManager Optional trust manager to fall back on if cert does not match
+ *
+ * @property fingerprints An array of SHA256 cert fingerprints
+ * @property defaultTrustManager Optional trust manager to fall back on if cert does not match
  * any of the fingerprints. Can be null.
  */
 @RequiresApi(Build.VERSION_CODES.N)

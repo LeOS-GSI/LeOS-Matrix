@@ -4,9 +4,15 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.text.Layout
+import android.text.Spannable
+import android.text.Spanned
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
+import androidx.core.text.getSpans
+import androidx.core.text.toSpanned
 import im.vector.app.R
+import im.vector.app.features.html.HtmlCodeSpan
+import io.noties.markwon.core.spans.EmphasisSpan
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -90,8 +96,25 @@ class FooteredTextView @JvmOverloads constructor(
                     (maxLineWidth + resources.getDimensionPixelSize(R.dimen.sc_footer_rtl_mismatch_extra_padding))
                 ) + footerWidth
 
+        // If the last line is a multi-line code block, we have never space in the last line (as the black background always uses full width)
+        val forceNewlineFooter: Boolean
+        // For italic text, we need some extra space due to a wrap_content bug: https://stackoverflow.com/q/4353836
+        val addItalicPadding: Boolean
+
+        if (text is Spannable || text is Spanned) {
+            val span = text.toSpanned()
+            // If not found, -1+1 = 0
+            val lastLineStart = span.lastIndexOf("\n") + 1
+            val lastLineCodeSpans = span.getSpans<HtmlCodeSpan>(lastLineStart)
+            forceNewlineFooter = lastLineCodeSpans.any { it.isBlock }
+            addItalicPadding = span.getSpans<EmphasisSpan>().isNotEmpty()
+        } else {
+            forceNewlineFooter = false
+            addItalicPadding = false
+        }
+
         // Is there space for a horizontal footer?
-        if (widthWithHorizontalFooter <= widthLimit) {
+        if (widthWithHorizontalFooter <= widthLimit && !forceNewlineFooter) {
             // Reserve extra horizontal footer space if necessary
             if (widthWithHorizontalFooter > newWidth) {
                 newWidth = ceil(widthWithHorizontalFooter).toInt()
@@ -103,6 +126,14 @@ class FooteredTextView @JvmOverloads constructor(
         } else {
             // Reserve vertical footer space
             newHeight += footerHeight
+            // Ensure enough width for footer bellow
+            newWidth = max(newWidth, footerWidth +
+                    resources.getDimensionPixelSize(R.dimen.sc_footer_padding_compensation) +
+                    2 * resources.getDimensionPixelSize(R.dimen.sc_footer_overlay_padding))
+        }
+
+        if (addItalicPadding) {
+            newWidth += resources.getDimensionPixelSize(R.dimen.italic_text_view_extra_padding)
         }
 
         setMeasuredDimension(newWidth, newHeight)

@@ -35,7 +35,7 @@ import org.matrix.android.sdk.api.util.toMatrixItem
 import javax.inject.Inject
 
 /**
- * Epoxy controller for room list actions
+ * Epoxy controller for room list actions.
  */
 class RoomListQuickActionsEpoxyController @Inject constructor(
         private val avatarRenderer: AvatarRenderer,
@@ -74,6 +74,10 @@ class RoomListQuickActionsEpoxyController @Inject constructor(
             } else {
                 RoomListQuickActionsSharedAction.MarkUnread(roomSummary.roomId).toBottomSheetItem("action_mark_unread")
             }
+        }
+
+        if (vectorPreferences.showOpenAnonymous()) {
+            RoomListQuickActionsSharedAction.OpenAnonymous(roomSummary.roomId).toBottomSheetItem("action_open_anonymous")
         }
 
         if (vectorPreferences.loadRoomAtFirstUnread()) {

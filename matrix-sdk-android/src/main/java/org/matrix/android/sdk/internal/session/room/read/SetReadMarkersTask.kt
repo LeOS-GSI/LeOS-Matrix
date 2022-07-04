@@ -17,6 +17,8 @@
 package org.matrix.android.sdk.internal.session.room.read
 
 import com.zhuinden.monarchy.Monarchy
+import de.spiritcroc.matrixsdk.util.DbgUtil
+import de.spiritcroc.matrixsdk.util.Dimber
 import io.realm.Realm
 import org.matrix.android.sdk.api.session.events.model.LocalEcho
 import org.matrix.android.sdk.internal.database.model.RoomSummaryEntity
@@ -34,6 +36,7 @@ import org.matrix.android.sdk.internal.session.sync.handler.room.ReadReceiptHand
 import org.matrix.android.sdk.internal.session.sync.handler.room.RoomFullyReadHandler
 import org.matrix.android.sdk.internal.task.Task
 import org.matrix.android.sdk.internal.util.awaitTransaction
+import org.matrix.android.sdk.internal.util.time.Clock
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.collections.set
@@ -58,8 +61,11 @@ internal class DefaultSetReadMarkersTask @Inject constructor(
         private val roomFullyReadHandler: RoomFullyReadHandler,
         private val readReceiptHandler: ReadReceiptHandler,
         @UserId private val userId: String,
-        private val globalErrorReceiver: GlobalErrorReceiver
+        private val globalErrorReceiver: GlobalErrorReceiver,
+        private val clock: Clock,
 ) : SetReadMarkersTask {
+
+    private val rmDimber = Dimber("ReadMarkerDbg", DbgUtil.DBG_READ_MARKER)
 
     override suspend fun execute(params: SetReadMarkersTask.Params) {
         val markers = mutableMapOf<String, String>()
@@ -75,15 +81,18 @@ internal class DefaultSetReadMarkersTask @Inject constructor(
         } else {
             params.readReceiptEventId
         }
-        if (fullyReadEventId != null && !isReadMarkerMoreRecent(monarchy.realmConfiguration, params.roomId, fullyReadEventId)) {
+        if (fullyReadEventId != null && !isReadMarkerMoreRecent(monarchy.realmConfiguration, params.roomId, fullyReadEventId, rmDimber)) {
+            rmDimber.i { "Set to $fullyReadEventId if it's not local..." }
             if (LocalEcho.isLocalEchoId(fullyReadEventId)) {
                 Timber.w("Can't set read marker for local event $fullyReadEventId")
             } else {
                 markers[READ_MARKER] = fullyReadEventId
             }
+        } else {
+            rmDimber.i { "Did not set to $fullyReadEventId" }
         }
         if (readReceiptEventId != null &&
-                !isEventRead(monarchy.realmConfiguration, userId, params.roomId, readReceiptEventId)) {
+                !isEventRead(monarchy.realmConfiguration, userId, params.roomId, readReceiptEventId, ignoreSenderId = true)) {
             if (LocalEcho.isLocalEchoId(readReceiptEventId)) {
                 Timber.w("Can't set read receipt for local event $readReceiptEventId")
             } else {
@@ -125,7 +134,7 @@ internal class DefaultSetReadMarkersTask @Inject constructor(
                 roomFullyReadHandler.handle(realm, roomId, FullyReadContent(readMarkerId))
             }
             if (readReceiptId != null) {
-                val readReceiptContent = ReadReceiptHandler.createContent(userId, readReceiptId)
+                val readReceiptContent = ReadReceiptHandler.createContent(userId, readReceiptId, clock.epochMillis())
                 readReceiptHandler.handle(realm, roomId, readReceiptContent, false, null)
             }
             if (shouldUpdateRoomSummary) {

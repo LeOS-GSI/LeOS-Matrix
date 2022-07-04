@@ -17,10 +17,17 @@
 package im.vector.app.features.html
 
 import android.content.Context
+import android.content.res.Resources
+import android.graphics.drawable.Drawable
 import android.text.Spannable
 import androidx.core.text.toSpannable
+import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestBuilder
+import com.bumptech.glide.request.target.Target
 import im.vector.app.R
+import im.vector.app.core.di.ActiveSessionHolder
 import im.vector.app.core.resources.ColorProvider
+import im.vector.app.core.utils.DimensionConverter
 import im.vector.app.features.settings.VectorPreferences
 import im.vector.app.features.themes.ThemeUtils
 import io.noties.markwon.AbstractMarkwonPlugin
@@ -31,8 +38,11 @@ import io.noties.markwon.PrecomputedFutureTextSetterCompat
 import io.noties.markwon.ext.latex.JLatexMathPlugin
 import io.noties.markwon.ext.latex.JLatexMathTheme
 import io.noties.markwon.html.HtmlPlugin
+import io.noties.markwon.image.AsyncDrawable
+import io.noties.markwon.image.glide.GlideImagesPlugin
 import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin
 import org.commonmark.node.Node
+import org.matrix.android.sdk.api.MatrixUrls.isMxcUrl
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,6 +51,7 @@ import javax.inject.Singleton
 class EventHtmlRenderer @Inject constructor(
         private val htmlConfigure: MatrixHtmlPluginConfigure,
         private val context: Context,
+        private val activeSessionHolder: ActiveSessionHolder,
         private val vectorPreferences: VectorPreferences
 ) {
 
@@ -56,6 +67,11 @@ class EventHtmlRenderer @Inject constructor(
         fun afterRender(renderedText: Spannable)
     }
 
+    private fun String.removeHeightWidthAttrs(): String {
+        return replace(Regex("""height="([^"]*)""""), "")
+                .replace(Regex("""width="([^"]*)""""), "")
+    }
+
     private fun buildMarkwon() = Markwon.builder(context)
             .usePlugins(listOf(
                     HtmlPlugin.create(htmlConfigure),
@@ -66,18 +82,44 @@ class EventHtmlRenderer @Inject constructor(
                                     .codeBackgroundColor(codeBlockBackground)
                                     .blockQuoteColor(quoteBarColor)
                         }
-                    }
+                    },
+                    object : AbstractMarkwonPlugin() { // Overwrite height for data-mx-emoticon, to ensure emoji-like height
+                        override fun processMarkdown(markdown: String): String {
+                            return markdown
+                                    .replace(Regex("""<img\s+([^>]*)data-mx-emoticon([^>]*)>""")) { matchResult ->
+                                        """<img height="1.2em" """ + matchResult.groupValues[1].removeHeightWidthAttrs() +
+                                                " data-mx-emoticon" + matchResult.groupValues[2].removeHeightWidthAttrs() + ">"
+                                    }
+                        }
+                    },
+                    GlideImagesPlugin.create(object: GlideImagesPlugin.GlideStore {
+                        override fun load(drawable: AsyncDrawable): RequestBuilder<Drawable> {
+                            val url = drawable.destination
+                            if (url.isMxcUrl()) {
+                                val contentUrlResolver = activeSessionHolder.getActiveSession().contentUrlResolver()
+                                val imageUrl = contentUrlResolver.resolveFullSize(url)
+                                // Override size to avoid crashes for huge pictures
+                                return Glide.with(context).load(imageUrl).override(500)
+                            }
+                            // We don't want to support other url schemes here, so just return a request for null
+                            return Glide.with(context).load(null as String?)
+                        }
+
+                        override fun cancel(target: Target<*>) {
+                            Glide.with(context).clear(target)
+                        }
+                    })
             ))
             .apply {
                 if (vectorPreferences.latexMathsIsEnabled()) {
                         usePlugin(object : AbstractMarkwonPlugin() { // Markwon expects maths to be in a specific format: https://noties.io/Markwon/docs/v4/ext-latex
                             override fun processMarkdown(markdown: String): String {
                                 return markdown
-                                        .replace(Regex("""<span\s+data-mx-maths="([^"]*)">.*?</span>""")) {
-                                            matchResult -> "$$" + matchResult.groupValues[1] + "$$"
+                                        .replace(Regex("""<span\s+data-mx-maths="([^"]*)">.*?</span>""")) { matchResult ->
+                                            "$$" + matchResult.groupValues[1] + "$$"
                                         }
-                                        .replace(Regex("""<div\s+data-mx-maths="([^"]*)">.*?</div>""")) {
-                                            matchResult -> "\n$$\n" + matchResult.groupValues[1] + "\n$$\n"
+                                        .replace(Regex("""<div\s+data-mx-maths="([^"]*)">.*?</div>""")) { matchResult ->
+                                            "\n$$\n" + matchResult.groupValues[1] + "\n$$\n"
                                         }
                             }
                         })
@@ -154,12 +196,15 @@ class EventHtmlRenderer @Inject constructor(
     }
 }
 
-class MatrixHtmlPluginConfigure @Inject constructor(private val colorProvider: ColorProvider) : HtmlPlugin.HtmlConfigure {
+class MatrixHtmlPluginConfigure @Inject constructor(private val colorProvider: ColorProvider, private val resources: Resources) : HtmlPlugin.HtmlConfigure {
 
     override fun configureHtml(plugin: HtmlPlugin) {
         plugin
                 .addHandler(FontTagHandler())
+                .addHandler(ParagraphHandler(DimensionConverter(resources)))
                 .addHandler(MxReplyTagHandler())
+                .addHandler(CodePreTagHandler())
+                .addHandler(CodeTagHandler())
                 .addHandler(SpanHandler(colorProvider))
     }
 }

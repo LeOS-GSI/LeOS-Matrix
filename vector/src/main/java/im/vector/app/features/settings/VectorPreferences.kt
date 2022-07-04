@@ -15,28 +15,39 @@
  */
 package im.vector.app.features.settings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.widget.Toast
+import androidx.annotation.BoolRes
 import androidx.core.content.edit
 import com.squareup.seismic.ShakeDetector
 import de.spiritcroc.matrixsdk.StaticScSdkHelper
 import im.vector.app.BuildConfig
 import im.vector.app.R
 import im.vector.app.core.di.DefaultSharedPreferences
+import im.vector.app.core.time.Clock
 import im.vector.app.features.disclaimer.SHARED_PREF_KEY
 import im.vector.app.features.home.room.detail.timeline.helper.MatrixItemColorProvider
 import im.vector.app.features.homeserver.ServerUrlsRepository
+import im.vector.app.features.themes.BubbleThemeUtils
 import im.vector.app.features.themes.ThemeUtils
 import org.matrix.android.sdk.api.extensions.tryOrNull
 import org.matrix.android.sdk.api.session.room.model.RoomSummary
 import timber.log.Timber
 import javax.inject.Inject
 
-class VectorPreferences @Inject constructor(private val context: Context): StaticScSdkHelper.ScSdkPreferenceProvider {
+class VectorPreferences @Inject constructor(
+        private val context: Context,
+        private val bubbleThemeUtils: BubbleThemeUtils,
+        private val clock: Clock,
+) : StaticScSdkHelper.ScSdkPreferenceProvider {
+
+    constructor(context: Context, clock: Clock) : this(context, BubbleThemeUtils(context), clock)
 
     companion object {
         const val SETTINGS_HELP_PREFERENCE_KEY = "SETTINGS_HELP_PREFERENCE_KEY"
@@ -87,6 +98,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         // interface
         const val SETTINGS_INTERFACE_LANGUAGE_PREFERENCE_KEY = "SETTINGS_INTERFACE_LANGUAGE_PREFERENCE_KEY"
         const val SETTINGS_INTERFACE_TEXT_SIZE_KEY = "SETTINGS_INTERFACE_TEXT_SIZE_KEY"
+        const val SETTINGS_INTERFACE_BUBBLE_KEY = "SETTINGS_INTERFACE_BUBBLE_KEY"
         const val SETTINGS_SHOW_URL_PREVIEW_KEY = "SETTINGS_SHOW_URL_PREVIEW_KEY"
         private const val SETTINGS_SEND_TYPING_NOTIF_KEY = "SETTINGS_SEND_TYPING_NOTIF_KEY"
         private const val SETTINGS_ENABLE_MARKDOWN_KEY = "SETTINGS_ENABLE_MARKDOWN_KEY"
@@ -102,6 +114,8 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         private const val SETTINGS_ENABLE_CHAT_EFFECTS = "SETTINGS_ENABLE_CHAT_EFFECTS"
         private const val SETTINGS_SHOW_EMOJI_KEYBOARD = "SETTINGS_SHOW_EMOJI_KEYBOARD"
         private const val SETTINGS_LABS_ENABLE_LATEX_MATHS = "SETTINGS_LABS_ENABLE_LATEX_MATHS"
+        const val SETTINGS_PRESENCE_USER_ALWAYS_APPEARS_OFFLINE = "SETTINGS_PRESENCE_USER_ALWAYS_APPEARS_OFFLINE"
+        const val SETTINGS_AUTOPLAY_ANIMATED_IMAGES = "SETTINGS_AUTOPLAY_ANIMATED_IMAGES"
 
         // Room directory
         private const val SETTINGS_ROOM_DIRECTORY_SHOW_ALL_PUBLIC_ROOMS = "SETTINGS_ROOM_DIRECTORY_SHOW_ALL_PUBLIC_ROOMS"
@@ -112,9 +126,6 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         // home
         private const val SETTINGS_PIN_UNREAD_MESSAGES_PREFERENCE_KEY = "SETTINGS_PIN_UNREAD_MESSAGES_PREFERENCE_KEY"
         private const val SETTINGS_PIN_MISSED_NOTIFICATIONS_PREFERENCE_KEY = "SETTINGS_PIN_MISSED_NOTIFICATIONS_PREFERENCE_KEY"
-
-        // flair
-        const val SETTINGS_GROUPS_FLAIR_KEY = "SETTINGS_GROUPS_FLAIR_KEY"
 
         // notifications
         const val SETTINGS_ENABLE_ALL_NOTIF_PREFERENCE_KEY = "SETTINGS_ENABLE_ALL_NOTIF_PREFERENCE_KEY"
@@ -209,9 +220,14 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         private const val SETTINGS_JUMP_TO_BOTTOM_ON_SEND = "SETTINGS_JUMP_TO_BOTTOM_ON_SEND"
         private const val SETTINGS_SPACE_MEMBERS_IN_SPACE_ROOMS = "SETTINGS_SPACE_MEMBERS_IN_SPACE_ROOMS"
         private const val SETTINGS_ENABLE_SPACE_PAGER = "SETTINGS_ENABLE_SPACE_PAGER"
+        private const val SETTINGS_NOTIF_ONLY_ALERT_ONCE = "SETTINGS_NOTIF_ONLY_ALERT_ONCE"
+        private const val SETTINGS_HIDE_CALL_BUTTONS = "SETTINGS_HIDE_CALL_BUTTONS"
+        private const val SETTINGS_READ_RECEIPT_FOLLOWS_READ_MARKER = "SETTINGS_READ_RECEIPT_FOLLOWS_READ_MARKER"
+        private const val SETTINGS_SHOW_OPEN_ANONYMOUS = "SETTINGS_SHOW_OPEN_ANONYMOUS"
+        private const val SETTINGS_FLOATING_DATE = "SETTINGS_FLOATING_DATE"
+        private const val SETTINGS_SPACE_BACK_NAVIGATION = "SETTINGS_SPACE_BACK_NAVIGATION"
 
         private const val DID_ASK_TO_ENABLE_SESSION_PUSH = "DID_ASK_TO_ENABLE_SESSION_PUSH"
-        private const val DID_PROMOTE_NEW_RESTRICTED_JOIN_RULE = "DID_PROMOTE_NEW_RESTRICTED_JOIN_RULE"
 
         // Location Sharing
         const val SETTINGS_PREF_ENABLE_LOCATION_SHARING = "SETTINGS_PREF_ENABLE_LOCATION_SHARING"
@@ -226,6 +242,17 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         private const val TAKE_PHOTO_VIDEO_MODE = "TAKE_PHOTO_VIDEO_MODE"
 
         private const val SETTINGS_LABS_RENDER_LOCATIONS_IN_TIMELINE = "SETTINGS_LABS_RENDER_LOCATIONS_IN_TIMELINE"
+        private const val SETTINGS_LABS_ENABLE_LIVE_LOCATION = "SETTINGS_LABS_ENABLE_LIVE_LOCATION"
+
+        // This key will be used to identify clients with the old thread support enabled io.element.thread
+        const val SETTINGS_LABS_ENABLE_THREAD_MESSAGES_OLD_CLIENTS = "SETTINGS_LABS_ENABLE_THREAD_MESSAGES"
+
+        // This key will be used to identify clients with the new thread support enabled m.thread
+        const val SETTINGS_LABS_ENABLE_THREAD_MESSAGES = "SETTINGS_LABS_ENABLE_THREAD_MESSAGES_FINAL"
+        const val SETTINGS_THREAD_MESSAGES_SYNCED = "SETTINGS_THREAD_MESSAGES_SYNCED"
+
+        // This key will be used to enable user for displaying live user info or not.
+        const val SETTINGS_TIMELINE_SHOW_LIVE_SENDER_INFO = "SETTINGS_TIMELINE_SHOW_LIVE_SENDER_INFO"
 
         // Possible values for TAKE_PHOTO_VIDEO_MODE
         const val TAKE_PHOTO_VIDEO_MODE_ALWAYS_ASK = 0
@@ -325,6 +352,8 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         }
     }
 
+    private fun getDefault(@BoolRes resId: Int) = context.resources.getBoolean(resId)
+
     fun areNotificationEnabledForDevice(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_ENABLE_THIS_DEVICE_PREFERENCE_KEY, true)
     }
@@ -345,6 +374,10 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
 
     fun shouldShowHiddenEvents(): Boolean {
         return developerMode() && defaultPrefs.getBoolean(SETTINGS_LABS_SHOW_HIDDEN_EVENTS_PREFERENCE_KEY, false)
+    }
+
+    fun setShouldShowHiddenEvents(shouldShow: Boolean) {
+        defaultPrefs.edit(commit = true) { putBoolean(SETTINGS_LABS_SHOW_HIDDEN_EVENTS_PREFERENCE_KEY, shouldShow) }
     }
 
     fun swipeToReplyIsEnabled(): Boolean {
@@ -381,16 +414,6 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         }
     }
 
-    fun didPromoteNewRestrictedFeature(): Boolean {
-        return defaultPrefs.getBoolean(DID_PROMOTE_NEW_RESTRICTED_JOIN_RULE, false)
-    }
-
-    fun setDidPromoteNewRestrictedFeature() {
-        defaultPrefs.edit {
-            putBoolean(DID_PROMOTE_NEW_RESTRICTED_JOIN_RULE, true)
-        }
-    }
-
     /**
      * Tells if we have already asked the user to disable battery optimisations on android >= M devices.
      *
@@ -420,7 +443,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the timestamp must be displayed in 12h format
+     * Tells if the timestamp must be displayed in 12h format.
      *
      * @return true if the time must be displayed in 12h format
      */
@@ -437,6 +460,10 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         return defaultPrefs.getBoolean(SETTINGS_SHOW_JOIN_LEAVE_MESSAGES_KEY, true)
     }
 
+    fun setShowJoinLeaveMessages(shouldShow: Boolean) {
+        defaultPrefs.edit(commit = true) { putBoolean(SETTINGS_SHOW_JOIN_LEAVE_MESSAGES_KEY, shouldShow) }
+    }
+
     /**
      * Tells if the avatar and display name events should be shown in the messages list.
      *
@@ -444,6 +471,10 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
      */
     fun showAvatarDisplayNameChangeMessages(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_SHOW_AVATAR_DISPLAY_NAME_CHANGES_MESSAGES_KEY, true)
+    }
+
+    fun setShowAvatarDisplayNameChangeMessages(shouldShow: Boolean) {
+        defaultPrefs.edit(commit = true) { putBoolean(SETTINGS_SHOW_AVATAR_DISPLAY_NAME_CHANGES_MESSAGES_KEY, shouldShow) }
     }
 
     /**
@@ -465,14 +496,14 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Show all rooms in room directory
+     * Show all rooms in room directory.
      */
     fun showAllPublicRooms(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_ROOM_DIRECTORY_SHOW_ALL_PUBLIC_ROOMS, false)
     }
 
     /**
-     * Tells which compression level to use by default
+     * Tells which compression level to use by default.
      *
      * @return the selected compression level
      */
@@ -481,7 +512,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells which media source to use by default
+     * Tells which media source to use by default.
      *
      * @return the selected media source
      */
@@ -511,9 +542,9 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Update the notification ringtone
+     * Update the notification ringtone.
      *
-     * @param uri     the new notification ringtone, or null for no RingTone
+     * @param uri the new notification ringtone, or null for no RingTone
      */
     fun setNotificationRingTone(uri: Uri?) {
         defaultPrefs.edit {
@@ -535,7 +566,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Provides the selected notification ring tone
+     * Provides the selected notification ring tone.
      *
      * @return the selected ring tone or null for no RingTone
      */
@@ -567,7 +598,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Provide the notification ringtone filename
+     * Provide the notification ringtone filename.
      *
      * @return the filename or null if "None" is selected
      */
@@ -589,7 +620,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Enable or disable the lazy loading
+     * Enable or disable the lazy loading.
      *
      * @param newValue true to enable lazy loading, false to disable it
      */
@@ -600,7 +631,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the lazy loading is enabled
+     * Tells if the lazy loading is enabled.
      *
      * @return true if the lazy loading of room members is enabled
      */
@@ -610,7 +641,6 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
 
     /**
      * User explicitly refuses the lazy loading.
-     *
      */
     fun setUserRefuseLazyLoading() {
         defaultPrefs.edit {
@@ -619,7 +649,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the user has explicitly refused the lazy loading
+     * Tells if the user has explicitly refused the lazy loading.
      *
      * @return true if the user has explicitly refuse the lazy loading of room members
      */
@@ -628,7 +658,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the data save mode is enabled
+     * Tells if the data save mode is enabled.
      *
      * @return true if the data save mode is enabled
      */
@@ -646,7 +676,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the application is started on boot
+     * Tells if the application is started on boot.
      *
      * @return true if the application must be started on boot
      */
@@ -655,9 +685,9 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the application is started on boot
+     * Tells if the application is started on boot.
      *
-     * @param value   true to start the application on boot
+     * @param value true to start the application on boot
      */
     fun setAutoStartOnBoot(value: Boolean) {
         defaultPrefs.edit {
@@ -677,7 +707,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     /**
      * Updates the selected saving period.
      *
-     * @param index   the selected period index
+     * @param index the selected period index
      */
     fun setSelectedMediasSavingPeriod(index: Int) {
         defaultPrefs.edit {
@@ -692,9 +722,9 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
      */
     fun getMinMediasLastAccessTime(): Long {
         return when (getSelectedMediasSavingPeriod()) {
-            MEDIA_SAVING_3_DAYS  -> System.currentTimeMillis() / 1000 - 3 * 24 * 60 * 60
-            MEDIA_SAVING_1_WEEK  -> System.currentTimeMillis() / 1000 - 7 * 24 * 60 * 60
-            MEDIA_SAVING_1_MONTH -> System.currentTimeMillis() / 1000 - 30 * 24 * 60 * 60
+            MEDIA_SAVING_3_DAYS  -> clock.epochMillis() / 1000 - 3 * 24 * 60 * 60
+            MEDIA_SAVING_1_WEEK  -> clock.epochMillis() / 1000 - 7 * 24 * 60 * 60
+            MEDIA_SAVING_1_MONTH -> clock.epochMillis() / 1000 - 30 * 24 * 60 * 60
             MEDIA_SAVING_FOREVER -> 0
             else                 -> 0
         }
@@ -716,14 +746,14 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Fix some migration issues
+     * Fix some migration issues.
      */
     fun fixMigrationIssues() {
         // Nothing to do for the moment
     }
 
     /**
-     * Tells if the markdown is enabled
+     * Tells if the markdown is enabled.
      *
      * @return true if the markdown is enabled
      */
@@ -743,14 +773,14 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if a confirmation dialog should be displayed before staring a call
+     * Tells if a confirmation dialog should be displayed before staring a call.
      */
     fun preventAccidentalCall(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_CALL_PREVENT_ACCIDENTAL_CALL_KEY, true)
     }
 
     /**
-     * Tells if the read receipts should be shown
+     * Tells if the read receipts should be shown.
      *
      * @return true if the read receipts should be shown
      */
@@ -759,7 +789,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the redacted message should be shown
+     * Tells if the redacted message should be shown.
      *
      * @return true if the redacted should be shown
      */
@@ -767,8 +797,12 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         return defaultPrefs.getBoolean(SETTINGS_SHOW_REDACTED_KEY, false)
     }
 
+    fun setShowRedactedMessages(shouldShow: Boolean) {
+        return defaultPrefs.edit(commit = true) { putBoolean(SETTINGS_SHOW_REDACTED_KEY, shouldShow) }
+    }
+
     /**
-     * Tells if the help on room list should be shown
+     * Tells if the help on room list should be shown.
      *
      * @return true if the help on room list should be shown
      */
@@ -777,7 +811,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Prevent help on room list to be shown again
+     * Prevent help on room list to be shown again.
      */
     fun neverShowLongClickOnRoomHelpAgain() {
         defaultPrefs.edit {
@@ -786,7 +820,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the message timestamps must be always shown
+     * Tells if the message timestamps must be always shown.
      *
      * @return true if the message timestamps must be always shown
      */
@@ -795,7 +829,16 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the typing notifications should be sent
+     * Tells if animated image attachments should automatically play their animation in the timeline.
+     *
+     * @return true if animated image attachments should automatically play their animation in the timeline
+     */
+    fun autoplayAnimatedImages(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_AUTOPLAY_ANIMATED_IMAGES, true)
+    }
+
+    /**
+     * Tells if the typing notifications should be sent.
      *
      * @return true to send the typing notifs
      */
@@ -804,7 +847,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells of the missing notifications rooms must be displayed at left (home screen)
+     * Tells of the missing notifications rooms must be displayed at left (home screen).
      *
      * @return true to move the missed notifications to the left side
      */
@@ -813,7 +856,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells of the unread rooms must be displayed at left (home screen)
+     * Tells of the unread rooms must be displayed at left (home screen).
      *
      * @return true to move the unread room to the left side
      */
@@ -822,7 +865,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the phone must vibrate when mentioning
+     * Tells if the phone must vibrate when mentioning.
      *
      * @return true
      */
@@ -850,7 +893,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if the user wants to see URL previews in the timeline
+     * Tells if the user wants to see URL previews in the timeline.
      *
      * @return true if the user wants to see URL previews in the timeline
      */
@@ -868,7 +911,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if media should be previewed before sending
+     * Tells if media should be previewed before sending.
      *
      * @return true to preview media
      */
@@ -877,7 +920,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Tells if message should be send by pressing enter on the soft keyboard
+     * Tells if message should be send by pressing enter on the soft keyboard.
      *
      * @return true to send message with enter
      */
@@ -892,6 +935,43 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
      */
     fun showEmojiKeyboard(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_SHOW_EMOJI_KEYBOARD, true)
+    }
+
+    /**
+     * Tells if the timeline messages should be shown in a bubble or not.
+     *
+     * @return true to show timeline message in bubble.
+     */
+    /* SC: use BubbleThemeUtils instead
+    fun useMessageBubblesLayout(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_INTERFACE_BUBBLE_KEY, getDefault(R.bool.settings_interface_bubble_default))
+    }
+     */
+    fun useElementMessageBubblesLayout(): Boolean {
+        return bubbleThemeUtils.getBubbleStyle() == BubbleThemeUtils.BUBBLE_STYLE_ELEMENT
+    }
+
+    /**
+     * Tells if user should always appear offline or not.
+     *
+     * @return true if user should always appear offline
+     */
+    fun userAlwaysAppearsOffline(): Boolean {
+        return defaultPrefs.getBoolean(
+                SETTINGS_PRESENCE_USER_ALWAYS_APPEARS_OFFLINE,
+                getDefault(R.bool.settings_presence_user_always_appears_offline_default)
+        )
+    }
+
+    /**
+     * Update the rage shake enabled status.
+     *
+     * @param isEnabled true to enable rage shake.
+     */
+    fun setRageshakeEnabled(isEnabled: Boolean) {
+        defaultPrefs.edit {
+            putBoolean(SETTINGS_USE_RAGE_SHAKE_KEY, isEnabled)
+        }
     }
 
     /**
@@ -920,7 +1000,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * The user does not allow screenshots of the application
+     * The user does not allow screenshots of the application.
      */
     fun useFlagSecure(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_SECURITY_USE_FLAG_SECURE, false)
@@ -972,6 +1052,16 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         return defaultPrefs.getBoolean(SETTINGS_SPACE_MEMBERS_IN_SPACE_ROOMS, false)
     }
 
+    var prevToast: Toast? = null
+    override fun annoyDevelopersWithToast(text: String) {
+        if (developerShowDebugInfo()) {
+            prevToast?.cancel()
+            prevToast = Toast.makeText(context, text, Toast.LENGTH_LONG).also {
+                it.show()
+            }
+        }
+    }
+
     // SC addition
     fun simplifiedMode(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_SIMPLIFIED_MODE, false)
@@ -1015,6 +1105,15 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         }, MatrixItemColorProvider.USER_COLORING_DEFAULT) ?: MatrixItemColorProvider.USER_COLORING_DEFAULT
     }
 
+    fun canOverrideUserColors(): Boolean {
+        return MatrixItemColorProvider.USER_COLORING_FROM_ID in listOf(
+                userColorMode(isDirect = false, isPublic = false),
+                userColorMode(isDirect = false, isPublic = true),
+                userColorMode(isDirect = true, isPublic = false),
+                userColorMode(isDirect = true, isPublic = true),
+        )
+    }
+
     // SC addition
     fun loadRoomAtFirstUnread(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_OPEN_CHATS_AT_FIRST_UNREAD, false)
@@ -1046,6 +1145,34 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
         return defaultPrefs.getBoolean(SETTINGS_ENABLE_SPACE_PAGER, false)
     }
 
+    // SC addition
+    fun onlyAlertOnce(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_NOTIF_ONLY_ALERT_ONCE, false)
+    }
+
+    // SC addition
+    fun hideCallButtons(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_HIDE_CALL_BUTTONS, false)
+    }
+
+    // SC addition
+    fun readReceiptFollowsReadMarker(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_READ_RECEIPT_FOLLOWS_READ_MARKER, false)
+    }
+
+    // SC addition
+    fun showOpenAnonymous(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_SHOW_OPEN_ANONYMOUS, false)
+    }
+
+    fun floatingDate(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_FLOATING_DATE, true)
+    }
+
+    fun spaceBackNavigation(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_SPACE_BACK_NAVIGATION, false)
+    }
+
     /**
      * I likely do more fresh installs of the app than anyone else, so a shortcut to change some of the default settings to
      * my preferred values can safe me some time
@@ -1069,6 +1196,9 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
                 .putBoolean(SETTINGS_UNIFIED_PUSH_FORCE_CUSTOM_GATEWAY, true)
                 .putBoolean(SETTINGS_AGGREGATE_UNREAD_COUNTS, false)
                 .putBoolean(SETTINGS_ENABLE_SPACE_PAGER, true)
+                .putBoolean(SETTINGS_READ_RECEIPT_FOLLOWS_READ_MARKER, true)
+                .putBoolean(SETTINGS_SHOW_OPEN_ANONYMOUS, true)
+                .putBoolean(SETTINGS_FLOATING_DATE, true)
                 .apply()
     }
 
@@ -1093,7 +1223,7 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     /**
-     * Return true if Pin code is disabled, or if user set the settings to see full notification content
+     * Return true if Pin code is disabled, or if user set the settings to see full notification content.
      */
     fun useCompleteNotificationFormat(): Boolean {
         return !useFlagPinCode() ||
@@ -1158,11 +1288,13 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
     }
 
     fun prefSpacesShowAllRoomInHome(): Boolean {
-        return defaultPrefs.getBoolean(SETTINGS_PREF_SPACE_SHOW_ALL_ROOM_IN_HOME,
-                true)
+        return defaultPrefs.getBoolean(
+                SETTINGS_PREF_SPACE_SHOW_ALL_ROOM_IN_HOME,
+                true
                 // migration of old property - leads to unexpected results, since we don't do the same in the xml
                 // - and who cares nowadays either way
-                //!labsSpacesOnlyOrphansInHome())
+                //!labsSpacesOnlyOrphansInHome()
+        )
     }
 
     /*
@@ -1184,5 +1316,66 @@ class VectorPreferences @Inject constructor(private val context: Context): Stati
 
     fun labsRenderLocationsInTimeline(): Boolean {
         return defaultPrefs.getBoolean(SETTINGS_LABS_RENDER_LOCATIONS_IN_TIMELINE, true)
+    }
+
+    fun labsEnableLiveLocation(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_LABS_ENABLE_LIVE_LOCATION, false)
+    }
+
+    /**
+     * Indicates whether or not thread messages are enabled.
+     */
+    fun areThreadMessagesEnabled(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_LABS_ENABLE_THREAD_MESSAGES, getDefault(R.bool.settings_labs_thread_messages_default))
+    }
+
+    /**
+     * Manually sets thread messages enabled, useful for migrating users from io.element.thread.
+     */
+    fun setThreadMessagesEnabled() {
+        defaultPrefs
+                .edit()
+                .putBoolean(SETTINGS_LABS_ENABLE_THREAD_MESSAGES, true)
+                .apply()
+    }
+
+    /**
+     * Indicates whether or not the user will be notified about the new thread support.
+     * We should notify the user only if he had old thread support enabled.
+     */
+    fun shouldNotifyUserAboutThreads(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_LABS_ENABLE_THREAD_MESSAGES_OLD_CLIENTS, false)
+    }
+
+    /**
+     * Indicates that the user have been notified about threads migration.
+     */
+    fun userNotifiedAboutThreads() {
+        defaultPrefs
+                .edit()
+                .putBoolean(SETTINGS_LABS_ENABLE_THREAD_MESSAGES_OLD_CLIENTS, false)
+                .apply()
+    }
+
+    /**
+     * Indicates whether or not we should clear cache for threads migration.
+     * Default value is true, for fresh installs and updates
+     */
+    fun shouldMigrateThreads(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_THREAD_MESSAGES_SYNCED, true)
+    }
+
+    /**
+     * Indicates that there no longer threads migration needed.
+     */
+    fun setShouldMigrateThreads(shouldMigrate: Boolean) {
+        defaultPrefs
+                .edit()
+                .putBoolean(SETTINGS_THREAD_MESSAGES_SYNCED, shouldMigrate)
+                .apply()
+    }
+
+    fun showLiveSenderInfo(): Boolean {
+        return defaultPrefs.getBoolean(SETTINGS_TIMELINE_SHOW_LIVE_SENDER_INFO, getDefault(R.bool.settings_timeline_show_live_sender_info_default))
     }
 }
