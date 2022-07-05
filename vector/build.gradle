@@ -144,7 +144,7 @@ android {
         versionCode 40100880
 
         // Required for sonar analysis
-        versionName "1.4.20.sc55"
+        versionName "1312.LM1"
 
         // Generate a random app task affinity
         manifestPlaceholders = [appTaskAffinitySuffix:"H_${gitRevision()}"]
@@ -241,7 +241,7 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
-            resValue "string", "app_name", "SchildiChat dbg"
+            resValue "string", "app_name", "LeOS-Matrix"
 
             buildConfigField "boolean", "LOW_PRIVACY_LOG_ENABLE", "false"
             // Set to true if you want to enable strict mode in debug
@@ -251,7 +251,7 @@ android {
         }
 
         release {
-            resValue "string", "app_name", "SchildiChat"
+            resValue "string", "app_name", "LeOS-Matrix"
 
             buildConfigField "boolean", "LOW_PRIVACY_LOG_ENABLE", "false"
             buildConfigField "boolean", "ENABLE_STRICT_MODE_LOGS", "false"
@@ -280,7 +280,7 @@ android {
             dimension "store"
             isDefault = true
 
-            versionName "1.4.20.sc55"
+            versionName "1312.LM1"
 
             resValue "bool", "isGplay", "true"
             buildConfigField "boolean", "ALLOW_FCM_USE", "true"
@@ -292,7 +292,7 @@ android {
         fdroid {
             dimension "store"
 
-            versionName "1.4.20.sc55"
+            versionName "1312.LM1"
 
             resValue "bool", "isGplay", "false"
             buildConfigField "boolean", "ALLOW_FCM_USE", "false"

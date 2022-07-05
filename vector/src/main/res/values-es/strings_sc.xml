@@ -23,14 +23,14 @@
     <string name="bubble_style_both">Ambos lados</string>
     <string name="bubble_time_location_top">Superior</string>
     <string name="bubble_time_location_bottom">Inferior</string>
-    <string name="all_list_rooms_empty_title">SchildiChat</string>
+    <string name="all_list_rooms_empty_title">LeOS-Matrix</string>
     <string name="all_list_rooms_empty_body">Los chats se mostrán aquí</string>
     <string name="login_connect_using_matrix_id_text_sc">ej: @usuario:dominio.com</string>
     <string name="login_server_other_title_sc">Servidor personalizado</string>
     <string name="settings_room_unread_kind_group">Previsualización del contenido del chat grupal</string>
     <string name="bubble_time_location">Ubicación de la marca de tiempo</string>
     <string name="url_previews_in_encrypted_rooms_summary">Esto va a filtrar las URLs de tus mensajes al servidor central!</string>
-    <string name="login_mobile_device_sc">SchildiChat para Android</string>
+    <string name="login_mobile_device_sc">LeOS-Matrix para Android</string>
     <string name="bottom_action_all">General</string>
     <string name="url_previews_in_encrypted_rooms">Previsualización de URLs en chats encriptados</string>
     <string name="settings_home_overview">Vista general</string>
@@ -95,7 +95,7 @@
     <string name="sc_accent_turquoise">Turquesa</string>
     <string name="sc_accent_carnation">Clavel</string>
     <string name="sc_accent_indigo">Añil</string>
-    <string name="send_bug_report_sc_extra">Para aumentar la visibilidad de tu problema y permitir que nos pongamos en contracto contigo, es posible que quieras hacer referencia a este reporte (añadiendo tu ID de Matrix y la hora aproximada de cuando se envio) en una issue en https://github.com/SchildiChat/SchildiChat-android/issues (comprueba primero si ya existe una para tu problema y crea una solo si no existe).</string>
+    <string name="send_bug_report_sc_extra">Para aumentar la visibilidad de tu problema y permitir que nos pongamos en contracto contigo, es posible que quieras hacer referencia a este reporte (añadiendo tu ID de Matrix y la hora aproximada de cuando se envio) en una issue en https://github.com/LeOS-Matrix/LeOS-Matrix-android/issues (comprueba primero si ya existe una para tu problema y crea una solo si no existe).</string>
     <string name="settings_troubleshoot_test_endpoint_title"></string>
     <string name="settings_theme_colors">Colores de tema</string>
     <string name="settings_enable_space_pager">Desliza la lista de conversaciones para cambiar de espacio</string>

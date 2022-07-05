@@ -1,3 +1,3 @@
-# SchildiChat Privacy Policy
+# LeOS-Matrix Privacy Policy
 
-The SchildiChat Privacy Policy has been moved to [schildi.chat/android/privacy/](https://schildi.chat/android/privacy/).
+The LeOS-Matrix Privacy Policy has been moved to [schildi.chat/android/privacy/](https://schildi.chat/android/privacy/).

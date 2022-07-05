@@ -1,1 +1,1 @@
-Variant of SchildiChat with proprietary (Google) push notifications
+Variant of LeOS-Matrix with proprietary (Google) push notifications
